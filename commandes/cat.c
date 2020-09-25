@@ -8,6 +8,8 @@
 #include "tar.h"
 
 
+// TO USE : ./cat fichiertar.tar fichier autrefichier ...
+
 int main(int argc, char *argv[]){
 
 	// CHECKING IF WE HAVE ENOUGH ARGUMENTS
@@ -91,6 +93,8 @@ int main(int argc, char *argv[]){
 		//BUFFER TO READ THE CONTENT OF THE FILE
 
 		char buff [BLOCKSIZE];
+
+		printf("\n");
 
 		//WE READ THE CONTENT OF THE FILE AND THEN WRITE IT IN THE STDOUT	
 
