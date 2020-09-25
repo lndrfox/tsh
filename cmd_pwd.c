@@ -20,10 +20,16 @@ int main(int argc, char *argv[]) {
 
 	char* tar = strtok(argv[1], "/");
 	char* nomfichier = strtok(NULL, "");
-	int fd = open(tar, O_RDONLY);
+	
+	if(nomfichier ==  NULL) {
+		printf("Veuillez rentrez un fichier : exemple.tar/fichier\n");
+		exit(-1);
+	}
+
 	char tampon[512];
 	int n;
 	struct posix_header * p_hdr;
+	int fd = open(tar, O_RDONLY);
 
 	if (fd<0) {
 		perror("Erreur lors de l'ouverture du tar");
