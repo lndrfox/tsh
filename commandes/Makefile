@@ -2,7 +2,7 @@
 CC=gcc
 CFLAGS=-W -Wall
 LDFLAGS=
-EXEC=cat cp
+EXEC=cat mkdir
 
 all: $(EXEC)
 
@@ -21,7 +21,7 @@ cat.o: cat.c tar.h
 mkdir: mkdir.o
 	$(CC) -o $@ $^ $(LDFLAGS)
 
-mkdir.o: mkdir.c mkdir.h
+mkdir.o: mkdir.c tar.h
 	$(CC) -o $@ -c $< $(CFLAGS)
 
 clean:
