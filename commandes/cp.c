@@ -78,24 +78,65 @@ int main(int argc, char *argv[]){
     lseek(fd,((size+ BLOCKSIZE - 1) >> BLOCKBITS)*BLOCKSIZE,SEEK_CUR);
 
 
-  }while(strcmp(hd.name,argv[2])!=0);	
+  }while(strcmp(hd.name,argv[2])!=0);
 
-  int fr = open(argv[2], O_RDONLY);
+  //CREATING THE FILE TO COPY
+
+
+		int fd2=open(argv[3], O_WRONLY | O_CREAT , S_IRUSR | S_IWUSR);
+
+
+		//GETTING THE SIZE OF WHAT WE NEED TO READ
+
+		char rd [BLOCKSIZE] ;
+
+		//LOOP TO READ AND WRITE THE BLOCKS OF THE FILE CONTENT
+
+		for(unsigned int i=0; i<(size+ BLOCKSIZE - 1) >> BLOCKBITS;i++){
+		  
+			int rdtmp = read(fd, rd, BLOCKSIZE);
+
+			//EROR MANAGMENT
+
+			if(rdtmp<0){
+
+				perror("Reading tar file");
+				exit(-1);
+			}
+
+			//WRITING THE BLOCK AND ERROR MANGEMENT
+
+			if(write(fd2,rd, rdtmp)<0){
+
+				perror("Writing file content");
+				exit(-1);
+
+			}
+
+       
+			memset(rd, 0, BLOCKSIZE);
+
+			
+
+		}
+
+		//CLOSING WRITING FILE
+		
+
+		close(fd2);
+
+
+		//MOVING READING HEAD BACK TO THE BEGINING OF THE TAR FILE IN CASE ARGUMENTS ARE NOT
+		//IN THE SAME ORDER AS THE HEADERS IN THE TAR FILE
+
+
+
+return 0;
+
+
+}
+
   
-  int ft = open ( argv[3], O_WRONLY | O_CREAT , S_IRUSR | S_IWUSR);
-    
-  while((n = read(fr, &tmp, 1)) > 0){    
-    write(ft , &tmp, 1);
-  }
-
-  
-  close (ft);
-  close (fr);
-  close (fd);
-  return 0;
-
-
-  }
      
   
 	         
