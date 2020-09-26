@@ -2,7 +2,7 @@
 #include <stdlib.h> // exit
 #include <unistd.h> // getcwd close read
 #include <string.h> // strtok
-#include <fcntl.h>  //open
+#include <fcntl.h>  // open
 #include "tar.h"
 
 int main(int argc, char *argv[]) {
