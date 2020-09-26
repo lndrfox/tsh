@@ -2,14 +2,26 @@
 CC=gcc
 CFLAGS=-W -Wall
 LDFLAGS=
-EXEC=cat
+EXEC=cat cp
 
 all: $(EXEC)
+
+cp: cp.o
+	$(CC) -o $@ $^ $(LDFLAGS)
+
+cp.o: cp.c tar.h
+	$(CC) -o $@ -c $< $(CFLAGS)
 
 cat: cat.o
 	$(CC) -o $@ $^ $(LDFLAGS)
 
 cat.o: cat.c tar.h
+	$(CC) -o $@ -c $< $(CFLAGS)
+
+mkdir: mkdir.o
+	$(CC) -o $@ $^ $(LDFLAGS)
+
+mkdir.o: mkdir.c mkdir.h
 	$(CC) -o $@ -c $< $(CFLAGS)
 
 clean:
