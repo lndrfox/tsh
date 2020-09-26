@@ -18,12 +18,6 @@ cat: cat.o
 cat.o: cat.c tar.h
 	$(CC) -o $@ -c $< $(CFLAGS)
 
-mkdir: mkdir.o
-	$(CC) -o $@ $^ $(LDFLAGS)
-
-mkdir.o: mkdir.c mkdir.h
-	$(CC) -o $@ -c $< $(CFLAGS)
-
 clean:
 	rm -rf *.o
 
