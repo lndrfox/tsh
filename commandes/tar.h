@@ -1,3 +1,5 @@
+#ifndef TAR_H
+#define TAR_H
 
 /* tar Header Block, from POSIX 1003.1-1990.  */
 
@@ -66,3 +68,5 @@ int check_checksum(struct posix_header *hd) {
   for (int i=0;i<8;i++) { sum += ' ' - hd->chksum[i]; }
   return (checksum == sum);
 }
+
+#endif
