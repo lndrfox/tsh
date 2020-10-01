@@ -3,7 +3,6 @@
 #include <stdlib.h>    // exit
 #include <unistd.h>    // read close lseek
 #include <sys/types.h> // lseek
-#include <sys/stat.h>  // stat
 #include <string.h>    // strcmp strtok strchr
 #include <time.h>      // localtime
 #include "tar.h"
@@ -40,14 +39,14 @@ void ptemps(long temps) {
 void ptype(char t) {
 	switch(t) {
 			case '0': printf("-"); break;
-			case '\0': printf("-"); break;  // A Completer
-			case '1': printf("-"); break;	// A Completer
+			case '\0': printf("-"); break;  // A Completer ?
+			case '1': printf("-"); break;	// A Completer ?
 			case '2': printf("l"); break;
 			case '3': printf("c"); break;
 			case '4': printf("b"); break;	
 			case '5': printf("d"); break;
 			case '6': printf("p"); break;
-			case '7': printf("-"); break;	// A Completer
+			case '7': printf("-"); break;	// A Completer ?
 		}
 }
 
@@ -141,14 +140,6 @@ int main (int argc, char *argv[]) {
 					// Droits d'accès
 					pdroit(p_hdr-> mode);
 
-					// Nombre de liens physiques
-					// A terminer avec cd
-					
-					/*char* chemin = getcwd(NULL, 0);
-					struct stat* statbuf;
-					stat(chemin, statbuf);
-					printf(" %lu ", statbuf -> st_nlink);*/
-
 					// Nom propriétaire
 					printf("%s ", p_hdr-> uname);
 
@@ -156,62 +147,13 @@ int main (int argc, char *argv[]) {
 					printf("%s ", p_hdr-> gname);
 
 					// Taille en octets
-					if(fich == 2)
-						printf("4096 ");
-					else {
-						sscanf(p_hdr->size,"%o", &size);
-						printf("%d ", size); 
-					}
+					sscanf(p_hdr->size,"%o", &size);
+					printf("%d ", size);
 
 					// Date de dernière modification 
-
-					// Affiche la date pour les repertoires
-					// Les fichier modifies a l'interieur influe sur la date
-					// ATTENTION les fichiers de repertoires a l'interieur du repertoire en
-					// revanche ne compte pas (i.e repertoire de repertoire de repertoire... etc)
-					// LE CODE NE MARCHE PAS :'( HELP
-					/*if(fich == 2) {
-						long temps;
-						long t;
-						int taille;
-
-						int nb = 1;
-						char* nomrep = malloc(strlen(p_hdr -> name)+1);
-						strcpy(nomrep, p_hdr->name);
-
-						// On parcours tous les fichiers appartenant au repertoire et le repertoire
-						// (strtok à decoupé le "/" de son nom)
-						while(((strchr(p_hdr-> name, '/') != NULL) || nb == 1) && n > 0 && strlen(p_hdr-> name) != 0) {
-							sscanf(p_hdr -> mtime,"%lo", &t);
-
-							// On prend le temps le plus récent
-							if(temps < t) {
-								temps = t;
-							}
-							nb ++;
-
-							sscanf(p_hdr->size,"%o", &taille);
-							lseek(fd,((taille + BLOCKSIZE - 1) >> BLOCKBITS)*512,SEEK_CUR);
-							n = read(fd, &tampon, 512);
-							p_hdr = (struct posix_header*)tampon;
-						}
-
-						// On retourne au repertoire
-						while(strcmp(p_hdr -> name, nomrep) != 0 && n > 0 && strlen(p_hdr-> name) != 0) {
-							lseek(fd,-(((taille + BLOCKSIZE - 1) >> BLOCKBITS)*512),SEEK_CUR);
-							n = read(fd, &tampon, 512);
-							p_hdr = (struct posix_header*)tampon;
-							sscanf(p_hdr->size,"%o", &taille);
-						}
-						ptemps(temps);
-					}
-					
-					else {*/
-						long temps;
-						sscanf(p_hdr-> mtime,"%lo", &temps);
-						ptemps(temps);
-					//}
-
+					long temps;
+					sscanf(p_hdr-> mtime,"%lo", &temps);
+					ptemps(temps);
 				}
 				// Nom du fichier
 				printf("%s\n", p_hdr-> name);
