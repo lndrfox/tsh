@@ -36,6 +36,7 @@ void ptemps(long temps) {
 		printf("%d ", tempsformat -> tm_year +1900);
 }
 
+// Affiche le type du fichier
 void ptype(char t) {
 	switch(t) {
 			case '0': printf("-"); break;
@@ -50,6 +51,7 @@ void ptype(char t) {
 		}
 }
 
+// Affiche les droits d'acces du fichier
 void pdroit(char *d) {
 	for(int i = 4; i < 7; i++) {
 		switch(d[i]) {
@@ -67,12 +69,14 @@ void pdroit(char *d) {
 
 int main (int argc, char *argv[]) {
 	// On suppose que la lecture se fait uniquement depuis le tar
-	// Deux formats possibles:
+	// Quatre formats possibles:
 	// test.tar
+	// test.tar/rep
 	// -l test.tar
+	// -l test.tar/rep
 
 	if(argc < 2 || argc > 3 || (strcmp(argv[1], "-l")!=0 && argc == 3)) {
-		printf("Fichier entré invalide\n");
+		printf("\033[1;31mEntrée invalide\n");
 		exit(-1);
 	}
 
@@ -84,10 +88,21 @@ int main (int argc, char *argv[]) {
 
 	// Ouverture du tar
 	int fd;
-	if (l == 1) fd = open(argv[2], O_RDONLY);
-	else fd = open(argv[1], O_RDONLY);
+	char* rep = NULL;
+	int argnum;
+
+	if (l == 1)	argnum = 2;
+	else argnum = 1;
+	
+	// Si on veut afficher un repertoire de tar
+	if(strchr(argv[argnum], '/') != NULL) {
+		strtok(argv[argnum], "/");
+		rep = strtok(NULL, "");
+	}
+
+	fd = open(argv[argnum], O_RDONLY);
 	if (fd<0) {
-		perror("Erreur lors de l'ouverture du tar");
+		perror("\033[1;31mErreur lors de l'ouverture du tar");
 		exit(-1);
 	}
 
@@ -98,12 +113,13 @@ int main (int argc, char *argv[]) {
 	int fich = 0;					// 0: C'est un fichier simple
 							// 1: C'est un fichier dans un repertoire
 							// 2: C'est un repertoire
+	int repexiste = 0;
 
 	while(1) {
 		// Lecture du bloc
 		n = read(fd, &tampon, 512);
 		if(n<0) {
-			perror("Erreur lors de la lecture du tar");
+			perror("\033[1;31mErreur lors de la lecture du tar");
 			exit(-1);
 		}
 		if(n == 0) break;
@@ -111,14 +127,18 @@ int main (int argc, char *argv[]) {
 		// Extraction des informations
 		p_hdr = (struct posix_header*)tampon;
 
-		// (sans la condition ci dessous: affiche des noms d'entetes avec un nom vide)
+		// On evite les deux blocs finaux formés uniquement de zéros
 		if(strlen(p_hdr-> name)!=0) {
 			
 			// --- Condition de la nature du fichier ---
 
 			// Si c'est un répertoire
-			if(p_hdr->typeflag == '5') {// Afficher en couleur bleu sans le '/'
+			if(p_hdr->typeflag == '5') { // Afficher en couleur bleu
 				strtok(p_hdr->name, "/");
+				if(rep != NULL) {
+					if (strcmp(p_hdr -> name, rep) == 0)
+						repexiste = 1;
+				}
 				fich = 2;
 			}
 			// Si c'est un fichier d'un repertoire
@@ -128,11 +148,17 @@ int main (int argc, char *argv[]) {
 			else 
 				fich = 0;
 
-			// Si le fichier est dans un repertoire on ne l'affiche pas
-			if(fich!=1) {
-
+			// On stock un mot de la taille de rep avec les strlen(rep) 1ere lettres du nom du fichier
+			char* isrep; 
+			if(rep != NULL && repexiste == 1) {
+				isrep = malloc(strlen(rep) +1);
+				strncat(isrep, p_hdr-> name, strlen(rep));
+			}
+		
+			// Format test.tar: Si le fichier est dans un repertoire on ne l'affiche pas
+			// Format test.tar/rep Si le repertoire existe on affiche ses fichiers
+			if((rep == NULL && fich!=1) || (rep != NULL && repexiste == 1 && fich == 1 && strcmp(isrep, rep) == 0)) {
 				// --- S'il y a l'option "-l" ---
-
 				if(l == 1) { 
 					// Type de fichier
 					ptype(p_hdr-> typeflag);
@@ -141,7 +167,7 @@ int main (int argc, char *argv[]) {
 					pdroit(p_hdr-> mode);
 
 					// Nom propriétaire
-					printf("%s ", p_hdr-> uname);
+					printf(" %s ", p_hdr-> uname);
 
 					// Nom du groupe
 					printf("%s ", p_hdr-> gname);
@@ -156,14 +182,33 @@ int main (int argc, char *argv[]) {
 					ptemps(temps);
 				}
 				// Nom du fichier
-				printf("%s\n", p_hdr-> name);
-			}
-		}
 
+				// Si c'est un repertoire: couleur bleu
+				if(fich == 2) 
+					printf("\033[1;34m");
+
+				// Si c'est un fichier du repertoire choisi on affiche que le nom apres rep/
+				if(rep != NULL && repexiste == 1) {
+					strtok(p_hdr-> name, "/");
+					char* sousfichier = strtok(NULL, "");
+					printf("%s\n", sousfichier);
+				}
+				else 
+					printf("%s\n", p_hdr-> name);
+
+				// Renitialise la couleur
+				if(fich == 2)
+					printf("\033[0m"); 
+
+			}
+			if (rep != NULL && repexiste == 1) free(isrep);
+		}
 		// On passe a l'entete suivante
 		sscanf(p_hdr->size,"%o", &size);
 		lseek(fd,((size + BLOCKSIZE - 1) >> BLOCKBITS)*512,SEEK_CUR);
 	}
+	if(rep!= NULL && repexiste == 0) 
+		printf("\033[1;31mLe répertoire n'existe pas\n");
 	close(fd);
 	exit(0);
 }
