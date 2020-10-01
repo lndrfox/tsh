@@ -3,8 +3,8 @@
 #include <stdlib.h>    // exit
 #include <unistd.h>    // read close lseek
 #include <sys/types.h> // lseek
-#include <string.h>    // strcmp strtok strchr
-#include <time.h>      // localtime
+#include <string.h>	   // strcmp strtok strchr
+#include <time.h>	   // localtime
 #include "tar.h"
 
 // Affiche la date
@@ -75,6 +75,7 @@ int main (int argc, char *argv[]) {
 	// -l test.tar
 	// -l test.tar/rep
 
+	// Conditions des valeurs d'entrée
 	if(argc < 2 || argc > 3 || (strcmp(argv[1], "-l")!=0 && argc == 3)) {
 		printf("\033[1;31mEntrée invalide\n");
 		exit(-1);
@@ -86,18 +87,23 @@ int main (int argc, char *argv[]) {
 		l = 1;
 	} 
 
-	// Ouverture du tar
+	// ======================================================================
+	// 							 OUVERTURE DU TAR
+	// ======================================================================
+
 	int fd;
 	char* rep = NULL;
 	int argnum;
 
-	if (l == 1)	argnum = 2;
-	else argnum = 1;
+	if (l == 1)	
+		argnum = 2;
+	else 
+		argnum = 1;
 	
-	// Si on veut afficher un repertoire de tar
+	// Si on veut afficher un repertoire du tar
 	if(strchr(argv[argnum], '/') != NULL) {
-		strtok(argv[argnum], "/");
-		rep = strtok(NULL, "");
+		strtok(argv[argnum], "/");		// Le nom du tar
+		rep = strtok(NULL, "");	 		// Le nom du repertoire
 	}
 
 	fd = open(argv[argnum], O_RDONLY);
@@ -106,14 +112,20 @@ int main (int argc, char *argv[]) {
 		exit(-1);
 	}
 
+	// ======================================================================
+	// 	 						 LECTURE DU TAR
+	// ======================================================================
+
 	char tampon[512];
 	int n;
 	unsigned int size;
 	struct posix_header * p_hdr;
 	int fich = 0;					// 0: C'est un fichier simple
-							// 1: C'est un fichier dans un repertoire
-							// 2: C'est un repertoire
-	int repexiste = 0;
+									// 1: C'est un fichier dans un repertoire
+									// 2: C'est un repertoire
+
+	int repexiste = 0;				// 0: Le repertoire correspondant a rep n'a pas ete trouve
+									// 1: Le repertoire a ete trouve
 
 	while(1) {
 		// Lecture du bloc
@@ -130,10 +142,12 @@ int main (int argc, char *argv[]) {
 		// On evite les deux blocs finaux formés uniquement de zéros
 		if(strlen(p_hdr-> name)!=0) {
 			
-			// --- Condition de la nature du fichier ---
+			// ----------------------------------------------------------------------
+			// 	 				CONDITION DE LA NATURE DU FICHIER
+			// ----------------------------------------------------------------------
 
 			// Si c'est un répertoire
-			if(p_hdr->typeflag == '5') { // Afficher en couleur bleu
+			if(p_hdr->typeflag == '5') {
 				strtok(p_hdr->name, "/");
 				if(rep != NULL) {
 					if (strcmp(p_hdr -> name, rep) == 0)
@@ -148,6 +162,10 @@ int main (int argc, char *argv[]) {
 			else 
 				fich = 0;
 
+			// ----------------------------------------------------------------------
+			// 	 					 AFFICHAGE DES INFORMATIONS
+			// ----------------------------------------------------------------------
+
 			// On stock un mot de la taille de rep avec les strlen(rep) 1ere lettres du nom du fichier
 			char* isrep; 
 			if(rep != NULL && repexiste == 1) {
@@ -156,9 +174,10 @@ int main (int argc, char *argv[]) {
 			}
 		
 			// Format test.tar: Si le fichier est dans un repertoire on ne l'affiche pas
-			// Format test.tar/rep Si le repertoire existe on affiche ses fichiers
+			// Format test.tar/rep: Sinon on affiche uniquement ses fichiers
 			if((rep == NULL && fich!=1) || (rep != NULL && repexiste == 1 && fich == 1 && strcmp(isrep, rep) == 0)) {
-				// --- S'il y a l'option "-l" ---
+
+				// S'il y a l'option "-l"
 				if(l == 1) { 
 					// Type de fichier
 					ptype(p_hdr-> typeflag);
@@ -201,14 +220,19 @@ int main (int argc, char *argv[]) {
 					printf("\033[0m"); 
 
 			}
+			
 			if (rep != NULL && repexiste == 1) free(isrep);
 		}
+
 		// On passe a l'entete suivante
 		sscanf(p_hdr->size,"%o", &size);
 		lseek(fd,((size + BLOCKSIZE - 1) >> BLOCKBITS)*512,SEEK_CUR);
 	}
+
+	// Si on ne rencontre pas le repertoire recherche
 	if(rep!= NULL && repexiste == 0) 
 		printf("\033[1;31mLe répertoire n'existe pas\n");
+
 	close(fd);
 	exit(0);
 }
