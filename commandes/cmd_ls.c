@@ -3,8 +3,8 @@
 #include <stdlib.h>    // exit
 #include <unistd.h>    // read close lseek
 #include <sys/types.h> // lseek
-#include <string.h>	   // strcmp strtok strchr
-#include <time.h>	   // localtime
+#include <string.h>    // strcmp strtok strchr
+#include <time.h>      // localtime
 #include "tar.h"
 
 // Affiche la date
@@ -88,7 +88,7 @@ int main (int argc, char *argv[]) {
 	} 
 
 	// ======================================================================
-	// 							 OUVERTURE DU TAR
+	// 			      OUVERTURE DU TAR
 	// ======================================================================
 
 	int fd;
@@ -113,7 +113,7 @@ int main (int argc, char *argv[]) {
 	}
 
 	// ======================================================================
-	// 	 						 LECTURE DU TAR
+	// 	 		      LECTURE DU TAR
 	// ======================================================================
 
 	char tampon[512];
@@ -121,11 +121,11 @@ int main (int argc, char *argv[]) {
 	unsigned int size;
 	struct posix_header * p_hdr;
 	int fich = 0;					// 0: C'est un fichier simple
-									// 1: C'est un fichier dans un repertoire
-									// 2: C'est un repertoire
+							// 1: C'est un fichier dans un repertoire
+							// 2: C'est un repertoire
 
 	int repexiste = 0;				// 0: Le repertoire correspondant a rep n'a pas ete trouve
-									// 1: Le repertoire a ete trouve
+							// 1: Le repertoire a ete trouve
 
 	while(1) {
 		// Lecture du bloc
@@ -143,7 +143,7 @@ int main (int argc, char *argv[]) {
 		if(strlen(p_hdr-> name)!=0) {
 			
 			// ----------------------------------------------------------------------
-			// 	 				CONDITION DE LA NATURE DU FICHIER
+			// 	 	     CONDITION DE LA NATURE DU FICHIER
 			// ----------------------------------------------------------------------
 
 			// Si c'est un répertoire
@@ -163,7 +163,7 @@ int main (int argc, char *argv[]) {
 				fich = 0;
 
 			// ----------------------------------------------------------------------
-			// 	 					 AFFICHAGE DES INFORMATIONS
+			// 	 		 AFFICHAGE DES INFORMATIONS
 			// ----------------------------------------------------------------------
 
 			// On stock un mot de la taille de rep avec les strlen(rep) 1ere lettres du nom du fichier
