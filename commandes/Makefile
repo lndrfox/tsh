@@ -2,9 +2,15 @@
 CC=gcc
 CFLAGS=-W -Wall
 LDFLAGS=
-EXEC=cat
+EXEC=cat ls
 
 all: $(EXEC)
+
+ls: ls.o
+	$(CC) -o $@ $^ $(LDFLAGS)
+
+ls.o: ls.c tar.h
+	$(CC) -o $@ -c $< $(CFLAGS)
 
 cat: cat.o
 	$(CC) -o $@ $^ $(LDFLAGS)
