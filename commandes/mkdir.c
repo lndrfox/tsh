@@ -128,8 +128,8 @@ int main(int argc, char *argv[]){
 
 		// LAST MODIFICATION DATE
 
-		long t_acc= time(NULL);
-		sprintf(dir.mtime ,"%ld", t_acc);
+		unsigned int  t_acc= time(NULL);
+		sprintf(dir.mtime ,"%o", t_acc);
 
 		//DIRECTORY SO TYPE FLAG IS 5
 
