@@ -1,11 +1,12 @@
-#include <stdio.h>     // printf
+#include <stdio.h>     // sscanf sprintf perror
 #include <fcntl.h>     // open
 #include <stdlib.h>    // exit
-#include <unistd.h>    // read close lseek
+#include <unistd.h>    // read close lseek write
 #include <sys/types.h> // lseek
 #include <string.h>    // strcmp strtok strchr
-#include <time.h>      // localtime
+#include <time.h>      // localtime time
 #include "tar.h"
+#include "print.h"
 
 // Affiche la date
 void ptemps(long temps) {
@@ -13,41 +14,47 @@ void ptemps(long temps) {
 	long tactuel = time(NULL);
 
 	switch (tempsformat->tm_mon) {
-		case 0: printf("janv."); break;
-		case 1: printf("fevr."); break;
-		case 2: printf("mars "); break;
-		case 3: printf("avril"); break;
-		case 4: printf("mai  "); break;
-		case 5: printf("juin "); break;
-		case 6: printf("juil."); break;
-		case 7: printf("août "); break;
-		case 8: printf("sept."); break;
-		case 9: printf("oct. "); break;
-		case 10: printf("nov. "); break;
-		case 11: printf("dec. "); break;
+		case 0: prints("janv."); break;
+		case 1: prints("fevr."); break;
+		case 2: prints("mars "); break;
+		case 3: prints("avril"); break;
+		case 4: prints("mai  "); break;
+		case 5: prints("juin "); break;
+		case 6: prints("juil."); break;
+		case 7: prints("août "); break;
+		case 8: prints("sept."); break;
+		case 9: prints("oct. "); break;
+		case 10: prints("nov. "); break;
+		case 11: prints("dec. "); break;
 
 	}
-	printf(" %d ", tempsformat -> tm_mday);
+	prints(" ");
+	printd(tempsformat -> tm_mday);
+	prints(" ");
 
 	// Si le fichier a ete modifie il y a moins de un an
-	if(tactuel-temps < 60*60*24*365) 
-		printf("%d:%d ", tempsformat -> tm_hour, tempsformat -> tm_min);
+	if(tactuel-temps < 60*60*24*365) {
+		printd(tempsformat -> tm_hour);
+		prints(":");
+		printd(tempsformat -> tm_min);
+	}
 	else
-		printf("%d ", tempsformat -> tm_year +1900);
+		printd(tempsformat -> tm_year +1900);
+		prints(" ");
 }
 
 // Affiche le type du fichier
 void ptype(char t) {
 	switch(t) {
-			case '0': printf("-"); break;
-			case '\0': printf("-"); break;  // A Completer ?
-			case '1': printf("-"); break;	// A Completer ?
-			case '2': printf("l"); break;
-			case '3': printf("c"); break;
-			case '4': printf("b"); break;	
-			case '5': printf("d"); break;
-			case '6': printf("p"); break;
-			case '7': printf("-"); break;	// A Completer ?
+			case '0': prints("-"); break;
+			case '\0': prints("-"); break;
+			case '1': prints("l"); break;
+			case '2': prints("l"); break;
+			case '3': prints("c"); break;
+			case '4': prints("b"); break;	
+			case '5': prints("d"); break;
+			case '6': prints("p"); break;
+			case '7': prints("s"); break;
 		}
 }
 
@@ -55,14 +62,14 @@ void ptype(char t) {
 void pdroit(char *d) {
 	for(int i = 4; i < 7; i++) {
 		switch(d[i]) {
-			case '0': printf("---"); break;
-			case '1': printf("--x"); break;
-			case '2': printf("-w-"); break;
-			case '3': printf("-wx"); break;
-			case '4': printf("r--"); break;
-			case '5': printf("r-x"); break;
-			case '6': printf("rw-"); break;
-			case '7': printf("rwx"); break;
+			case '0': prints("---"); break;
+			case '1': prints("--x"); break;
+			case '2': prints("-w-"); break;
+			case '3': prints("-wx"); break;
+			case '4': prints("r--"); break;
+			case '5': prints("r-x"); break;
+			case '6': prints("rw-"); break;
+			case '7': prints("rwx"); break;
 		}
 	}
 }
@@ -77,7 +84,7 @@ int main (int argc, char *argv[]) {
 
 	// Conditions des valeurs d'entrée
 	if(argc < 2 || argc > 3 || (strcmp(argv[1], "-l")!=0 && argc == 3)) {
-		printf("\033[1;31mEntrée invalide\n");
+		prints("\033[1;31mEntrée invalide\n");
 		exit(-1);
 	}
 
@@ -113,7 +120,7 @@ int main (int argc, char *argv[]) {
 	}
 
 	// ======================================================================
-	// 	 		      LECTURE DU TAR
+	// 	 			LECTURE DU TAR
 	// ======================================================================
 
 	char tampon[512];
@@ -163,7 +170,7 @@ int main (int argc, char *argv[]) {
 				fich = 0;
 
 			// ----------------------------------------------------------------------
-			// 	 		 AFFICHAGE DES INFORMATIONS
+			// 	 		AFFICHAGE DES INFORMATIONS
 			// ----------------------------------------------------------------------
 
 			// On stock un mot de la taille de rep avec les strlen(rep) 1ere lettres du nom du fichier
@@ -186,14 +193,18 @@ int main (int argc, char *argv[]) {
 					pdroit(p_hdr-> mode);
 
 					// Nom propriétaire
-					printf(" %s ", p_hdr-> uname);
+					prints(" ");
+					prints(p_hdr-> uname);
+					prints(" ");
 
 					// Nom du groupe
-					printf("%s ", p_hdr-> gname);
+					prints(p_hdr-> gname);
+					prints(" ");
 
 					// Taille en octets
 					sscanf(p_hdr->size,"%o", &size);
-					printf("%d ", size);
+					printd(size);
+					prints(" ");
 
 					// Date de dernière modification 
 					long temps;
@@ -204,24 +215,28 @@ int main (int argc, char *argv[]) {
 
 				// Si c'est un repertoire: couleur bleu
 				if(fich == 2) 
-					printf("\033[1;34m");
+					prints("\033[1;34m");
 
 				// Si c'est un fichier du repertoire choisi on affiche que le nom apres rep/
 				if(rep != NULL && repexiste == 1) {
 					strtok(p_hdr-> name, "/");
 					char* sousfichier = strtok(NULL, "");
-					printf("%s\n", sousfichier);
+					prints(sousfichier);
+					prints("\n");
 				}
-				else 
-					printf("%s\n", p_hdr-> name);
+				else {
+					prints(p_hdr-> name);
+					prints("\n");
+				}
 
 				// Renitialise la couleur
 				if(fich == 2)
-					printf("\033[0m"); 
+					prints("\033[0m"); 
 
 			}
 			
-			if (rep != NULL && repexiste == 1) free(isrep);
+			if (rep != NULL && repexiste == 1) 
+				free(isrep);
 		}
 
 		// On passe a l'entete suivante
@@ -231,7 +246,7 @@ int main (int argc, char *argv[]) {
 
 	// Si on ne rencontre pas le repertoire recherche
 	if(rep!= NULL && repexiste == 0) 
-		printf("\033[1;31mLe répertoire n'existe pas\n");
+		prints("\033[1;31mLe répertoire n'existe pas\n");
 
 	close(fd);
 	exit(0);
