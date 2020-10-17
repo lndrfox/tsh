@@ -63,16 +63,22 @@ char ** decompose(char * prompt, char * delimiter){
 
 int main (int argc, char *argv[]){
 
+	int run=1;
+
 	char bufdir [PATH_MAX + 1];
 
-	while(1){
+	while(run){
 
 		getcwd(bufdir,sizeof(bufdir));
 		printf("\033[1;32m\n%s >\033[0m\n",bufdir);
 		char * prompt = get_line();
 		char ** tokens = decompose(prompt," ");
-		printf("\n%s",tokens[0]);
 
+		if(strcmp(tokens[0],"exit")==0){
+
+			run =0;
+			
+		}
 
 
 		
