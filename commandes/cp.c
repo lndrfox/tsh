@@ -9,15 +9,6 @@
 #include <time.h>
 #include "tar.h"
 
-/////////////////////////////////////////////////////////////////
-/////////////////////////////////////////////////////////////////
-/////////////////////////////////////////////////////////////////
-/////////////////////////////////////////////////////////////////
-int tar_vers_ext_dir (int argc, char *argv[]){
-  return 0;
-}
-
-
 //COPY A FILE FROM A TAR INTO THE CURRENT REPERTORY
 //the format is -- cp nameoftar.tar path/of/file name_of_copy
 int tar_vers_ext(int argc, char *argv[]){
@@ -89,7 +80,6 @@ int tar_vers_ext(int argc, char *argv[]){
 
   //CREATING THE FILE TO COPY
 
-  else{
   int fd2=open(argv[3], O_WRONLY | O_CREAT , S_IRUSR | S_IWUSR);
 
   //GETTING THE SIZE OF WHAT WE NEED TO READ
@@ -131,8 +121,6 @@ int tar_vers_ext(int argc, char *argv[]){
 		
   close(fd);
   close(fd2);
-  }
-
 
 return 0;
 }
@@ -142,17 +130,8 @@ return 0;
 //the format is -- cp  path/of/file name_of_the_tar.tar name_of_copy
 int ext_vers_tar(int argc, char *argv[]){
   
- 
-  int n;
-  char tmp[512];
   char buf [BLOCKSIZE];
   struct posix_header hd;//Header for the tar
-  unsigned int size;//Size of the file that will be initialized later
-
-   if (argc < 4 || argc > 4) {
-    printf("Need 3 argument of type -tarappend name.tar file_copy name_of_the_copy-");
-    return -1;
-  }
 
   //TAR TO OPEN
   int fd = open(argv[2], O_RDWR);
@@ -226,7 +205,7 @@ int ext_vers_tar(int argc, char *argv[]){
 
  //SIZE BECOME THE SIZE OF THE COPIED FILE
 
-  unsigned int fsize;
+  unsigned int fsize;//Size of the file that will be initialized later
   fsize = lseek(fd2,0,SEEK_END);//GET FILE SIZE
 
 
@@ -284,9 +263,9 @@ int ext_vers_tar(int argc, char *argv[]){
 
   if(rddd<BLOCKSIZE){
 
-			perror("Error writing in file");
-			exit(-1);
-		}
+    perror("Error writing in file");
+    exit(-1);
+  }
 
   
   char buff [BLOCKSIZE];
@@ -294,8 +273,6 @@ int ext_vers_tar(int argc, char *argv[]){
   for(unsigned int i=0; i<((fsize+ BLOCKSIZE - 1) >> BLOCKBITS); i++){
  
     int rdtmp = read(fd2,buff, BLOCKSIZE);
-    printf("%s",buff);
-    printf("%d\n", rdtmp);
     //EROR MANAGMENT
 
     if(rdtmp<0){
@@ -324,7 +301,6 @@ int ext_vers_tar(int argc, char *argv[]){
   
   for(int i=0;i<2;i++){
 
-    printf("et la so coman");
     int rdd=write(fd,buf,BLOCKSIZE);
 
 
@@ -342,10 +318,9 @@ int ext_vers_tar(int argc, char *argv[]){
   return 0;
 }
 
-
-int tar_vers_tar(int argc, char *argv[]){
-  int n;
-  char tmp[512];
+//COPY A FILE FROM A TAR INTO ANOTHER TAR
+//the format is -- cp nameoftar.tar path/of/file nameof2tar.tar name_of_copy
+int tar_vers_tar(char *argv[]){
 
   //HEADER FOR THE FIRST TAR WE COPY THE FILE
   struct posix_header hd;
@@ -367,7 +342,6 @@ int tar_vers_tar(int argc, char *argv[]){
 
   //OPENING FIRST TAR AND FINDING FILE
   do{
-    printf("1\n");
     // READING AN HEADER
 
     int rdcount=read(fd,&hd,BLOCKSIZE);
@@ -416,7 +390,6 @@ int tar_vers_tar(int argc, char *argv[]){
   //OPENING SECOND TAR GO TO THE END
 
    do{
-     printf("2\n");
     // READING AN HEADER
 
     int rdcount=read(fd3,&hd2,BLOCKSIZE);
@@ -440,7 +413,6 @@ int tar_vers_tar(int argc, char *argv[]){
 		  			
     //READING THE SIZE OF THE FILE CORRESPONDING TO THE CURRENT HEADER
 
-    unsigned int size;
     sscanf(hd2.size, "%o",&size2);
 
     //WE GET TO THE NEXT HEADER
@@ -523,9 +495,9 @@ int tar_vers_tar(int argc, char *argv[]){
   
   if(rddd<BLOCKSIZE){
 
-			perror("Error writing in file");
-			exit(-1);
-		}
+    perror("Error writing in file");
+    exit(-1);
+  }
 
   
   char buff [BLOCKSIZE];
@@ -561,7 +533,6 @@ int tar_vers_tar(int argc, char *argv[]){
   
   memset(buff,0,BLOCKSIZE);
   for(int i=0;i<2;i++){
-    printf("fuck3");
 
     int rdd=write(fd3,buff,BLOCKSIZE);
 
@@ -589,20 +560,20 @@ int main (int argc, char *argv[]){
   if(argc == 4 || argc == 5){
     if(argc == 4){
       if(strchr(argv[1],'.') != NULL){
-	 printf("tar vers ext\n");
-	    tar_vers_ext(argc,argv);
-	    return 0;
+	printf("tar vers ext\n");
+	tar_vers_ext(argc,argv);
+	return 0;
       }
       else {
-	  printf("ext vers tar\n");
-	  ext_vers_tar(argc,argv);
-	  return 0; 	   
-      }
-      if (argc == 5){
-	printf("tar vers tar\n");
-	tar_vers_tar(argc,argv);
+	printf("ext vers tar\n");
+	ext_vers_tar(argc,argv);
+	return 0; 	   
       }
       
+    }
+    if (argc == 5){
+      printf("tar vers tar\n");
+      tar_vers_tar(argv);
     }
     else {return -1;}
   }
