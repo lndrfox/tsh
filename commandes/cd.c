@@ -12,9 +12,10 @@
 void append_path(char * path){
 
 	size_t size=strlen(getenv("tar"))+strlen(path);
-	char cat1 [size]
-	strcat(cat1,path);
+	char * cat1 = malloc(size);
+	cat1=strcat(cat1,path);
 	setenv("tar",cat1,1);
+	free(cat1);
 }
 
 int main (int argc, char *argv[]){

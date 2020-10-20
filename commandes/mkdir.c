@@ -10,9 +10,10 @@
 #include "tar.h"
 
 
-// TO USE : ./mkdir fichiertar.tar directory otherdirectory ...
 
 int main(int argc, char *argv[]){
+
+	char * tar="c.tar";
 
 	// CHECKING IF WE HAVE ENOUGH ARGUMENTS
 
@@ -22,9 +23,13 @@ int main(int argc, char *argv[]){
 		return -1;
 	}
 
+
+
+
+
 	// OPENING THE TAR FILE
 
-	int fd=open(argv[1],O_RDWR);
+	int fd=open(tar,O_RDWR);
 
 	//ERROR MANAGMENT
 
@@ -39,7 +44,8 @@ int main(int argc, char *argv[]){
 
 		// WE LOOP ON EVERY DIRECTORY THAT WE NEED TO CREATE
 
-	for (int i=2; i<argc;i++){
+	for (int i=1; i<argc;i++){
+
 
 		if(sizeof(argv[i])>sizeof(char[100])){
 

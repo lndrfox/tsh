@@ -5,6 +5,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <limits.h>
+#include <sys/wait.h>
 #include "tar.h"
 #include "tar_nav.h"
 
@@ -34,6 +35,35 @@ void parse (char ** tokens){
 
 	}
 
+	if(strcmp(tokens[0],"mkdir")==0){
+
+		if(current_dir_is_tar()){
+
+			int r,w;
+			r=fork();
+
+			switch(r){
+				  case -1: 
+
+				  	perror("fork");
+				    exit(EXIT_FAILURE);
+
+				  case 0: //fils
+
+					execv("mkdir",tokens);
+				    exit(EXIT_SUCCESS);
+
+				  default: //pere
+
+				    wait(&w);
+				  }
+
+
+			
+		}
+
+	}
+
 
 }
 
@@ -41,7 +71,7 @@ void parse (char ** tokens){
 int main (void){
 
 	char bufdir [PATH_MAX + 1];
-	setenv("tar","",1);
+	setenv("tar","c.tar",1);
 
 	while(run){
 
@@ -49,6 +79,11 @@ int main (void){
 		printf("\033[1;32m\n%s >\033[0m\n",bufdir);
 
 		char * prompt = get_line();
+
+		if(strlen(prompt)==0){
+
+			continue;
+		}
 		char ** tokens = decompose(prompt," ");
 
 		parse(tokens);

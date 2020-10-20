@@ -43,14 +43,14 @@ char ** decompose(char * prompt, char * delimiter){
 
 	while((token =strtok(NULL, delimiter) ) !=NULL){
 
-		tokens[cpt_tokens]= token;
 		tokens =realloc(tokens, sizeof(tokens)+sizeof(char* ));
+		tokens[cpt_tokens]= token;	
 		cpt_tokens++;
 
 	}
 
 	/*WE ADD NULL AT THE END OF TOKENS */
-
+	tokens =realloc(tokens, sizeof(tokens)+sizeof(char* ));
 	tokens[cpt_tokens]=NULL;
 
 	return tokens;
