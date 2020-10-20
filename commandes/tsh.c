@@ -6,12 +6,8 @@
 #include <unistd.h>
 #include <limits.h>
 #include "tar.h"
+#include "tar_nav.h"
 
-
-
-char * get_line();
-
-char ** decompose(char * prompt, char * delimiter);
 
 int run=1;
 
@@ -25,50 +21,6 @@ char * get_line(){
 	return line;
 }
 
-/*DECOMPOSE THE STRING PROMPT ACCORDING TO THE STRING DELIMITER AND RETURNS THE TOKENS
-IN CHAR ** TOKEN ENDING BY NULL*/
-
-char ** decompose(char * prompt, char * delimiter){
-
-	/* THIS WERE WE STORE ALL THE TOKENS*/
-
-	char ** tokens= calloc (1,sizeof(char *));
-
-	/*ERROR MANAGEMENT*/
-
-	if(tokens ==NULL){
-
-		exit (-1);
-	}
-
-	/*WE CALL STRTOK FOR THE FIRST TIME*/
-
-	char * token = strtok(prompt, delimiter);
-
-	/*WE NEED TO STORE THE FIRST RESULT OF STTOK TO NOT LOSE ANYTHING*/
-
-	tokens[0]=token;
-
-	int cpt_tokens=1;
-
-	/*AS LONG AS THERE IS SOMETHING TO DECOMPOSE WE TOK AND STORE IT IN TOKENS*/
-
-	while((token =strtok(NULL, delimiter) ) !=NULL){
-
-		tokens[cpt_tokens]= token;
-		tokens =realloc(tokens, sizeof(tokens)+sizeof(char* ));
-		cpt_tokens++;
-
-	}
-
-	/*WE ADD NULL AT THE END OF TOKENS */
-
-	tokens[cpt_tokens]=NULL;
-
-	return tokens;
-
-
-}
 
 
 
@@ -85,39 +37,11 @@ void parse (char ** tokens){
 
 }
 
-/*CHECKS IF THE STRING STRING IS A TAR PATH */
 
-int string_contains_tar(char * string){
-
-	return strstr(string,".tar")!=NULL;
-}
-
-/*CHECK IF THE CURRENT WORKING DIRECTORY IS INSIDE OF A TAR*/
-
-int current_dir_is_tar(){
-
+int main (void){
 
 	char bufdir [PATH_MAX + 1];
-	getcwd(bufdir,sizeof(bufdir));
-	char ** dir =decompose(bufdir, "/");
-
-	int cpt=0;
-
-	while(dir[i]!=NULL){
-
-		if(string_contains_tar(dir[i])){
-
-			return 1;
-		}
-
-	}
-
-	return 0;
-}
-
-int main (int argc, char *argv[]){
-
-	char bufdir [PATH_MAX + 1];
+	setenv("tar","",1);
 
 	while(run){
 
@@ -128,7 +52,7 @@ int main (int argc, char *argv[]){
 		char ** tokens = decompose(prompt," ");
 
 		parse(tokens);
-
+		
 		
 	}
 
