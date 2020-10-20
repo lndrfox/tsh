@@ -13,7 +13,7 @@
 
 int main(int argc, char *argv[]){
 
-	char * tar="c.tar";
+	char * tar=getenv("tar");
 
 	// CHECKING IF WE HAVE ENOUGH ARGUMENTS
 

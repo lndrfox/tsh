@@ -35,9 +35,7 @@ void parse (char ** tokens){
 
 	}
 
-	if(strcmp(tokens[0],"mkdir")==0){
-
-		if(current_dir_is_tar()){
+	else{
 
 			int r,w;
 			r=fork();
@@ -50,7 +48,33 @@ void parse (char ** tokens){
 
 				  case 0: //fils
 
-					execv("mkdir",tokens);
+				  	if(current_dir_is_tar()){
+
+				  		if(access(tokens[0],F_OK|X_OK)==0){
+
+				  			execv(tokens[0],tokens);
+
+				  		}
+
+				  		
+				  	}
+
+				  	else{
+
+				  		char * cat = malloc(strlen("/bin/")+strlen(tokens[0]));
+
+				  		memset(cat,0, strlen(cat));
+				  		cat=strcat(cat,"/bin/");
+				  		cat=strcat(cat,tokens[0]);
+
+				  		if(access(tokens[0],F_OK|X_OK)==0){
+
+				  			execv(cat,tokens);
+				  		}
+				  		
+				  	}
+
+					
 				    exit(EXIT_SUCCESS);
 
 				  default: //pere
@@ -58,9 +82,9 @@ void parse (char ** tokens){
 				    wait(&w);
 				  }
 
-
 			
-		}
+
+
 
 	}
 
@@ -71,7 +95,6 @@ void parse (char ** tokens){
 int main (void){
 
 	char bufdir [PATH_MAX + 1];
-	setenv("tar","c.tar",1);
 
 	while(run){
 
