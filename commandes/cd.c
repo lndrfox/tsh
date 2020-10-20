@@ -25,20 +25,7 @@ int main (int argc, char *argv[]){
 		exit(-1);
 	}
 
-	char ** path =decompose(argv[1],"/");
-
-	char bufdir [PATH_MAX + 1];
-	getcwd(bufdir,sizeof(bufdir));
-
-
-	if(tar_file_exists(bufdir,path[0])){
-
-			if(path[1]==NULL){	
-
-				append_path(path[0]);
-			}
-		
-	}
+	
 
 	
 	printf("%s\n",getenv("tar"));

@@ -29,6 +29,8 @@ char * get_line(){
 
 void parse (char ** tokens){
 
+	/*WE HANDLE THE SPECIFIC CASE OF EXIT*/
+
 	if(strcmp(tokens[0],"exit")==0){
 
 		run =0;
@@ -37,29 +39,42 @@ void parse (char ** tokens){
 
 	else{
 
+			/*WE FORK TO GET A NEW PROCESS*/
+
 			int r,w;
 			r=fork();
 
 			switch(r){
-				  case -1: 
+
+
+				  case -1: //ERROR
 
 				  	perror("fork");
 				    exit(EXIT_FAILURE);
 
-				  case 0: //fils
+				  case 0: //SON
+
+				  //IF WE ARE WORKING WITH TAR FILES
 
 				  	if(current_dir_is_tar()){
 
+				  		//WE CHECK IF THE TAR COMMAND EXISTS/IS HANDLED
+
 				  		if(access(tokens[0],F_OK|X_OK)==0){
+
+				  			//EXEC THE COMMAND
 
 				  			execv(tokens[0],tokens);
 
 				  		}
-
 				  		
 				  	}
 
+				  	//ELSE IF WE ARE NOT WORKING WITH A TAR FILE
+
 				  	else{
+
+				  		//BULDING /BIN/COMMAND STRING
 
 				  		char * cat = malloc(strlen("/bin/")+strlen(tokens[0]));
 
@@ -67,17 +82,21 @@ void parse (char ** tokens){
 				  		cat=strcat(cat,"/bin/");
 				  		cat=strcat(cat,tokens[0]);
 
+				  		//CHECKING IF THE COMMAND EXISTS IN /BIN/
+
 				  		if(access(tokens[0],F_OK|X_OK)==0){
+
+				  			//EXEC THE COMMAND
 
 				  			execv(cat,tokens);
 				  		}
 				  		
 				  	}
 
-					
-				    exit(EXIT_SUCCESS);
 
-				  default: //pere
+				  default: //FATHER
+
+				  	//WAITING FOR THE SON TO TERMINATE	
 
 				    wait(&w);
 				  }
@@ -98,16 +117,26 @@ int main (void){
 
 	while(run){
 
+		/*PROMPT*/
+
 		getcwd(bufdir,sizeof(bufdir));
 		printf("\033[1;32m\n%s >\033[0m\n",bufdir);
 
+		/*READING COMMAND*/
+
 		char * prompt = get_line();
+
+		/*HANDLING THE CASE WHERE NOTHING WAS WRITTEN*/
 
 		if(strlen(prompt)==0){
 
 			continue;
 		}
+
+		/*DECOMPOSING THE COMMAND */
 		char ** tokens = decompose(prompt," ");
+
+		/*PARSING THE COMMAND*/
 
 		parse(tokens);
 		

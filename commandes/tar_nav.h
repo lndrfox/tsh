@@ -11,6 +11,9 @@ char ** decompose(char * prompt, char * delimiter);
 int string_contains_tar(char * string);
 int current_dir_is_tar();
 int tar_file_exists(char * path, char * tar);
+char * get_tar_name();
+char * get_path_in_tar();
+int path_is_valid(char * path);
 
 
 /*DECOMPOSE THE STRING PROMPT ACCORDING TO THE STRING DELIMITER AND RETURNS THE TOKENS
@@ -128,3 +131,67 @@ int tar_file_exists(char * path, char * tar){
 	return 0;
 
 }
+
+/*RETURNS THE NAME OF THE TAR FILE WE ARE CURRENTLY WORKING ON*/
+
+char * get_tar_name(){
+
+	if(!current_dir_is_tar()){
+
+		return NULL;
+	}
+
+	char ** tokens = decompose(getenv("tar"),"/");
+	return tokens[0];
+
+}
+
+/*RETURNS THE CURRENT PATH INSIDE OF THE TAR*/
+
+/*char * get_path_in_tar(){
+
+	if(!current_dir_is_tar()){
+
+		return NULL;
+	}
+
+	char ** tokens = decompose(getenv("tar"),"/");
+
+	char * cat= malloc(sizeof(getenv("tar"))-sizeof(tokens[0]));
+
+	for(int i=1;i<(sizeof(tokens)/sizeof(char *))){
+
+		cat = strcat(cat,tokens[i]);
+	}
+
+	return cat;
+
+}
+
+char * path_is_valid(char * path){
+
+	char ** tokens =decompose(path,"/");
+
+	char bufdir [PATH_MAX + 1];
+	getcwd(bufdir,sizeof(bufdir));
+
+
+	if(!tar_file_exists(bufdir,path[0])){
+
+		return NULL;
+	}
+
+	if(tokens[1]==NULL){
+
+		return path;
+	}
+
+	char * f_path = malloc(strlen(tokens[1]));
+
+	if(f_path==NULL){
+
+		exit(-1);
+	}
+
+	for(int i=1; i)
+}*/
