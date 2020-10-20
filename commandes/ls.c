@@ -38,9 +38,10 @@ void ptemps(long temps) {
 		prints(":");
 		printd(tempsformat -> tm_min);
 	}
-	else
+	else{
 		printd(tempsformat -> tm_year +1900);
 		prints(" ");
+	}
 }
 
 // Affiche le type du fichier
