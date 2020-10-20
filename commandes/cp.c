@@ -11,12 +11,8 @@
 
 //COPY A FILE FROM A TAR INTO THE CURRENT REPERTORY
 //the format is -- cp nameoftar.tar path/of/file name_of_copy
-int tar_vers_ext(int argc, char *argv[]){
+int tar_vers_ext(char *argv[]){
   
-  if (argc < 4 || argc > 4) {
-    printf("Need 3 argument of type -cp name.tar pathname/of/file name_of_copy-");
-    return -1;
-  }
   
   struct posix_header hd; //Header for the tar
 
@@ -128,7 +124,7 @@ return 0;
 
 //COPY A FILE FROM THE CURRENT DIRECTORY  INTO THE TAR
 //the format is -- cp  path/of/file name_of_the_tar.tar name_of_copy
-int ext_vers_tar(int argc, char *argv[]){
+int ext_vers_tar(char *argv[]){
   
   char buf [BLOCKSIZE];
   struct posix_header hd;//Header for the tar
@@ -561,12 +557,12 @@ int main (int argc, char *argv[]){
     if(argc == 4){
       if(strchr(argv[1],'.') != NULL){
 	printf("tar vers ext\n");
-	tar_vers_ext(argc,argv);
+	tar_vers_ext(argv);
 	return 0;
       }
       else {
 	printf("ext vers tar\n");
-	ext_vers_tar(argc,argv);
+	ext_vers_tar(argv);
 	return 0; 	   
       }
       
