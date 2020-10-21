@@ -2,14 +2,14 @@
 CC=gcc
 CFLAGS=-W -Wall
 LDFLAGS=
-EXEC=cat ls
+EXEC=cat cp
 
 all: $(EXEC)
 
-ls: ls.o
+cp: cp.o
 	$(CC) -o $@ $^ $(LDFLAGS)
 
-ls.o: ls.c tar.h
+cp.o: cp.c tar.h
 	$(CC) -o $@ -c $< $(CFLAGS)
 
 cat: cat.o
