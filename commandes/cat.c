@@ -70,7 +70,7 @@ int main(int argc, char *argv[]){
 				return -1;
 			}
 
-			//READONG THE SIZE OF THE FILE CORRESPONDING TO THE CURRENT HEADER
+			//READING THE SIZE OF THE FILE CORRESPONDING TO THE CURRENT HEADER
 
 			
 			sscanf(hd.size, "%o",&size);
