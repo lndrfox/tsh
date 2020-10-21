@@ -1,7 +1,9 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
-#include <sys/types.h> 
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
 #include <dirent.h>	
 #include <unistd.h>
 #include <limits.h>
@@ -12,8 +14,9 @@ int string_contains_tar(char * string);
 int current_dir_is_tar();
 int tar_file_exists(char * path, char * tar);
 char * get_tar_name();
-char * get_path_in_tar();
-int path_is_valid(char * path);
+char * flatten(char ** tokens, char * delimiter);
+char * path_is_valid(char * path);
+int file_exists_in_tar(char * path, char *  tar);
 
 
 /*DECOMPOSE THE STRING PROMPT ACCORDING TO THE STRING DELIMITER AND RETURNS THE TOKENS
@@ -51,7 +54,6 @@ char ** decompose(char * prompt, char * delimiter){
 		cpt_tokens++;
 
 	}
-
 	/*WE ADD NULL AT THE END OF TOKENS */
 	tokens =realloc(tokens, sizeof(tokens)+sizeof(char* ));
 	tokens[cpt_tokens]=NULL;
@@ -120,14 +122,14 @@ int tar_file_exists(char * path, char * tar){
 
 				if (strcmp(entry->d_name,tar)==0){
 
-					free(entry);
+					//free(entry);
 					return 1;	
 				}
 			}
 		}	
 	}
 
-	free(entry);
+	//free(entry);
 	return 0;
 
 }
@@ -146,52 +148,211 @@ char * get_tar_name(){
 
 }
 
-/*RETURNS THE CURRENT PATH INSIDE OF THE TAR*/
+/*	CAT THE STRINGS IN TOKENS WITH DELIMITER BETWEEN THEM INTO AN ONLY STRIN
+EG IF TOKEN IS "a" "b" AND "c" AND DELIMITERS "/" IT RETURNS "a/b/c"*/
 
-/*char * get_path_in_tar(){
+char * flatten(char ** tokens, char * delimiter){
 
-	if(!current_dir_is_tar()){
+	if(tokens[1]==NULL){
 
-		return NULL;
+		return "";
 	}
 
-	char ** tokens = decompose(getenv("tar"),"/");
+	char *ret = malloc(strlen(tokens[0]));
+	memset(ret,0,strlen(tokens[0]));
+	ret=strcat(ret,tokens[1]);
 
-	char * cat= malloc(sizeof(getenv("tar"))-sizeof(tokens[0]));
+	int cpt=2;
 
-	for(int i=1;i<(sizeof(tokens)/sizeof(char *))){
 
-		cat = strcat(cat,tokens[i]);
+	while(tokens[cpt]!=NULL){
+
+		ret =realloc(ret,strlen(ret)+1+strlen(tokens[cpt]));
+		ret=strcat(ret,delimiter);
+		ret=strcat(ret,tokens[cpt]);
+
+		cpt++;
+
 	}
 
-	return cat;
+	return ret;
+
 
 }
+
+int file_exists_in_tar(char * path, char * tar){
+
+
+	// OPENING THE TAR FILE
+
+	int fd=open(tar,O_RDONLY);
+
+	//ERROR MANAGMENT
+
+	if(fd==-1){
+		perror("open tar file");
+		exit(-1);
+	}
+
+	// THIS IS WERE WE STORE HEADERS
+
+	struct posix_header hd;
+
+		do{
+
+			// READING AN HEADER
+
+			int rdcount=read(fd,&hd,BLOCKSIZE);
+
+			//ERROR MANAGMENT
+
+			if(rdcount<0){
+
+				perror("reading tar file");
+				close(fd);
+				return -1;
+			}
+
+			//IF WE REACHED THE END OF THE TAR WITHOUT FINDING THE HEADER THEN IT DOESNT EXIST
+
+			if((hd.name[0]=='\0')){
+
+				return 0;
+			}
+
+			//IF WE FOUND THE HEADER
+
+			if(strcmp(hd.name,path)==0){
+
+				return 1;
+
+			}
+
+			
+			//READING THE SIZE OF THE FILE CORRESPONDING TO THE CURRENT HEADER
+
+			unsigned int size;
+			sscanf(hd.size, "%o",&size);
+
+			//WE GET TO THE NEXT HEADER
+
+			lseek(fd,((size+ BLOCKSIZE - 1) >> BLOCKBITS)*BLOCKSIZE,SEEK_CUR);
+
+
+		}while(strcmp(hd.name,path)!=0);
+
+		return 0;
+
+}
+
+
+
+/*IF PATH IS A VALID PATH, RETURN A CHAR * WITH THE PATH ( WITH .. PROCESSED ) ELSE
+RETURNS NULL*/
 
 char * path_is_valid(char * path){
 
 	char ** tokens =decompose(path,"/");
 
+
 	char bufdir [PATH_MAX + 1];
 	getcwd(bufdir,sizeof(bufdir));
 
+	/*	CHECKS THAT THE TAR FILE THE PATH IS IN IS IN THE CURRENT LAST NOT TAR DIRECTORY*/
 
-	if(!tar_file_exists(bufdir,path[0])){
+	if(!tar_file_exists(bufdir,tokens[0])){
 
 		return NULL;
 	}
+
+	/*IF THERE IS NOTHING ELSE IN TOKEN THEN WE ARE DONE*/
 
 	if(tokens[1]==NULL){
 
 		return path;
 	}
 
-	char * f_path = malloc(strlen(tokens[1]));
+	/*F_PATH CONTAINS THE TOKENS OF THE TRUE PATH WITHOUT ..*/
+
+	char ** f_path = calloc(1, sizeof(char *));
 
 	if(f_path==NULL){
 
 		exit(-1);
 	}
 
-	for(int i=1; i)
-}*/
+	f_path[0]=tokens[0];
+
+	/*CPT IS THE NUMBER OF THE TOKEN WE ARE CURRENTLY ACCESSING IN F_PATH*/
+
+	int cpt=1;
+
+	/*WE LOOP ON ALL THE TOKENS*/
+
+	int cpt2=1;
+
+
+	while(tokens[cpt2]!=NULL){
+
+
+		/*HANDLING THE .. CASE*/
+
+		if(strcmp(tokens[cpt2],"..")==0){
+
+			/*CASE WERE WE GET OUT OF THE TAR*/
+
+			if(cpt ==1){
+
+				return "";
+			}
+
+			/*IF THERE IS NOTHING BEFORE THE .. THERE IS AN ERROR*/
+
+			if(cpt ==0){
+
+				return NULL;
+			}
+
+			else{
+
+				cpt --;
+				f_path[cpt]=NULL;
+			}
+
+		}
+
+		/*ANY OTHER CASES*/
+
+		else{
+
+			printf("%s\n", tokens[cpt2]);
+			f_path=realloc(f_path,sizeof(f_path)+sizeof(char *));
+			f_path[cpt]=tokens[cpt2];
+			cpt ++;
+		}
+	}
+
+	/*IF THE LAST TOKEN WASNT ..*/
+
+	if(f_path[cpt]!=NULL){
+
+
+			f_path=realloc(f_path,sizeof(f_path)+sizeof(char *));
+			cpt++;
+			f_path[cpt]=NULL;
+			
+	}
+
+	/*FLATTENING THE PATH INTO A STRING*/
+
+	char * pathf =flatten(f_path, "/");
+
+	/*IF SUCH A DIRECTORY EXISTS IN THE TAR THEN WE CAN RETURN PATH*/
+
+	if(file_exists_in_tar(pathf,tokens[0])){
+
+		return pathf;
+	}
+
+	return NULL;
+}

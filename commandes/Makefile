@@ -2,21 +2,15 @@
 CC=gcc
 CFLAGS=-W -Wall
 LDFLAGS=
-EXEC=cat ls mkdir cd tsh
+EXEC=cat ls mkdir tsh
 
 all: $(EXEC)
 
 tsh: tsh.o
 	$(CC) -o $@ $^ $(LDFLAGS) -lreadline
 
-tsh.o: tsh.c tar.h tar_nav.h
+tsh.o: tsh.c tar.h tar_nav.h cd.h
 	$(CC) -o $@ -c $< $(CFLAGS)
-
-cd: cd.o
-	$(CC) -o $@ $^ $(LDFLAGS) 
-
-cd.o: cd.c tar.h tar_nav.h
-	$(CC) -o $@ -c $< $(CFLAGS)  
 
 ls: ls.o
 	$(CC) -o $@ $^ $(LDFLAGS)

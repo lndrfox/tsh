@@ -8,6 +8,7 @@
 #include <sys/wait.h>
 #include "tar.h"
 #include "tar_nav.h"
+#include "cd.h"
 
 
 int run=1;
@@ -34,6 +35,20 @@ void parse (char ** tokens){
 	if(strcmp(tokens[0],"exit")==0){
 
 		run =0;
+
+	}
+
+	 if(strcmp(tokens[0],"cd")==0){
+
+
+		if(tokens[1]!=NULL ){
+
+			if(string_contains_tar(tokens[1])||  current_dir_is_tar()){
+
+				cd(tokens[1]);
+			}
+		}
+
 
 	}
 
@@ -70,6 +85,7 @@ void parse (char ** tokens){
 				  		
 				  	}
 
+
 				  	//ELSE IF WE ARE NOT WORKING WITH A TAR FILE
 
 				  	else{
@@ -93,6 +109,8 @@ void parse (char ** tokens){
 				  		
 				  	}
 
+				  	exit(EXIT_FAILURE);
+
 
 				  default: //FATHER
 
@@ -114,13 +132,20 @@ void parse (char ** tokens){
 int main (void){
 
 	char bufdir [PATH_MAX + 1];
+	setenv("tar","",1);
 
 	while(run){
 
 		/*PROMPT*/
 
 		getcwd(bufdir,sizeof(bufdir));
-		printf("\033[1;32m\n%s >\033[0m\n",bufdir);
+
+		char * entry=malloc(sizeof(bufdir)+sizeof(getenv("tar")));
+		memset(entry,0,strlen(entry));
+		entry= strcat(entry,bufdir);
+		entry = strcat(entry,getenv("tar"));
+
+		printf("\033[1;32m\n%s >\033[0m\n",entry);
 
 		/*READING COMMAND*/
 
