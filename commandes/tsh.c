@@ -23,6 +23,20 @@ char * get_line(){
 	return line;
 }
 
+void pwd(){
+
+	char bufdir [PATH_MAX + 1];
+	getcwd(bufdir,sizeof(bufdir));
+	char * entry=malloc(sizeof(bufdir)+sizeof(getenv("tar")));
+	memset(entry,0,strlen(entry));
+	entry= strcat(entry,bufdir);
+	entry = strcat(entry,getenv("tar"));
+	printf("%s\n",entry);
+	free(entry);
+
+
+}
+
 
 
 
@@ -35,6 +49,14 @@ void parse (char ** tokens){
 	if(strcmp(tokens[0],"exit")==0){
 
 		run =0;
+		return;
+
+	}
+
+	if(strcmp(tokens[0],"pwd")==0  && current_dir_is_tar()){
+
+		pwd();
+		return;
 
 	}
 
@@ -43,14 +65,13 @@ void parse (char ** tokens){
 
 		if(tokens[1]!=NULL ){
 
-			if(string_contains_tar(tokens[1])||  current_dir_is_tar()){
+			
 
 				cd(tokens[1]);
+				return;
 			}
 		}
 
-
-	}
 
 	else{
 
@@ -69,6 +90,8 @@ void parse (char ** tokens){
 
 				  case 0: //SON
 
+
+
 				  //IF WE ARE WORKING WITH TAR FILES
 
 				  	if(current_dir_is_tar()){
@@ -78,7 +101,6 @@ void parse (char ** tokens){
 				  		if(access(tokens[0],F_OK|X_OK)==0){
 
 				  			//EXEC THE COMMAND
-
 				  			execv(tokens[0],tokens);
 
 				  		}
@@ -90,24 +112,10 @@ void parse (char ** tokens){
 
 				  	else{
 
-				  		//BULDING /BIN/COMMAND STRING
-
-				  		char * cat = malloc(strlen("/bin/")+strlen(tokens[0]));
-
-				  		memset(cat,0, strlen(cat));
-				  		cat=strcat(cat,"/bin/");
-				  		cat=strcat(cat,tokens[0]);
-
-				  		//CHECKING IF THE COMMAND EXISTS IN /BIN/
-
-				  		if(access(tokens[0],F_OK|X_OK)==0){
-
-				  			//EXEC THE COMMAND
-
-				  			execv(cat,tokens);
-				  		}
-				  		
+				  		execvp(tokens[0],tokens);
+					  	 		
 				  	}
+
 
 				  	exit(EXIT_FAILURE);
 
@@ -119,33 +127,22 @@ void parse (char ** tokens){
 				    wait(&w);
 				  }
 
-			
-
-
-
 	}
-
 
 }
 
 
 int main (void){
 
-	char bufdir [PATH_MAX + 1];
 	setenv("tar","",1);
 
 	while(run){
 
-		/*PROMPT*/
+		/*ENTRY*/
 
-		getcwd(bufdir,sizeof(bufdir));
+		char * entry = getlogin();
 
-		char * entry=malloc(sizeof(bufdir)+sizeof(getenv("tar")));
-		memset(entry,0,strlen(entry));
-		entry= strcat(entry,bufdir);
-		entry = strcat(entry,getenv("tar"));
-
-		printf("\033[1;32m\n%s >\033[0m\n",entry);
+		printf("\033[1;32m\n[%s]$\033[0m ",entry);
 
 		/*READING COMMAND*/
 

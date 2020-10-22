@@ -246,7 +246,6 @@ RETURNS NULL*/
 
 char * path_is_valid(char * path){
 
-	printf("test\n");
 
 	char ** tokens =decompose(path,"/");
 
@@ -345,12 +344,16 @@ char * path_is_valid(char * path){
 	char * pathf =flatten(f_path, "/");
 
 	/*IF SUCH A DIRECTORY EXISTS IN THE TAR THEN WE CAN RETURN PATH*/
+
+	/*WE NEED TO ADD A / AT THE END TO SEARCH IN THE TAR*/
 	char * pathtest=malloc(strlen(pathf)+1);
 	memset(pathtest,0,strlen(pathtest));
 	pathtest=strcat(pathf,"/");
 
 
 	if(file_exists_in_tar(pathtest,tokens[0])){
+
+		/*BUILDING THE STRING TO HAVE THE FORMAT "/PATH/PATH/../" */
 
 		char * final = malloc(strlen(pathf)+strlen(tokens[0])+2);
 
