@@ -213,16 +213,10 @@ int file_exists_in_tar(char * path, char * tar){
 				return -1;
 			}
 
-			//IF WE REACHED THE END OF THE TAR WITHOUT FINDING THE HEADER THEN IT DOESNT EXIST
-
-			if((hd.name[0]=='\0')){
-
-				return 0;
-			}
 
 			//IF WE FOUND THE HEADER
 
-			if(strcmp(hd.name,path)==0){
+			if(strcmp(hd.name,path)==0 && hd.typeflag=='5'){
 
 				return 1;
 
@@ -239,7 +233,7 @@ int file_exists_in_tar(char * path, char * tar){
 			lseek(fd,((size+ BLOCKSIZE - 1) >> BLOCKBITS)*BLOCKSIZE,SEEK_CUR);
 
 
-		}while(strcmp(hd.name,path)!=0);
+		}while(hd.name[0]!='\0');
 
 		return 0;
 
@@ -251,6 +245,8 @@ int file_exists_in_tar(char * path, char * tar){
 RETURNS NULL*/
 
 char * path_is_valid(char * path){
+
+	printf("test\n");
 
 	char ** tokens =decompose(path,"/");
 
@@ -325,11 +321,12 @@ char * path_is_valid(char * path){
 
 		else{
 
-			printf("%s\n", tokens[cpt2]);
 			f_path=realloc(f_path,sizeof(f_path)+sizeof(char *));
 			f_path[cpt]=tokens[cpt2];
 			cpt ++;
 		}
+
+		cpt2++;
 	}
 
 	/*IF THE LAST TOKEN WASNT ..*/
@@ -348,10 +345,23 @@ char * path_is_valid(char * path){
 	char * pathf =flatten(f_path, "/");
 
 	/*IF SUCH A DIRECTORY EXISTS IN THE TAR THEN WE CAN RETURN PATH*/
+	char * pathtest=malloc(strlen(pathf)+1);
+	memset(pathtest,0,strlen(pathtest));
+	pathtest=strcat(pathf,"/");
 
-	if(file_exists_in_tar(pathf,tokens[0])){
 
-		return pathf;
+	if(file_exists_in_tar(pathtest,tokens[0])){
+
+		char * final = malloc(strlen(pathf)+strlen(tokens[0])+2);
+
+		memset(final,0,strlen(final));
+
+		final=strcat(final,"/");
+		final=strcat(final,tokens[0]);
+		final=strcat(final,"/");
+		final=strcat(final,pathf);
+
+		return final;
 	}
 
 	return NULL;
