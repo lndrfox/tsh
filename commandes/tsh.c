@@ -56,6 +56,7 @@ char * get_last_dir(){
 	}
 
 	ret=strcpy(ret,tokens[cpt-1]);
+	free(tokens);
 	return ret;
 
 }
@@ -203,15 +204,6 @@ int main (void){
 		
 		free(prompt);
 		free(last_dir);
-
-		int cpt =0;
-
-		/*while(tokens[cpt]!=NULL){
-
-			free(tokens[cpt]);
-			cpt++;
-		}*/
-
 		free(tokens);
 		
 	}
