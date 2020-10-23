@@ -2,14 +2,14 @@
 CC=gcc
 CFLAGS=-W -Wall
 LDFLAGS=
-EXEC=cat ls mkdir tsh
+EXEC=cat ls mkdir cp tsh
 
 all: $(EXEC)
 
 tsh: tsh.o
 	$(CC) -o $@ $^ $(LDFLAGS) -lreadline
 
-tsh.o: tsh.c tar.h tar_nav.h cd.h
+tsh.o: tsh.c tar.h tar_nav.h cd.h print.h
 	$(CC) -o $@ -c $< $(CFLAGS)
 
 ls: ls.o
@@ -27,13 +27,13 @@ cp.o: cp.c tar.h
 cat: cat.o
 	$(CC) -o $@ $^ $(LDFLAGS)
 
-cat.o: cat.c tar.h
+cat.o: cat.c tar.h tar_nav.h print.h
 	$(CC) -o $@ -c $< $(CFLAGS)
 
 mkdir: mkdir.o
 	$(CC) -o $@ $^ $(LDFLAGS)
 
-mkdir.o: mkdir.c tar.h
+mkdir.o: mkdir.c tar.h print.h
 	$(CC) -o $@ -c $< $(CFLAGS)
 
 clean:
