@@ -24,9 +24,23 @@ IN CHAR ** TOKEN ENDING BY NULL*/
 
 char ** decompose(char * prompt, char * delimiter){
 
-	/* THIS WERE WE STORE ALL THE TOKENS*/
+	/*WE CALCULATE HOW MANY TOKENS THE STRING HAS*/
+	char * prompt_cpy=(char * ) malloc(strlen(prompt)+sizeof(char));
+	strcpy(prompt_cpy,prompt);
+	//memcpy(prompt_cpy,prompt,sizeof(prompt)+sizeof(char));
 
-	char ** tokens= calloc (1,sizeof(char *));
+	char * check_len = strtok(prompt_cpy, delimiter);
+
+	int i =1;
+
+	while((check_len =strtok(NULL, delimiter) ) !=NULL){
+
+		i++;
+
+	}
+
+	/* THIS WERE WE STORE ALL THE TOKENS*/
+	char ** tokens= (char **) calloc(i+1,sizeof(char *));
 
 	/*ERROR MANAGEMENT*/
 
@@ -35,31 +49,25 @@ char ** decompose(char * prompt, char * delimiter){
 		exit (-1);
 	}
 
-	/*WE CALL STRTOK FOR THE FIRST TIME*/
-
+	/*WE NEED TO STORE THE FIRST RESULT OF STRTOK TO NOT LOSE ANYTHING*/
 	char * token = strtok(prompt, delimiter);
-
-	/*WE NEED TO STORE THE FIRST RESULT OF STTOK TO NOT LOSE ANYTHING*/
-
-	tokens[0]=token;
-
-	int cpt_tokens=1;
+	int cpt_tokens=0;
+	tokens[cpt_tokens]=token;
+	cpt_tokens++;
 
 	/*AS LONG AS THERE IS SOMETHING TO DECOMPOSE WE TOK AND STORE IT IN TOKENS*/
 
 	while((token =strtok(NULL, delimiter) ) !=NULL){
 
-		tokens =realloc(tokens, sizeof(tokens)+sizeof(char* ));
-		tokens[cpt_tokens]= token;	
+		tokens[cpt_tokens]= token;
 		cpt_tokens++;
 
 	}
+
 	/*WE ADD NULL AT THE END OF TOKENS */
-	tokens =realloc(tokens, sizeof(tokens)+sizeof(char* ));
-	tokens[cpt_tokens]=NULL;
 
+	tokens[cpt_tokens]=token;
 	return tokens;
-
 
 }
 
@@ -246,10 +254,9 @@ RETURNS NULL*/
 
 char * path_is_valid(char * path){
 
+	return ("c.tar");
 
 	char ** tokens =decompose(path,"/");
-
-
 	char bufdir [PATH_MAX + 1];
 	getcwd(bufdir,sizeof(bufdir));
 
@@ -267,9 +274,45 @@ char * path_is_valid(char * path){
 		return path;
 	}
 
+	int i=0;
+
+	/*WE LOOP ON ALL THE TOKENS TO COUNT HOW MANY TOKENS THE FINAL PATH HAS*/
+
+	int cpt_tok=1;
+
+	while(tokens[cpt_tok]!=NULL){
+
+		/*HANDLING THE .. CASE*/
+
+		if(strcmp(tokens[cpt_tok],"..")==0){
+
+			/*IF THERE IS NOTHING BEFORE THE .. THERE IS AN ERROR*/
+
+			if(i ==0){
+
+				return NULL;
+			}
+
+			else{
+
+				i --;
+			}
+
+		}
+
+		/*ANY OTHER CASES*/
+
+		else{
+
+			i ++;
+		}
+
+		cpt_tok++;
+	}
+
 	/*F_PATH CONTAINS THE TOKENS OF THE TRUE PATH WITHOUT ..*/
 
-	char ** f_path = calloc(1, sizeof(char *));
+	char ** f_path =(char **) calloc(i+2,sizeof(char *));
 
 	if(f_path==NULL){
 
@@ -282,36 +325,30 @@ char * path_is_valid(char * path){
 
 	int cpt=1;
 
-	/*WE LOOP ON ALL THE TOKENS*/
+	/*WE LOOP ON ALL THE TOKENS */
 
-	int cpt2=1;
+	cpt_tok=1;
 
+	while(tokens[cpt_tok]!=NULL){
 
-	while(tokens[cpt2]!=NULL){
 
 
 		/*HANDLING THE .. CASE*/
 
-		if(strcmp(tokens[cpt2],"..")==0){
+		if(strcmp(tokens[cpt_tok],"..")==0){
 
 			/*CASE WERE WE GET OUT OF THE TAR*/
 
-			if(cpt ==1){
+			if(i ==1){
 
 				return "";
 			}
 
-			/*IF THERE IS NOTHING BEFORE THE .. THERE IS AN ERROR*/
-
-			if(cpt ==0){
-
-				return NULL;
-			}
-
 			else{
 
-				cpt --;
-				f_path[cpt]=NULL;
+			cpt --;
+			f_path[cpt]=NULL;
+
 			}
 
 		}
@@ -319,25 +356,14 @@ char * path_is_valid(char * path){
 		/*ANY OTHER CASES*/
 
 		else{
-
-			f_path=realloc(f_path,sizeof(f_path)+sizeof(char *));
-			f_path[cpt]=tokens[cpt2];
+			f_path[cpt]=tokens[cpt_tok];
 			cpt ++;
 		}
 
-		cpt2++;
+		cpt_tok++;
 	}
 
-	/*IF THE LAST TOKEN WASNT ..*/
-
-	if(f_path[cpt]!=NULL){
-
-
-			f_path=realloc(f_path,sizeof(f_path)+sizeof(char *));
-			cpt++;
-			f_path[cpt]=NULL;
-			
-	}
+	f_path[cpt]=NULL;
 
 	/*FLATTENING THE PATH INTO A STRING*/
 
@@ -346,22 +372,22 @@ char * path_is_valid(char * path){
 	/*IF SUCH A DIRECTORY EXISTS IN THE TAR THEN WE CAN RETURN PATH*/
 
 	/*WE NEED TO ADD A / AT THE END TO SEARCH IN THE TAR*/
-	char * pathtest=malloc(strlen(pathf)+1);
-	memset(pathtest,0,strlen(pathtest));
-	pathtest=strcat(pathf,"/");
+
+	char * pathtest=(char * ) malloc(sizeof(pathf)+sizeof(char));
+	memcpy(pathtest,pathf,strlen(pathf)+sizeof(char));
+	pathtest=realloc(pathtest,sizeof(pathtest)+strlen("/"));
+	pathtest=strcat(pathtest,"/");
 
 
 	if(file_exists_in_tar(pathtest,tokens[0])){
 
 		/*BUILDING THE STRING TO HAVE THE FORMAT "/PATH/PATH/../" */
 
-		char * final = malloc(strlen(pathf)+strlen(tokens[0])+2);
-
-		memset(final,0,strlen(final));
-
+		char * final = (char * ) malloc(sizeof(tokens[0])+sizeof(char));
+		memcpy(final,tokens[0],strlen(tokens[0])+sizeof(char));
+		final=realloc(final,sizeof(final)+strlen("/"));
 		final=strcat(final,"/");
-		final=strcat(final,tokens[0]);
-		final=strcat(final,"/");
+		final=realloc(final,sizeof(final)+strlen(pathf));
 		final=strcat(final,pathf);
 
 		return final;

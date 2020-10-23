@@ -10,9 +10,7 @@
 #include "tar_nav.h"
 #include "cd.h"
 
-
 int run=1;
-
 
 /*READS A LINE ENTERED IN THE TERMINAL AND RETURNS IT*/
 
@@ -27,9 +25,10 @@ void pwd(){
 
 	char bufdir [PATH_MAX + 1];
 	getcwd(bufdir,sizeof(bufdir));
-	char * entry=malloc(sizeof(bufdir)+sizeof(getenv("tar")));
-	memset(entry,0,strlen(entry));
+	char * entry=malloc(sizeof(bufdir)+sizeof(getenv("tar"))+sizeof("/"));
+	memset(entry,0,sizeof(bufdir)+sizeof(getenv("tar")));
 	entry= strcat(entry,bufdir);
+	entry=strcat(entry,"/");
 	entry = strcat(entry,getenv("tar"));
 	printf("%s\n",entry);
 	free(entry);
@@ -37,14 +36,11 @@ void pwd(){
 
 }
 
-
-
-
 /*PARSE TOKENS AND EXEC THE APPROPRIATE COMMAND*/
 
 void parse (char ** tokens){
 
-	/*WE HANDLE THE SPECIFIC CASE OF EXIT*/
+	/*WE HANDLE THE SPECIFIC CASES*/
 
 	if(strcmp(tokens[0],"exit")==0){
 
@@ -60,13 +56,12 @@ void parse (char ** tokens){
 
 	}
 
+	/*CD CAN'T BE CALLED AFTER A FORK CAUSE THE CHANGES WOULDNT CARRY OVER TO
+	THE FATHER PROCESS*/
+
 	 if(strcmp(tokens[0],"cd")==0){
 
-
 		if(tokens[1]!=NULL ){
-
-			
-
 				cd(tokens[1]);
 				return;
 			}
@@ -82,16 +77,12 @@ void parse (char ** tokens){
 
 			switch(r){
 
-
 				  case -1: //ERROR
 
 				  	perror("fork");
 				    exit(EXIT_FAILURE);
 
 				  case 0: //SON
-
-
-
 				  //IF WE ARE WORKING WITH TAR FILES
 
 				  	if(current_dir_is_tar()){
@@ -102,11 +93,9 @@ void parse (char ** tokens){
 
 				  			//EXEC THE COMMAND
 				  			execv(tokens[0],tokens);
-
 				  		}
 				  		
 				  	}
-
 
 				  	//ELSE IF WE ARE NOT WORKING WITH A TAR FILE
 
@@ -116,9 +105,7 @@ void parse (char ** tokens){
 					  	 		
 				  	}
 
-
 				  	exit(EXIT_FAILURE);
-
 
 				  default: //FATHER
 
@@ -126,7 +113,6 @@ void parse (char ** tokens){
 
 				    wait(&w);
 				  }
-
 	}
 
 }
@@ -156,6 +142,7 @@ int main (void){
 		}
 
 		/*DECOMPOSING THE COMMAND */
+
 		char ** tokens = decompose(prompt," ");
 
 		/*PARSING THE COMMAND*/

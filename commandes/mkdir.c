@@ -14,6 +14,7 @@
 int main(int argc, char *argv[]){
 
 	char * tar=getenv("tar");
+	printf("%s\n",tar);
 
 	// CHECKING IF WE HAVE ENOUGH ARGUMENTS
 

@@ -6,14 +6,16 @@
 
 void cd (char * p){
 
+
 	if(current_dir_is_tar() || string_contains_tar(p)){
 
-			/*BUILDING THE FULL TAR PATH, ACTUAL PATH IN TAR + ARG */
+		/*BUILDING THE FULL TAR PATH, ACTUAL PATH IN TAR + ARG */
 
-		char * path = malloc(strlen(p)+strlen(getenv("tar"))+1);
-		memset(path,0,strlen(path));
-		path = strcat(path,getenv("tar"));
+		char * path=(char * ) malloc(sizeof(getenv("tar"))+sizeof(char));
+		memcpy(path,getenv("tar"),strlen(getenv("tar"))+sizeof(char));
+		path=realloc(path,sizeof(path)+strlen("/"));
 		path=strcat(path,"/");
+		path=realloc(path,sizeof(path)+strlen(p));
 		path=strcat(path,p);
 
 		/*CHECKING IF PATH IS VALID AND STORING IT*/
@@ -26,6 +28,7 @@ void cd (char * p){
 
 
 		}
+
 
 		/*IF THE PATH IS VALID WE UPDATE IT*/
 
