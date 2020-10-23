@@ -18,6 +18,12 @@ ls: ls.o
 ls.o: ls.c tar.h
 	$(CC) -o $@ -c $< $(CFLAGS)
 
+cp: cp.o
+	$(CC) -o $@ $^ $(LDFLAGS)
+
+cp.o: cp.c tar.h
+	$(CC) -o $@ -c $< $(CFLAGS)
+
 cat: cat.o
 	$(CC) -o $@ $^ $(LDFLAGS)
 
