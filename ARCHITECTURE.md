@@ -18,10 +18,10 @@ Dans le répertoire "commandes":
 
 * Les fichiers headers facilitent l'implémentation des fichiers `.c`
 
- * `tar.h`: représente la structure d'un fichier tarball grace à une structure posix_header
- * `print.h`: implémente des fonctions qui facilite l'affichage dans la sortie standard
- * `cd.h`: **(A REMPLIR)**
- * `tar_nav.h` : **(A REMPLIR)**
+  * `tar.h`: représente la structure d'un fichier tarball grace à une structure posix_header
+  * `print.h`: implémente des fonctions qui facilite l'affichage dans la sortie standard
+  * `cd.h`: **(A REMPLIR)**
+  * `tar_nav.h` : **(A REMPLIR)**
 
 ### Algorithmes implémentés
 
@@ -35,43 +35,35 @@ Les commandes qui ont été implémentés
 
 * `pwd`: Le fichier pwd.c affiche dans la sortie standard la concaténation du chemin du fichier exécuté et du tarball ou le repertoire du tarball si celui-ci existe. 
 
-	**Entrée:** 
-	```./pwd test.tar/nomfichier```
+**Entrée:** 
+`./pwd test.tar/nomfichier`
 
 * `mkdir`: Le fichier mkdir.c permet de créer un ou plusieurs répertoires dans le tarball si celui ci n'existe pas déjà. Le nom entré ne doit pas dépasser 100 lettres. Le répertoire est ajouté à la fin du tarball. Il contient uniquement un bloc d'en-tête remplit des informations nécéssaires.
 	
-	**Entrée:** 
-	```./mkdir rep1 rep_existant/rep2 rep3 ...```
+**Entrée:** 
+`./mkdir rep1 rep_existant/rep2 rep3 ...`
 
 * `rmdir`: Le fichier rmdir.c permet de supprimer un répertoire seulement s'il est vide. Pour le supprimer, le programme écrit par dessus le bloc d'en-tête du répertoire à supprimer. On déplace donc toutes les données se situant en dessous de celui-ci. Si le fichier est à la fin, alors il n'y a aucune données à déplacer et donc aucune données à écrire par dessus. Donc on diminue la taille du fichier pour suprrimer le répertoire.
 
-	**Entrée:** 
-	```./rmdir rep1/... rep2/...   ...```
+**Entrée:** 
+`./rmdir rep1/... rep2/...   ...`
 
 * `cp`:
 	**(A REMPLIR)**
 
 * `ls`: Le fichier ls.c permet d'afficher le nom des fichiers dans le tarball :
-	- sans afficher les fichiers appartenant à un répertoire si on souhaite afficher le tarball lui-même
-	- en affichant uniquement le nom des fichiers appartenant au repertoire que l'on souhaite afficher sinon
-	Le fichier conitent l'option `-l` pour afficher des informations supplémentaires qui à le même rôle que `ls -l` dans un répertoire.
+  * sans afficher les fichiers appartenant à un répertoire si on souhaite afficher le tarball lui-même
+  * en affichant uniquement le nom des fichiers appartenant au repertoire que l'on souhaite afficher sinon
+Le fichier conitent l'option `-l` pour afficher des informations supplémentaires qui à le même rôle que `ls -l` dans un répertoire.
 
-	**Entrée:**
-	```
-	./ls test.tar
-	``` 
-	ou
-	```
-	./ls test.tar/rep/...
-	``` 
-	ou
-	```
-	./ls -l test.tar
-	``` 
-	ou
-	```
-	./ls -l test.tar/rep/...
-	```
+**Entrée:**
+`./ls test.tar`
+ou
+`./ls test.tar/rep/...` 
+ou
+`./ls -l test.tar` 
+ou
+`./ls -l test.tar/rep/...`
 	
 * `cat`:
 	**(A REMPLIR)**
