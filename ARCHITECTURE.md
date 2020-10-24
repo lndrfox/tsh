@@ -12,13 +12,13 @@ Le dépôt est constitué d'un fichier AUTHORS.md qui contient la liste des memb
 
 Dans le répertoire "commandes":
 
-* Le `Makefile` créé des éxécutables pour chaque commande possédant le nom du fichier C.
+* Le `Makefile` créé des éxécutables pour chaque commande possédant le nom du fichier `.c`.
 
 * Les fichiers `.c` représente  chacun une commande du shell pour les tarballs à l'exception de tsh.c qui gère les commandes `cd` et `exit`
 
 * Les fichiers headers facilitent l'implémentation des fichiers `.c`
 
-  * `tar.h`: représente la structure d'un fichier tarball grâce à une structure posix_header
+  * `tar.h`: représente la structure de l'entête d'un fichier dans un tarball grâce à une structure posix_header
   * `print.h`: implémente des fonctions qui facilitent l'affichage dans la sortie standard
   * `cd.h`: **(A REMPLIR)**
   * `tar_nav.h` : **(A REMPLIR)**
