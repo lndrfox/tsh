@@ -36,6 +36,12 @@ mkdir: mkdir.o
 mkdir.o: mkdir.c tar.h print.h tar_nav.h
 	$(CC) -o $@ -c $< $(CFLAGS)
 
+rmdir: rmdir.o
+	$(CC) -o $@ $^ $(LDFLAGS)
+
+rmdir.o: rmdir.c tar.h print.h
+	$(CC) -o $@ -c $< $(CFLAGS)
+
 clean:
 	rm -rf *.o
 
