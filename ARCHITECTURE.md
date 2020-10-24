@@ -2,11 +2,11 @@
 
 ## Stratégie adoptée
 
-Pour ce projet nous avons décidé de commencer par l'implémentation des commandes demandées dans les fonctionnalités du shell. Chaque commande est représenté par un fichier `c`. Lors de l'avancement du projet, nous avons aussi commencé à réflechir sur l'implémentation du Makefile afin compiler et exécuter ces fichiers. Certains fichiers headers ont été ajoutés pour faciliter le codage des fichiers `.c`.
+Pour ce projet nous avons décidé de commencer par l'implémentation des commandes demandées dans les fonctionnalités du shell. Chaque commande est représenté par un fichier `.c`. Lors de l'avancement du projet, nous avons aussi commencé à réflechir sur l'implémentation du `Makefile` afin compiler et exécuter ces fichiers. Certains fichiers headers ont été ajoutés pour faciliter le codage des fichiers `.c`.
 
 ### Architecture logicielle
 	
-Le dépôt est constitué d'un fichier AUTHORS.md qui contient la liste des membres de l'équipe, un fichier .gitignore **(A REMPLIR)** et un répertoire contenant un Makefile, les fichiers C des commandes du shell et des fichiers headers.
+Le dépôt est constitué d'un fichier AUTHORS.md qui contient la liste des membres de l'équipe, un fichier .gitignore **(A REMPLIR)** et un répertoire contenant un Makefile, les fichiers `.c` des commandes du shell et des fichiers headers.
 
 ### Structures de données et les algorithmes
 
@@ -14,12 +14,12 @@ Dans le répertoire "commandes":
 
 * Le `Makefile` créé des éxécutables pour chaque commande possédant le nom du fichier C.
 
-* Les fichiers C représente les commandes du shell pour les tarballs. Le nom de celles-ci est le nom de la commande avec `.c` à l'exception de tsh.c qui gère les commandes `cd` et `exit`
+* Les fichiers `.c` représente  chacun une commande du shell pour les tarballs à l'exception de tsh.c qui gère les commandes `cd` et `exit`
 
 * Les fichiers headers facilitent l'implémentation des fichiers `.c`
 
-  * `tar.h`: représente la structure d'un fichier tarball grace à une structure posix_header
-  * `print.h`: implémente des fonctions qui facilite l'affichage dans la sortie standard
+  * `tar.h`: représente la structure d'un fichier tarball grâce à une structure posix_header
+  * `print.h`: implémente des fonctions qui facilitent l'affichage dans la sortie standard
   * `cd.h`: **(A REMPLIR)**
   * `tar_nav.h` : **(A REMPLIR)**
 
