@@ -9,3 +9,7 @@ Installations des pré requis:
 Après installation, éxecuter le Makefile avec la commande:
 
 **make**
+
+Pour lancer le shell, utiliser la commande
+
+./tsh
