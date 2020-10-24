@@ -33,7 +33,7 @@ cat.o: cat.c tar.h tar_nav.h print.h
 mkdir: mkdir.o
 	$(CC) -o $@ $^ $(LDFLAGS)
 
-mkdir.o: mkdir.c tar.h print.h
+mkdir.o: mkdir.c tar.h print.h tar_nav.h
 	$(CC) -o $@ -c $< $(CFLAGS)
 
 clean:

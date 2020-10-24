@@ -29,34 +29,29 @@ void cd (char * p){
 
 		/*BUILDING THE FULL TAR PATH, ACTUAL PATH IN TAR + ARG */
 
-		char * path=(char * ) malloc(sizeof(getenv("tar"))+sizeof(char));
+		/*char * path=(char * ) malloc(sizeof(getenv("tar"))+sizeof(char));
 		memcpy(path,getenv("tar"),strlen(getenv("tar"))+sizeof(char));
 		path=realloc(path,sizeof(path)+strlen("/"));
 		path=strcat(path,"/");
 		path=realloc(path,sizeof(path)+strlen(p));
-		path=strcat(path,p);
+		path=strcat(path,p);*/
 
+		char bufdir [PATH_MAX + 1];
+		getcwd(bufdir,sizeof(bufdir));
 
+		if(tar_file_exists(bufdir,p)){
 
-		//CHECKING IF PATH IS VALID AND STORING IT
+			setenv("tar",p,1);
+		}
 
-		//path = path_is_valid(path);
+		else if(strcmp(p,"..")==0){
 
-		//IF THE PATH IS NOT VALID
+			setenv("tar","",1);
+		}
 
-		/*if(path==NULL){
-
-
-		}*/
-
-
-		//IF THE PATH IS VALID WE UPDATE IT
-
-		//else{
-
-			setenv("tar","c.tar",1);
-		//}
 	}
+
+
 
 	/*-----IF WE ARE NOT DEALING WITH TAR FILES-----*/
 

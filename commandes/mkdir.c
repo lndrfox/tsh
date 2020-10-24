@@ -8,19 +8,20 @@
 #include <grp.h>
 #include <time.h>
 #include "tar.h"
+#include "print.h"
+#include "tar_nav.h"
 
 
 
 int main(int argc, char *argv[]){
 
 	char * tar=getenv("tar");
-	printf("%s\n",tar);
 
 	// CHECKING IF WE HAVE ENOUGH ARGUMENTS
 
 	if (argc<2){
 
-		printf("Error invalid argument \n");
+		prints("Error invalid argument \n");
 		return -1;
 	}
 
@@ -50,8 +51,8 @@ int main(int argc, char *argv[]){
 
 		if(sizeof(argv[i])>sizeof(char[100])){
 
-			printf("Error directory %s name is too long\n", argv[i]);
-			exit(-1);
+			prints("Error directory %s name is too long\n", argv[i]);
+			return -1
 
 		}
 
@@ -84,7 +85,7 @@ int main(int argc, char *argv[]){
 			if(strcmp(hd.name,argv[i])==0){
 
 				printf ( "Error, the directory %s already exists", argv[i]);
-				exit(-1);
+				return -1;
 
 			}
 
