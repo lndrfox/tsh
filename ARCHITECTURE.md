@@ -43,7 +43,7 @@ Les commandes qui ont été implémentés
 	**Entrée:** 
 	`./mkdir rep1 rep_existant/rep2 rep3 ...`
 
-* `rmdir`: Le fichier rmdir.c permet de supprimer un répertoire seulement s'il est vide. Pour le supprimer, le programme écrit par dessus le bloc d'en-tête du répertoire à supprimer. On déplace donc toutes les données se situant en dessous de celui-ci. Si le fichier est à la fin, alors il n'y a aucune données à déplacer et donc aucune données à écrire par dessus. Donc on diminue la taille du fichier pour suprrimer le répertoire.
+* `rmdir`: Le fichier rmdir.c permet de supprimer un répertoire si et seulement s'il est vide. Pour le supprimer, on déplace toutes les données se situant en dessous de celui-ci à la suite des données se situant avant. Si le répertoire est à la fin, alors il n'y a aucune donnée à déplacer. Donc on diminue la taille du fichier pour suprrimer le répertoire.
 
 	**Entrée:** 
 	`./rmdir rep1/... rep2/...   ...`
