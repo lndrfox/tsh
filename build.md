@@ -1,8 +1,11 @@
 # Instructions
 
 Installations des pré requis:
+
 **sudo apt install --reinstall build-essential**
+
 **sudo apt-get install libreadline-dev**
 
-Après installation, éxecuter le Makefile avec la commande
+Après installation, éxecuter le Makefile avec la commande:
+
 **make**
