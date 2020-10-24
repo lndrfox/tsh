@@ -4,10 +4,11 @@
 #include <string.h> // strtok
 #include <fcntl.h>  // open
 #include "tar.h"
+#include "print.h"
 
 int main(int argc, char *argv[]) {
 	if(argc != 2) {
-		printf("Fichier entré invalide\nFormat : test.tar/nomfichier\n");
+		prints("Fichier entré invalide\nFormat : test.tar/nomfichier\n");
 		exit(-1);
 	}
 
@@ -33,7 +34,8 @@ int main(int argc, char *argv[]) {
 	
 	// Si le tarball est uniquement rentre
 	if(fd>=0 && nomfichier ==  NULL) {
-		printf("Le tarball existe :\n%s/%s \n", chemin, tar); 
+		printsss("Le tarball existe :\n", chemin, "/");
+		printsss(tar, " \n", ""); 
 		close(fd);
 		exit(0);
 	}
@@ -47,7 +49,9 @@ int main(int argc, char *argv[]) {
 		p_hdr = (struct posix_header*)tampon;
 		if(strcmp(p_hdr -> name, nomfichier) == 0) {
 			// Affichage du chemin
-			printf("Le fichier existe :\n%s/%s/%s \n", chemin, tar, nomfichier); 
+			printsss("Le fichier existe :\n", chemin, "/");
+			printsss(tar, "/", nomfichier); 
+			prints(" \n");
 			close(fd);
 			exit(0);
 		}
