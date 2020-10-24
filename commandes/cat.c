@@ -6,6 +6,8 @@
 #include <string.h>
 #include <stdlib.h>
 #include "tar.h"
+#include "tar_nav.h"
+#include "print.h"
 
 
 // TO USE : ./cat fichiertar.tar fichier autrefichier ...
@@ -14,15 +16,16 @@ int main(int argc, char *argv[]){
 
 	// CHECKING IF WE HAVE ENOUGH ARGUMENTS
 
-	if (argc<2){
+	if (argc<1){
 
-		printf("Error invalid argument \n");
-		return -1;
+		prints("Error invalid argument \n");
 	}
 
 	// OPENING THE TAR FILE
 
-	int fd=open(argv[1],O_RDONLY);
+	char * tar =get_tar_name(getenv("tar"));
+
+	int fd=open(tar,O_RDONLY);
 
 	//ERROR MANAGMENT
 
@@ -38,7 +41,7 @@ int main(int argc, char *argv[]){
 
 		// LOOPING ON EVERY FILE THAT WAS PUT AS AN ARGUMENT
 
-	for(int i=2; i<argc; i++){
+	for(int i=1; i<argc; i++){
 
 		unsigned int size;
 
@@ -66,7 +69,7 @@ int main(int argc, char *argv[]){
 
 			if((hd.name[0]=='\0')){
 
-				printf("Error, file not found int the .tar\n");
+				prints("Error, file not found int the .tar\n");
 				return -1;
 			}
 
@@ -76,12 +79,28 @@ int main(int argc, char *argv[]){
 			sscanf(hd.size, "%o",&size);
 
 			//IF WE FOUND THE RIGHT HEADER, WE GET OUT OF THE LOOP
+			if(strcmp(getenv("tar"),tar)==0){
 
-			if(strcmp(hd.name,argv[i])==0){
+				if(strcmp(hd.name,argv[i])==0){
 
-				break;
+					break;
+				}
+			}
+
+			else{
+
+				char *relative = get_path_without_tar();
+				relative= realloc(relative,strlen(relative)+strlen(hd.name)+sizeof(char));
+				relative=strcat(relative,hd.name);
+
+				if(strcmp(relative,argv[i])==0){
+
+					break;
+				}
+
 
 			}
+			
 
 			//OTHERWISE WE GET TO THE NEXT HEADER
 
@@ -133,9 +152,10 @@ int main(int argc, char *argv[]){
 
 
 	}
+	prints("\n");
 
 	close(fd);
-
+	free(tar);
 
 
 	return 0;

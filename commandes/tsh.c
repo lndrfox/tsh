@@ -9,6 +9,7 @@
 #include "tar.h"
 #include "tar_nav.h"
 #include "cd.h"
+#include "print.h"
 
 int run=1;
 
@@ -21,6 +22,47 @@ char * get_line(){
 	return line;
 }
 
+/*RETURN A STRING THAT CONTAINS ONLY THE LAST DIRECTORY FROM
+GETCWD*/
+
+char * get_last_dir(){
+
+	char ** tokens;
+	if(!current_dir_is_tar()){
+
+		char bufdir [PATH_MAX + 1];
+		getcwd(bufdir,sizeof(bufdir));
+		tokens=decompose(bufdir,"/");
+	}
+
+	else{
+
+		tokens=decompose(getenv("tar"),"/");
+
+	}
+
+	int cpt=0;
+
+	while(tokens[cpt]!=NULL){
+
+		cpt++;
+	}
+	char * ret=malloc(strlen(tokens[cpt-1])+sizeof(char));
+
+	if(ret==NULL){
+
+		perror("malloc");
+		exit(-1);
+	}
+
+	ret=strcpy(ret,tokens[cpt-1]);
+	free(tokens);
+	return ret;
+
+}
+
+/*RETURNS THE FULL PATH OF THE CURRENT WORKING DIRECTORY*/
+
 void pwd(){
 
 	char bufdir [PATH_MAX + 1];
@@ -30,7 +72,8 @@ void pwd(){
 	entry= strcat(entry,bufdir);
 	entry=strcat(entry,"/");
 	entry = strcat(entry,getenv("tar"));
-	printf("%s\n",entry);
+	prints(entry);
+	prints("\n");
 	free(entry);
 
 
@@ -61,10 +104,8 @@ void parse (char ** tokens){
 
 	 if(strcmp(tokens[0],"cd")==0){
 
-		if(tokens[1]!=NULL ){
-				cd(tokens[1]);
-				return;
-			}
+			cd(tokens[1]);
+			return;			
 		}
 
 
@@ -121,14 +162,24 @@ void parse (char ** tokens){
 int main (void){
 
 	setenv("tar","",1);
+	prints("\n");
 
 	while(run){
 
 		/*ENTRY*/
 
-		char * entry = getlogin();
+		char * login = getlogin();
+		char host [HOST_NAME_MAX];
+		gethostname(host, HOST_NAME_MAX);
 
-		printf("\033[1;32m\n[%s]$\033[0m ",entry);
+		prints("\033[1;32m[");
+		prints(login);
+		prints("@");
+		prints(host);
+		prints("\033[0m\e[1m ");
+		char * last_dir=get_last_dir();
+		prints(last_dir);
+		prints("\033[0m\033[1;32m]$\033[0m");
 
 		/*READING COMMAND*/
 
@@ -148,7 +199,12 @@ int main (void){
 		/*PARSING THE COMMAND*/
 
 		parse(tokens);
+
+		/*FREE*/
 		
+		free(prompt);
+		free(last_dir);
+		free(tokens);
 		
 	}
 
