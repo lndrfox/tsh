@@ -57,6 +57,7 @@ Les commandes qui ont été implémentés
 Le fichier conitent l'option `-l` pour afficher des informations supplémentaires qui à le même rôle que `ls -l` dans un répertoire.
 
 	**Entrée:**
+
 	`./ls test.tar` ou
 
 	`./ls test.tar/rep/...` ou
