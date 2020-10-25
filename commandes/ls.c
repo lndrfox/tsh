@@ -159,24 +159,18 @@ int main (int argc, char *argv[]) {
 			// Si c'est un répertoire
 			if(p_hdr->typeflag == '5') {
 
-				// On fait une copie du nom du fichier afin de ne pas le modifier directement avec strtok()
-				char* nom = malloc(strlen(p_hdr->name) + 1);
-				strcpy(nom, p_hdr -> name);
-				strtok(nom, "/");
-
 				// Si le repertoire correspond au repertoire a afficher
 				if(rep != NULL) {
 					if (strcmp(p_hdr -> name, rep) == 0)
 						repexiste = 1;
 				}
 
-				// Si c'est un repertoire dans un repertoire
-				char * nom2 = strtok(NULL, "");
+				char * nom1 = strchr(p_hdr -> name, '/');
+				char * nom2 = strrchr(p_hdr -> name, '/');
 
-				if(nom2 != NULL) {
-					if(strchr(nom2, '/') != NULL)
-						fich = 1;
-				}
+				// Si c'est un repertoire dans un repertoire
+				if(strcmp(nom1, nom2) != 0)
+					fich = 1;
 
 				// Sinon c'est un repertoire simple
 				else
