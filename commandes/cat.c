@@ -113,7 +113,7 @@ int main(int argc, char *argv[]){
 
 		char buff [BLOCKSIZE];
 
-		printf("\n");
+		prints("\n");
 
 		//WE READ THE CONTENT OF THE FILE AND THEN WRITE IT IN THE STDOUT	
 
