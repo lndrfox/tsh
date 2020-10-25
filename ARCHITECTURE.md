@@ -57,8 +57,19 @@ ainsi tsh.
 	**Entrée:** 
 	`./rmdir rep1/... rep2/...   ...`
 
-* `cp`:
-	**(A REMPLIR)**
+* `cp`: Le fichier cp.c permet de copier un fichier d'un tarball vers un autre ou d'un fichier en dehors du tarball vers un tarball. La commande est utilisé selon la manière dont elle est appelé.
+
+  	**Entrée:**
+	Si l'on veut copié un fichier du tarball vers un autre tarball:
+	'cp fichier_à_copié test.tar/nomfichier
+
+	Si l'on veut copié un fichier du tarball en dehors du tarball:
+	'cp fichier_à_copié path/nom_de_la_copie'
+
+	Si l'on veut copié un fichier en dehors du tarball vers un tarball:
+	'cp path/fichier_à_copié nom_de_la_copie
+  	
+	
 
 * `ls`: Le fichier ls.c permet d'afficher le nom des fichiers dans le tarball :
   * sans afficher les fichiers appartenant à un répertoire si on souhaite afficher le tarball lui-même
