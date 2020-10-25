@@ -85,8 +85,6 @@ int main (int argc, char *argv[]) {
 	// -l test.tar
 	// -l test.tar/rep
 
-	char * tar=getenv("tar");
-
 	// Conditions des valeurs d'entrée
 	if(argc != 2 && (argc != 3 || strcmp(argv[1], "-l")!=0)) {
 		prints("\033[1;31mEntrée invalide\n");
