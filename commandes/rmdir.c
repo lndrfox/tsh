@@ -11,6 +11,19 @@
 // Format: ./rmdir fichiertar.tar directory otherdirectory ...
 // (Un repertoire doit avoir '/' a la fin)
 
+// Retourne si le fichier appartient au repertoire
+int estDansRep(char * name, char * rep) {
+	char * repertoire = malloc(strlen(rep) +1);
+	char * isrep = malloc(strlen(rep) +1);
+	strncpy(isrep, name, strlen(rep));
+	strncpy(repertoire, rep, strlen(rep));
+
+	if(strcmp(isrep, repertoire) == 0)
+		return 1;
+	else
+		return 0;
+}
+
 int main(int argc, char *argv[]){
 
 	// ======================================================================
@@ -72,16 +85,12 @@ int main(int argc, char *argv[]){
 
 			if(strlen(p_hdr-> name) == 0) {
 				if (rep == NULL) {
-					prints("\033[1;31mrmdir: impossible de supprimer '");
-					prints(argv[i]);
-					prints("': Aucun fichier ou dossier de ce type\033[0m\n");
+					printsss("\033[1;31mrmdir: impossible de supprimer '", argv[i], "': Aucun fichier ou dossier de ce type\033[0m\n");
 					break;
 				}
 				else {
 					if(supp != BLOCKSIZE) {
-						prints("\033[1;31mrmdir: impossible de supprimer '");
-						prints(argv[i]);
-						prints("': Le dossier n'est pas vide\033[0m\n");
+						printsss("\033[1;31mrmdir: impossible de supprimer '", argv[i], "': Le dossier n'est pas vide\033[0m\n");
 						break;
 					}
 					else {
@@ -94,17 +103,16 @@ int main(int argc, char *argv[]){
 
 			// Si on trouve le repertoire
 
-			if(strcmp(p_hdr->name, argv[i]) == 0 && p_hdr->typeflag == '5') {
+			if(strcmp(p_hdr -> name, argv[i]) == 0 && p_hdr->typeflag == '5') {
 				rep = malloc(strlen(p_hdr->name) + 1);
-				strcpy(rep, strtok(p_hdr->name,"/"));
+				strcpy(rep, p_hdr->name);
 			}
 
 			// Stockage des octets a utiliser lors de la suppresion
 
 			if(rep != NULL) {
 				// Le repertoire et ses fichiers a supprimer
-				strtok(p_hdr-> name, "/");
-				if(strcmp(p_hdr-> name, rep) == 0) 
+				if(estDansRep(p_hdr-> name, rep) == 1) 
 					supp = supp + BLOCKSIZE + (((size+ BLOCKSIZE - 1) >> BLOCKBITS)*BLOCKSIZE);
 
 				// Toutes donnees se situant apres le repertoire
