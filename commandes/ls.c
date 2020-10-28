@@ -140,7 +140,7 @@ int main (int argc, char *argv[]) {
 
 	// Conditions des valeurs d'entrée
 	if(argc != 2 && (argc != 3 || strcmp(argv[1], "-l") != 0)) {
-		prints("\033[1;31mEntrée invalide\n");
+		prints("\033[1;31mEntrée invalide\n\033[0m");
 		exit(-1);
 	}
 
@@ -165,7 +165,7 @@ int main (int argc, char *argv[]) {
 
 	fd = open(argv[l], O_RDONLY);
 	if (fd<0) {
-		perror("\033[1;31mErreur lors de l'ouverture du tar");
+		perror("\033[1;31mErreur lors de l'ouverture du tar\033[0m");
 		exit(-1);
 	}
 
@@ -178,16 +178,16 @@ int main (int argc, char *argv[]) {
 	unsigned int size;
 	struct posix_header * p_hdr;
 
-	int p;				// profondeur
+	int p;					// profondeur
 
 	int repexiste = 0;		// 0: Le repertoire correspondant a rep n'a pas ete trouve
-					// 1: Le repertoire a ete trouve
+							// 1: Le repertoire a ete trouve
 
 	while(1) {
 		// Lecture du bloc
 		n = read(fd, &tampon, 512);
 		if(n<0) {
-			perror("\033[1;31mErreur lors de la lecture du tar");
+			perror("\033[1;31mErreur lors de la lecture du tar\033[0m");
 			exit(-1);
 		}
 		if(n == 0) break;
@@ -246,6 +246,7 @@ int main (int argc, char *argv[]) {
 					ptemps(temps);
 				}
 				// Nom du fichier
+
 				afficheNom(p_hdr, rep, repexiste);
 
 			}
@@ -258,7 +259,7 @@ int main (int argc, char *argv[]) {
 
 	// Si on ne rencontre pas le repertoire recherche
 	if(rep!= NULL && repexiste == 0) 
-		prints("\033[1;31mLe répertoire n'existe pas\n");
+		prints("\033[1;31mLe répertoire n'existe pas\n\033[0m");
 
 	close(fd);
 	exit(0);
