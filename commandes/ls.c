@@ -77,25 +77,78 @@ void pdroit(char *d) {
 	}
 }
 
+// Affiche le nom du fichier
+void afficheNom(struct posix_header * p_hdr, char* rep, int repexiste) {
+
+	// Si c'est un repertoire: couleur bleu
+	if(p_hdr -> typeflag == '5') 
+		prints("\033[1;34m");
+
+	// Si c'est un fichier du repertoire choisi on affiche que le nom apres rep1/rep2/...
+	if(rep != NULL && repexiste == 1) {
+
+		char * nom = malloc(strlen(p_hdr ->name) - strlen(rep) + 1);
+		strcpy(nom, &p_hdr -> name[strlen(rep)]);
+		printsss("", nom, "\n");
+	}
+
+	// Sinon on affiche son nom complet
+	else
+		printsss("", p_hdr-> name, "\n");
+
+	// Renitialise la couleur
+	if(p_hdr -> typeflag == '5')
+		prints("\033[0m"); 
+}
+
+// Retourne la profondeur d'un fichier
+int profondeur (struct posix_header * p_hdr) {
+	int profondeur = -1;
+
+	char * nom = malloc(strlen(p_hdr->name)+1);
+	strcpy(nom, p_hdr -> name);
+	char *buf = strtok(nom, "/");
+
+	while(buf != NULL) {
+		profondeur ++;
+		buf = strtok(NULL, "/");
+	}
+
+	return profondeur;   
+}
+
+// Retourne si le fichier appartient au repertoire
+int estDansRep(char * name, char * rep) {
+	char * repertoire = malloc(strlen(rep) +1);
+	char * isrep = malloc(strlen(rep) +1);
+	strncpy(isrep, name, strlen(rep));
+	strncpy(repertoire, rep, strlen(rep));
+
+	if(strcmp(isrep, repertoire) == 0)
+		return 1;
+	else
+		return 0;
+}
+
 int main (int argc, char *argv[]) {
 	// On suppose que la lecture se fait uniquement depuis le tar
 	// Quatre formats possibles:
-	// test.tar
-	// test.tar/rep
-	// -l test.tar
-	// -l test.tar/rep
+	// (1) test.tar
+	// (2) test.tar/rep1/rep2/...
+	// (3) -l test.tar
+	// (4) -l test.tar/rep1/rep2/...
 
 	// Conditions des valeurs d'entrée
-	if(argc != 2 && (argc != 3 || strcmp(argv[1], "-l")!=0)) {
+	if(argc != 2 && (argc != 3 || strcmp(argv[1], "-l") != 0)) {
 		prints("\033[1;31mEntrée invalide\n");
 		exit(-1);
 	}
 
 	// S'il y a l'option "-l"
-	int l = 0;
-	if(strcmp(argv[1], "-l")==0 && argc == 3) {
-		l = 1;
-	}
+	int l = 1;
+	if(strcmp(argv[1], "-l") == 0 && argc == 3)
+		l = 2;
+	
 
 	// ======================================================================
 	// 			      OUVERTURE DU TAR
@@ -103,20 +156,14 @@ int main (int argc, char *argv[]) {
 
 	int fd;
 	char* rep = NULL;
-	int argnum;
-
-	if (l == 1)	
-		argnum = 2;
-	else 
-		argnum = 1;
 	
 	// Si on veut afficher un repertoire du tar
-	if(strchr(argv[argnum], '/') != NULL) {
-		strtok(argv[argnum], "/");		// Le nom du tar
-		rep = strtok(NULL, "");	 		// Le nom du repertoire
+	if(strchr(argv[l], '/') != NULL) {
+		strtok(argv[l], "/");		// Le nom du tar
+		rep = strtok(NULL, "");		// Le nom du repertoire
 	}
 
-	fd = open(argv[argnum], O_RDONLY);
+	fd = open(argv[l], O_RDONLY);
 	if (fd<0) {
 		perror("\033[1;31mErreur lors de l'ouverture du tar");
 		exit(-1);
@@ -130,12 +177,11 @@ int main (int argc, char *argv[]) {
 	int n;
 	unsigned int size;
 	struct posix_header * p_hdr;
-	int fich = 0;					// 0: C'est un fichier simple
-							// 1: C'est un fichier dans un repertoire
-							// 2: C'est un repertoire
 
-	int repexiste = 0;				// 0: Le repertoire correspondant a rep n'a pas ete trouve
-							// 1: Le repertoire a ete trouve
+	int p;				// profondeur
+
+	int repexiste = 0;		// 0: Le repertoire correspondant a rep n'a pas ete trouve
+					// 1: Le repertoire a ete trouve
 
 	while(1) {
 		// Lecture du bloc
@@ -158,48 +204,25 @@ int main (int argc, char *argv[]) {
 
 			// Si c'est un répertoire
 			if(p_hdr->typeflag == '5') {
-
 				// Si le repertoire correspond au repertoire a afficher
 				if(rep != NULL) {
-					if (strcmp(p_hdr -> name, rep) == 0)
+					if (strcmp(p_hdr -> name, rep) == 0) {
 						repexiste = 1;
+						p = profondeur(p_hdr) + 1;
+					}
 				}
-
-				char * nom1 = strchr(p_hdr -> name, '/');
-				char * nom2 = strrchr(p_hdr -> name, '/');
-
-				// Si c'est un repertoire dans un repertoire
-				if(strcmp(nom1, nom2) != 0)
-					fich = 1;
-
-				// Sinon c'est un repertoire simple
-				else
-					fich = 2;
 			}
-			// Si c'est un fichier d'un repertoire
-			else if(strchr(p_hdr-> name, '/') != NULL) 
-				fich = 1;
-			// Sinon c'est un fichier simple
-			else 
-				fich = 0;
 
 			// ----------------------------------------------------------------------
 			// 	 		AFFICHAGE DES INFORMATIONS
 			// ----------------------------------------------------------------------
 
-			// On stock un mot de la taille de rep avec les strlen(rep) 1ere lettres du nom du fichier
-			char* isrep; 
-			if(rep != NULL && repexiste == 1) {
-				isrep = malloc(strlen(rep) +1);
-				strncat(isrep, p_hdr-> name, strlen(rep));
-			}
-		
 			// Format test.tar: Si le fichier est dans un repertoire on ne l'affiche pas
-			// Format test.tar/rep: Sinon on affiche uniquement ses fichiers
-			if((rep == NULL && fich!=1) || (rep != NULL && repexiste == 1 && fich == 1 && strcmp(isrep, rep) == 0)) {
+			// Format test.tar/rep1/rep2/...: Sinon on affiche uniquement ses fichiers
+			if((rep == NULL && profondeur(p_hdr) == 0) || (rep != NULL && repexiste == 1 && profondeur(p_hdr) == p && estDansRep(p_hdr -> name, rep) == 1)) {
 
 				// S'il y a l'option "-l"
-				if(l == 1) { 
+				if(l == 2) { 
 					// Type de fichier
 					ptype(p_hdr-> typeflag);
 
@@ -223,35 +246,9 @@ int main (int argc, char *argv[]) {
 					ptemps(temps);
 				}
 				// Nom du fichier
-
-				// Si c'est un repertoire: couleur bleu
-				if(fich == 2) 
-					prints("\033[1;34m");
-
-				// Si c'est un fichier du repertoire choisi on affiche que le nom apres rep/
-				if(rep != NULL && repexiste == 1) {
-
-					// On fait une copie du nom du fichier afin de ne pas le modifier directement avec strtok()
-					char * nom = malloc(strlen(rep)+1);
-					strcpy(nom, p_hdr -> name);
-
-					strtok(nom, "/");
-					char* sousfichier = strtok(NULL, "");
-
-					printsss("", sousfichier, "\n");
-				}
-				else {
-					printsss("", p_hdr-> name, "\n");
-				}
-
-				// Renitialise la couleur
-				if(fich == 2)
-					prints("\033[0m"); 
+				afficheNom(p_hdr, rep, repexiste);
 
 			}
-			
-			if (rep != NULL && repexiste == 1) 
-				free(isrep);
 		}
 
 		// On passe a l'entete suivante
