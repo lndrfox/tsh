@@ -6,9 +6,8 @@
 #include <string.h>    // strcmp strtok strchr
 #include <time.h>      // localtime time
 #include "tar.h"
-#include "tar_nav.h"
-#include "cd.h"
 #include "print.h"
+#include "tar_nav.h"
 
 // Affiche la date
 void ptemps(long temps) {
@@ -133,23 +132,26 @@ int estDansRep(char * name, char * rep) {
 int main (int argc, char *argv[]) {
 	// On suppose que la lecture se fait uniquement depuis le tar
 	// Quatre formats possibles:
-	// (1) test.tar
-	// (2) test.tar/rep1/rep2/...
-	// (3) -l test.tar
-	// (4) -l test.tar/rep1/rep2/...
+	// (1) ls
+	// (2) ls rep1/rep2/...
+	// (3) ls -l
+	// (4) ls -l /rep1/rep2/...
+
+	char * tar = getenv("tar");
 
 	// Conditions des valeurs d'entrée
-	if(argc != 2 && (argc != 3 || strcmp(argv[1], "-l") != 0)) {
+	if(argc != 1 && argc != 2 && (argc != 3 || strcmp(argv[1], "-l") != 0)) {
 		prints("\033[1;31mEntrée invalide\n\033[0m");
 		exit(-1);
 	}
 
 	// S'il y a l'option "-l"
 	int l = 1;
-	if(strcmp(argv[1], "-l") == 0 && argc == 3)
-		l = 2;
+	if(argc > 1) {
+		if(strcmp(argv[1], "-l") == 0)
+			l = 2;
+	}
 	
-
 	// ======================================================================
 	// 			      OUVERTURE DU TAR
 	// ======================================================================
@@ -158,12 +160,10 @@ int main (int argc, char *argv[]) {
 	char* rep = NULL;
 	
 	// Si on veut afficher un repertoire du tar
-	if(strchr(argv[l], '/') != NULL) {
-		strtok(argv[l], "/");		// Le nom du tar
-		rep = strtok(NULL, "");		// Le nom du repertoire
-	}
+	if((argc == 2 && l == 1) || (argc == 3 && l == 2))
+		rep = argv[l];
 
-	fd = open(argv[l], O_RDONLY);
+	fd = open(tar, O_RDONLY);
 	if (fd<0) {
 		perror("\033[1;31mErreur lors de l'ouverture du tar\033[0m");
 		exit(-1);
@@ -178,10 +178,10 @@ int main (int argc, char *argv[]) {
 	unsigned int size;
 	struct posix_header * p_hdr;
 
-	int p;					// profondeur
+	int p;				// profondeur
 
 	int repexiste = 0;		// 0: Le repertoire correspondant a rep n'a pas ete trouve
-							// 1: Le repertoire a ete trouve
+					// 1: Le repertoire a ete trouve
 
 	while(1) {
 		// Lecture du bloc
@@ -246,7 +246,6 @@ int main (int argc, char *argv[]) {
 					ptemps(temps);
 				}
 				// Nom du fichier
-
 				afficheNom(p_hdr, rep, repexiste);
 
 			}
@@ -259,7 +258,7 @@ int main (int argc, char *argv[]) {
 
 	// Si on ne rencontre pas le repertoire recherche
 	if(rep!= NULL && repexiste == 0) 
-		prints("\033[1;31mLe répertoire n'existe pas\n\033[0m");
+		printsss("\033[1;31mls: impossible d'accéder à '", rep ,"': Aucun fichier ou dossier de ce type\n\033[0m");
 
 	close(fd);
 	exit(0);
