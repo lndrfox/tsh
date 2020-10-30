@@ -257,7 +257,7 @@ int main (int argc, char *argv[]) {
 
 	// Si on ne rencontre pas le repertoire recherche
 	if(rep!= NULL && repexiste == 0) 
-		printsss("\033[1;31mls: impossible d'accéder à '", rep ,"': Aucun fichier ou dossier de ce type\n\033[0m");
+		printsss("ls: impossible d'accéder à '", rep ,"': Aucun fichier ou dossier de ce type\n");
 
 	close(fd);
 	exit(0);
