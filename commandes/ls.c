@@ -7,7 +7,6 @@
 #include <time.h>      // localtime time
 #include "tar.h"
 #include "print.h"
-#include "tar_nav.h"
 
 // Affiche la date
 void ptemps(long temps) {
