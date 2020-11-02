@@ -11,22 +11,37 @@
 // Format: ./rmdir fichiertar.tar directory otherdirectory ...
 // (Un repertoire doit avoir '/' a la fin)
 
+// Retourne si le fichier appartient au repertoire
+int estDansRep(char * name, char * rep) {
+	char * repertoire = malloc(strlen(rep) +1);
+	char * isrep = malloc(strlen(rep) +1);
+	strncpy(isrep, name, strlen(rep));
+	strncpy(repertoire, rep, strlen(rep));
+
+	if(strcmp(isrep, repertoire) == 0)
+		return 1;
+	else
+		return 0;
+}
+
 int main(int argc, char *argv[]){
 
 	// ======================================================================
 	// 	 			INITIALISATION
 	// ======================================================================
 
+	char * tar = getenv("tar");
+
 	// Conditions des valeurs d'entrée
 	if (argc < 2){
-		prints("\033[1;31mEntrée invalide \n");
+		prints("rmdir: opérande manquant\n");
 		exit(-1);
 	}
 
 	// Ouverture du tar
-	int fd = open(argv[1],O_RDWR);
+	int fd = open(tar, O_RDWR);
 	if(fd < 0){
-		perror("\033[1;31mErreur lors de l'ouverture du tar");
+		perror("\033[1;31mErreur lors de l'ouverture du tar\033[0m");
 		exit(-1);
 	}
 
@@ -37,7 +52,7 @@ int main(int argc, char *argv[]){
 	// 	 	    PARCOURS DU TAR POUR CHAQUE REPERTOIRE
 	// ======================================================================
 
-	for (int i=2; i<argc;i++){
+	for (int i=1; i<argc;i++){
 
 		int valide = 0;			// 0: le repertoire ne peut pas etre supprime
 						// 1: le repertoire peut etre supprime
@@ -58,7 +73,7 @@ int main(int argc, char *argv[]){
 
 			int rdcount = read(fd,&tampon, BLOCKSIZE);
 			if(rdcount<0){
-				perror("\033[1;31mErreur lors de la lecture du tar");
+				perror("\033[1;31mErreur lors de la lecture du tar\033[0m");
 				close(fd);
 				exit(-1);
 			}
@@ -72,16 +87,12 @@ int main(int argc, char *argv[]){
 
 			if(strlen(p_hdr-> name) == 0) {
 				if (rep == NULL) {
-					prints("\033[1;31mrmdir: impossible de supprimer '");
-					prints(argv[i]);
-					prints("': Aucun fichier ou dossier de ce type\033[0m\n");
+					printsss("rmdir: impossible de supprimer '", argv[i], "': Aucun fichier ou dossier de ce type\n");
 					break;
 				}
 				else {
 					if(supp != BLOCKSIZE) {
-						prints("\033[1;31mrmdir: impossible de supprimer '");
-						prints(argv[i]);
-						prints("': Le dossier n'est pas vide\033[0m\n");
+						printsss("rmdir: impossible de supprimer '", argv[i], "': Le dossier n'est pas vide\n");
 						break;
 					}
 					else {
@@ -94,17 +105,16 @@ int main(int argc, char *argv[]){
 
 			// Si on trouve le repertoire
 
-			if(strcmp(p_hdr->name, argv[i]) == 0 && p_hdr->typeflag == '5') {
+			if(strcmp(p_hdr -> name, argv[i]) == 0 && p_hdr->typeflag == '5') {
 				rep = malloc(strlen(p_hdr->name) + 1);
-				strcpy(rep, strtok(p_hdr->name,"/"));
+				strcpy(rep, p_hdr->name);
 			}
 
 			// Stockage des octets a utiliser lors de la suppresion
 
 			if(rep != NULL) {
 				// Le repertoire et ses fichiers a supprimer
-				strtok(p_hdr-> name, "/");
-				if(strcmp(p_hdr-> name, rep) == 0) 
+				if(estDansRep(p_hdr-> name, rep) == 1) 
 					supp = supp + BLOCKSIZE + (((size+ BLOCKSIZE - 1) >> BLOCKBITS)*BLOCKSIZE);
 
 				// Toutes donnees se situant apres le repertoire
@@ -136,7 +146,7 @@ int main(int argc, char *argv[]){
 
 			int rd = read(fd, &mem, dep);
 			if(rd<0){
-				perror("\033[1;31mErreur lors de la lecture du tar");
+				perror("\033[1;31mErreur lors de la lecture du tar\033[0m");
 				close(fd);
 				exit(-1);
 			}
@@ -146,7 +156,7 @@ int main(int argc, char *argv[]){
 			lseek(fd, longueur, SEEK_SET);
 			int wr = write(fd, &mem, dep);
 			if(wr<0){
-				perror("\033[1;31mErreur lors de l'écriture du tar");
+				perror("\033[1;31mErreur lors de l'écriture du tar\033[0m");
 				close(fd);
 				exit(-1);
 			}
