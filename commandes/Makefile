@@ -6,40 +6,52 @@ EXEC=cat ls mkdir rmdir cp tsh
 
 all: $(EXEC)
 
-tsh: tsh.o
+tar_nav.o: tar_nav.c tar_nav.h tar.h
+	$(CC) -o $@ -c $< $(CFLAGS)
+
+tar.o: tar.c tar.h
+	$(CC) -o $@ -c $< $(CFLAGS)
+
+print.o: print.c print.h
+	$(CC) -o $@ -c $< $(CFLAGS)
+
+cd.o: cd.c cd.h
+	$(CC) -o $@ -c $< $(CFLAGS)
+
+tsh: tsh.o tar_nav.o print.o cd.o
 	$(CC) -o $@ $^ $(LDFLAGS) -lreadline
 
-tsh.o: tsh.c tar.h tar_nav.h cd.h print.h
+tsh.o: tsh.c  cd.h 
 	$(CC) -o $@ -c $< $(CFLAGS)
 
-ls: ls.o
+ls: ls.o tar.o print.o
 	$(CC) -o $@ $^ $(LDFLAGS)
 
-ls.o: ls.c tar.h
+ls.o: ls.c 
 	$(CC) -o $@ -c $< $(CFLAGS)
 
-cp: cp.o
+cp: cp.o tar.o
 	$(CC) -o $@ $^ $(LDFLAGS)
 
-cp.o: cp.c tar.h
+cp.o: cp.c 
 	$(CC) -o $@ -c $< $(CFLAGS)
 
-cat: cat.o
+cat: cat.o tar_nav.o tar.o print.o
 	$(CC) -o $@ $^ $(LDFLAGS)
 
-cat.o: cat.c tar.h tar_nav.h print.h
+cat.o: cat.c 
 	$(CC) -o $@ -c $< $(CFLAGS)
 
-mkdir: mkdir.o
+mkdir: mkdir.o tar.o print.o tar_nav.o
 	$(CC) -o $@ $^ $(LDFLAGS)
 
-mkdir.o: mkdir.c tar.h print.h tar_nav.h
+mkdir.o: mkdir.c 
 	$(CC) -o $@ -c $< $(CFLAGS)
 
-rmdir: rmdir.o
+rmdir: rmdir.o tar.o print.o
 	$(CC) -o $@ $^ $(LDFLAGS)
 
-rmdir.o: rmdir.c tar.h print.h
+rmdir.o: rmdir.c 
 	$(CC) -o $@ -c $< $(CFLAGS)
 
 clean:
