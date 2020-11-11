@@ -6,7 +6,7 @@
 #include <unistd.h>
 #include <limits.h>
 #include <sys/wait.h>
-#include "tar.h"
+
 #include "tar_nav.h"
 #include "cd.h"
 #include "print.h"

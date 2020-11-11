@@ -1,11 +1,6 @@
 #ifndef TAR_H
 #define TAR_H
 
-/* tar Header Block, from POSIX 1003.1-1990.  */
-
-#define BLOCKSIZE 512
-#define BLOCKBITS 9
-
 /* POSIX header.  */
 
 /* Note that sizeof(struct posix_header) == BLOCKSIZE */
@@ -31,6 +26,13 @@ struct posix_header
   char junk[12];                /* 500 */
 };                              /* Total: 512 */
 
+/* tar Header Block, from POSIX 1003.1-1990.  */
+
+#define BLOCKSIZE 512
+#define BLOCKBITS 9
+
+             /* Total: 512 */
+
 #define TMAGIC   "ustar"        /* ustar and a null */
 #define TMAGLEN  6
 #define TVERSION "00"           /* 00 and no null */
@@ -49,24 +51,11 @@ struct posix_header
    sum (on 6 bytes), followed by '\0' and ' '.
 */
 
-void set_checksum(struct posix_header *hd) {
-  memset(hd->chksum,' ',8);
-  unsigned int sum = 0;
-  char *p = (char *)hd;
-  for (int i=0; i < BLOCKSIZE; i++) { sum += p[i]; }
-  sprintf(hd->chksum,"%06o",sum);
-}
+void set_checksum(struct posix_header *hd);
 
 /* Check that the checksum of a header is correct */
 
-int check_checksum(struct posix_header *hd) {
-  unsigned int checksum;
-  sscanf(hd->chksum,"%o ", &checksum);
-  unsigned int sum = 0;
-  char *p = (char *)hd;
-  for (int i=0; i < BLOCKSIZE; i++) { sum += p[i]; }
-  for (int i=0;i<8;i++) { sum += ' ' - hd->chksum[i]; }
-  return (checksum == sum);
-}
+int check_checksum(struct posix_header *hd);
+
 
 #endif
