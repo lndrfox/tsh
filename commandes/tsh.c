@@ -161,6 +161,9 @@ void parse (char ** tokens){
 
 int main (void){
 
+	/*WE INITIALISE THE ENVIRONEMENT VAIRABLE THAT CONTAINS
+	THE CURRENT TAR PATH*/
+
 	setenv("tar","",1);
 	prints("\n");
 

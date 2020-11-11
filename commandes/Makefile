@@ -2,7 +2,7 @@
 CC=gcc
 CFLAGS=-W -Wall
 LDFLAGS=
-EXEC=cat ls mkdir cp tsh 
+EXEC=cat ls mkdir rmdir cp tsh
 
 all: $(EXEC)
 
@@ -45,7 +45,13 @@ cat.o: cat.c
 mkdir: mkdir.o tar.o print.o
 	$(CC) -o $@ $^ $(LDFLAGS)
 
-mkdir.o: mkdir.c 
+mkdir.o: mkdir.c tar.h print.h tar_nav.h
+	$(CC) -o $@ -c $< $(CFLAGS)
+
+rmdir: rmdir.o
+	$(CC) -o $@ $^ $(LDFLAGS)
+
+rmdir.o: rmdir.c tar.h print.h
 	$(CC) -o $@ -c $< $(CFLAGS)
 
 clean:

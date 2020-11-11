@@ -8,19 +8,20 @@
 #include <grp.h>
 #include <time.h>
 #include "tar.h"
+#include "print.h"
+#include "tar_nav.h"
 
 
 
 int main(int argc, char *argv[]){
 
 	char * tar=getenv("tar");
-	printf("%s\n",tar);
 
 	// CHECKING IF WE HAVE ENOUGH ARGUMENTS
 
 	if (argc<2){
 
-		printf("Error invalid argument \n");
+		prints("Error invalid argument \n");
 		return -1;
 	}
 
@@ -50,8 +51,10 @@ int main(int argc, char *argv[]){
 
 		if(sizeof(argv[i])>sizeof(char[100])){
 
-			printf("Error directory %s name is too long\n", argv[i]);
-			exit(-1);
+			prints("Error directory ");
+			prints(argv[i]);
+			prints(" name is too long\n");
+			return -1;
 
 		}
 
@@ -83,8 +86,10 @@ int main(int argc, char *argv[]){
 
 			if(strcmp(hd.name,argv[i])==0){
 
-				printf ( "Error, the directory %s already exists", argv[i]);
-				exit(-1);
+				prints("Error, the directory ");
+				prints(argv[i]);
+				prints(" already exists");
+				return -1;
 
 			}
 
@@ -113,10 +118,10 @@ int main(int argc, char *argv[]){
 		//  WE NEED TO ADD / AT THE END OF THE DIRECTORY NAME FOR IT TO BE VALID
 
 		char name_tmp[100];
-		sprintf(name_tmp, argv[i]);
+		sprintf(name_tmp, "%s", argv[i]);
 		char name_tmp2 [100]="/";
 		strcat(name_tmp, name_tmp2);
-		sprintf(dir.name,name_tmp);
+		sprintf(dir.name, "%s", name_tmp);
 
 		//FILLING MODE 
 
@@ -161,7 +166,7 @@ int main(int argc, char *argv[]){
 			perror("Reading group ID");
 			exit(-1);
 		}
-		sprintf(dir.gname,g->gr_name);
+		sprintf(dir.gname, "%s", g->gr_name);
 
 		//SETTING CHECKSUM ONCE ALL THE OTHER FIELDS ARE FILLED
 
