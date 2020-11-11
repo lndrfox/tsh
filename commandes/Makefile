@@ -42,16 +42,16 @@ cat: cat.o tar_nav.o tar.o print.o
 cat.o: cat.c 
 	$(CC) -o $@ -c $< $(CFLAGS)
 
-mkdir: mkdir.o tar.o print.o
+mkdir: mkdir.o tar.o print.o tar_nav.o
 	$(CC) -o $@ $^ $(LDFLAGS)
 
-mkdir.o: mkdir.c tar.h print.h tar_nav.h
+mkdir.o: mkdir.c 
 	$(CC) -o $@ -c $< $(CFLAGS)
 
-rmdir: rmdir.o
+rmdir: rmdir.o tar.o print.o
 	$(CC) -o $@ $^ $(LDFLAGS)
 
-rmdir.o: rmdir.c tar.h print.h
+rmdir.o: rmdir.c 
 	$(CC) -o $@ -c $< $(CFLAGS)
 
 clean:
