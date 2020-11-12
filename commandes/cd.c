@@ -41,21 +41,31 @@ void cd (char * p){
 
 		//CHECKING IF PATH IS VALID AND STORING IT
 
-		//path = path_is_valid(path);
+		path = path_is_valid(path);
 
 		//IF THE PATH IS NOT VALID
 
-		/*if(path==NULL){
+		if(path==NULL){
 
+				printf("dommagemaggle\n");
+		}
 
-		}*/
+		else{
+			
+			setenv("tar",path,1);
+		}
 
 
 		//IF THE PATH IS VALID WE UPDATE IT
 
 		//else{
+			/*if(strcmp(p,"..")==0){
+				setenv("tar","",1);
+			}
+			else{
+				setenv("tar","c.tar",1);
 
-			setenv("tar","c.tar",1);
+			}*/
 		//}
 	}
 
