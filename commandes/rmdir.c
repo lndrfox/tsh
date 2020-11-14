@@ -6,23 +6,11 @@
 #include <stdlib.h>		// exit
 #include "tar.h"
 #include "print.h"
+#include "lib.h"
 
 
 // Format: ./rmdir fichiertar.tar directory otherdirectory ...
 // (Un repertoire doit avoir '/' a la fin)
-
-// Retourne si le fichier appartient au repertoire
-int estDansRep(char * name, char * rep) {
-	char * repertoire = malloc(strlen(rep) +1);
-	char * isrep = malloc(strlen(rep) +1);
-	strncpy(isrep, name, strlen(rep));
-	strncpy(repertoire, rep, strlen(rep));
-
-	if(strcmp(isrep, repertoire) == 0)
-		return 1;
-	else
-		return 0;
-}
 
 int main(int argc, char *argv[]){
 
