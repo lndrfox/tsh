@@ -47,7 +47,7 @@ void cd (char * p){
 
 		if(path==NULL){
 
-				printf("dommagemaggle\n");
+				write(2,"Path invalid\n",strlen("Path invalid\n"));
 		}
 
 		else{
@@ -55,18 +55,6 @@ void cd (char * p){
 			setenv("tar",path,1);
 		}
 
-
-		//IF THE PATH IS VALID WE UPDATE IT
-
-		//else{
-			/*if(strcmp(p,"..")==0){
-				setenv("tar","",1);
-			}
-			else{
-				setenv("tar","c.tar",1);
-
-			}*/
-		//}
 	}
 
 	/*-----IF WE ARE NOT DEALING WITH TAR FILES-----*/
@@ -88,7 +76,6 @@ void cd (char * p){
 			char absolute [1+strlen(tokens[cpt])];
 			strcat(absolute,"/");
 			strcat(absolute,tokens[cpt]);
-			printf("%s\n",absolute);
 
 			/*ERROR MANAGMENT*/
 

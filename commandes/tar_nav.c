@@ -387,7 +387,6 @@ char * path_is_valid(char * path){
 		final=strcat(final,"/");
 		final=realloc(final,strlen(final)+strlen(pathf)+sizeof(char));
 		final=strcat(final,pathf);
-
 		return final;
 	}
 

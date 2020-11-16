@@ -37,7 +37,10 @@ char * get_last_dir(){
 
 	else{
 
-		tokens=decompose(getenv("tar"),"/");
+		size_t size_tmp=strlen(getenv("tar"))+sizeof(char);
+		char *tmp=malloc(size_tmp);
+		strcpy(tmp,getenv("tar"));
+		tokens=decompose(tmp,"/");
 
 	}
 
