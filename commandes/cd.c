@@ -30,15 +30,13 @@ void cd (char * p){
 
 		/*BUILDING THE FULL TAR PATH, ACTUAL PATH IN TAR + ARG */
 
-		char * path=(char * ) malloc(sizeof(getenv("tar"))+sizeof(char));
-		memcpy(path,getenv("tar"),strlen(getenv("tar"))+sizeof(char));
-		path=realloc(path,sizeof(path)+strlen("/"));
+		char * path=(char * ) malloc(strlen(getenv("tar"))+sizeof(char));
+		strcpy(path,getenv("tar"));
+		path=realloc(path,strlen(path)+strlen("/")+sizeof(char));
 		path=strcat(path,"/");
-		path=realloc(path,sizeof(path)+strlen(p));
+		path=realloc(path,strlen(path)+strlen(p)+sizeof(char));
 		path=strcat(path,p);
-
-
-
+		
 		//CHECKING IF PATH IS VALID AND STORING IT
 
 		path = path_is_valid(path);
