@@ -30,15 +30,13 @@ void cd (char * p){
 
 		/*BUILDING THE FULL TAR PATH, ACTUAL PATH IN TAR + ARG */
 
-		char * path=(char * ) malloc(sizeof(getenv("tar"))+sizeof(char));
-		memcpy(path,getenv("tar"),strlen(getenv("tar"))+sizeof(char));
-		path=realloc(path,sizeof(path)+strlen("/"));
+		char * path=(char * ) malloc(strlen(getenv("tar"))+sizeof(char));
+		strcpy(path,getenv("tar"));
+		path=realloc(path,strlen(path)+strlen("/")+sizeof(char));
 		path=strcat(path,"/");
-		path=realloc(path,sizeof(path)+strlen(p));
+		path=realloc(path,strlen(path)+strlen(p)+sizeof(char));
 		path=strcat(path,p);
-
-
-
+		
 		//CHECKING IF PATH IS VALID AND STORING IT
 
 		path = path_is_valid(path);
@@ -47,7 +45,7 @@ void cd (char * p){
 
 		if(path==NULL){
 
-				printf("dommagemaggle\n");
+				write(2,"Path invalid\n",strlen("Path invalid\n"));
 		}
 
 		else{
@@ -55,18 +53,6 @@ void cd (char * p){
 			setenv("tar",path,1);
 		}
 
-
-		//IF THE PATH IS VALID WE UPDATE IT
-
-		//else{
-			/*if(strcmp(p,"..")==0){
-				setenv("tar","",1);
-			}
-			else{
-				setenv("tar","c.tar",1);
-
-			}*/
-		//}
 	}
 
 	/*-----IF WE ARE NOT DEALING WITH TAR FILES-----*/
@@ -88,7 +74,6 @@ void cd (char * p){
 			char absolute [1+strlen(tokens[cpt])];
 			strcat(absolute,"/");
 			strcat(absolute,tokens[cpt]);
-			printf("%s\n",absolute);
 
 			/*ERROR MANAGMENT*/
 
