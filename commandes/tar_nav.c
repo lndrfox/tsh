@@ -259,6 +259,7 @@ int file_exists_in_tar(char * path, char * tar){
 RETURNS NULL*/
 
 char * path_is_valid(char * path){
+
 	char ** tokens =decompose(path,"/");
 	char bufdir [PATH_MAX + 1];
 	getcwd(bufdir,sizeof(bufdir));

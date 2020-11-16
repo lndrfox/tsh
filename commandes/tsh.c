@@ -6,13 +6,17 @@
 #include <unistd.h>
 #include <limits.h>
 #include <sys/wait.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+
 
 #include "tar_nav.h"
 #include "cd.h"
 #include "print.h"
 
 int run=1;
-
+int d_stdout=1;
 /*READS A LINE ENTERED IN THE TERMINAL AND RETURNS IT*/
 
 char * get_line(){
@@ -79,6 +83,40 @@ void pwd(){
 	prints("\n");
 	free(entry);
 
+
+}
+
+/*HANDLES REDIRECTIONS : CHANGES THE DESCRIPTORS SO SATISFY THE REDIRACTIONS 
+SPECIFIED IN PROMPT*/
+
+char * redir(char * prompt){
+
+	char * check_1 =malloc(strlen(prompt)+sizeof(char));
+	strcpy(check_1,prompt);
+
+	char ** tokens= decompose(check_1,">>");
+
+	if(strcmp(tokens[0],prompt)!=0){	
+
+		int fd=open(tokens[1],O_RDWR|O_APPEND|O_CREAT,S_IRUSR|S_IWUSR|S_IRGRP|S_IROTH);
+
+		if(fd<0){
+
+			perror("open");
+			exit(-1);
+		}
+
+		d_stdout=dup(STDOUT_FILENO);
+		dup2(fd,STDOUT_FILENO);
+		return tokens[0];
+	}
+
+	return "";
+}
+
+void reinit_descriptors(){
+
+	dup2(d_stdout,STDOUT_FILENO);
 
 }
 
@@ -198,16 +236,44 @@ int main (void){
 			continue;
 		}
 
+		/*HANDLING REDIRECTIONS*/
+
+		char * prompt_cpy =malloc(strlen(prompt)+sizeof(char));
+
+		if(prompt_cpy==NULL){
+			perror("malloc");
+			exit(-1);
+		}
+
+		strcpy(prompt_cpy,prompt);
+		char * prompt_clear=redir(prompt_cpy);
+		free(prompt_cpy);
+		char * prompt_check1;
+		if(strcmp(prompt_clear,"")!=0){
+
+			prompt_check1=malloc(strlen(prompt_clear)+sizeof(char));
+			strcpy(prompt_check1,prompt_clear);
+
+		}
+
+
+		else{
+
+			 prompt_check1=prompt;
+		}
+
+
+
 		/*DECOMPOSING THE COMMAND */
 
-		char ** tokens = decompose(prompt," ");
+		char ** tokens = decompose(prompt_check1," ");
 
 		/*PARSING THE COMMAND*/
 
 		parse(tokens);
 
 		/*FREE*/
-		
+		reinit_descriptors();
 		free(prompt);
 		free(last_dir);
 		free(tokens);
