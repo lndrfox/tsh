@@ -18,7 +18,7 @@ int main (int argc, char *argv[]) {
 	// (4) ls -l rep1/ rep2/blablah/ rep3/ ...
 
 	// ======================================================================
-	// 			     INITIALISATION
+	// 			      INITIALISATION
 	// ======================================================================
 
 	// Conditions des valeurs d'entrée
@@ -38,7 +38,7 @@ int main (int argc, char *argv[]) {
 	}
 	
 	// ======================================================================
-	// 			    OUVERTURE DU TAR
+	// 			      OUVERTURE DU TAR
 	// ======================================================================
 
 	int fd;
@@ -51,7 +51,7 @@ int main (int argc, char *argv[]) {
 	}
 
 	// ======================================================================
-	// 	 		     LECTURE DU TAR
+	// 	 			LECTURE DU TAR
 	// ======================================================================
 
 	char tampon[512];				// lecture du bloc stocke ici
@@ -73,7 +73,7 @@ int main (int argc, char *argv[]) {
 		start = 1;
 
 	// ----------------------------------------------------------------------
-	// 	 	  PARCOURS DU TAR POUR CHAQUE ARGUMENT
+	// 	 	     	PARCOURS DU TAR POUR CHAQUE ARGUMENT
 	// ----------------------------------------------------------------------
 
 	for (int i = start; i < argc; i++) {
@@ -94,7 +94,7 @@ int main (int argc, char *argv[]) {
 				rep = argv[i];
 
 			// ----------------------------------------------------------------------
-			// 	 		    PARCOURS DU TAR
+			// 	 		       PARCOURS DU TAR
 			// ----------------------------------------------------------------------
 
 			while(1) {
@@ -114,7 +114,7 @@ int main (int argc, char *argv[]) {
 				if(strlen(p_hdr-> name)!=0) {
 					
 					// ----------------------------------------------------------------------
-					// 	 		  REPERTOIRE A AFFICHER
+					// 	 	     REPERTOIRE A AFFICHER
 					// ----------------------------------------------------------------------
 
 					// Si le repertoire correspond au repertoire a afficher
@@ -171,7 +171,7 @@ int main (int argc, char *argv[]) {
 						}
 
 						// Nom du fichier
-						afficheNom(a, p_hdr, rep, repexiste, l);
+						afficheNom(a, p_hdr, rep, repexiste, l, tar);
 
 					}
 				}
@@ -182,7 +182,7 @@ int main (int argc, char *argv[]) {
 			}
 
 			// ----------------------------------------------------------------------
-			// 	 	   FINALISATION DES INFORMATIONS A STOCKER
+			// 	 		FINALISATION DES INFORMATIONS A STOCKER
 			// ----------------------------------------------------------------------
 
 			// Si on ne rencontre pas le repertoire recherche

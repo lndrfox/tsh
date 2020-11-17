@@ -20,7 +20,6 @@ char ** decompose(char * prompt, char * delimiter){
 	/*WE CALCULATE HOW MANY TOKENS THE STRING HAS*/
 	char * prompt_cpy=(char * ) malloc(strlen(prompt)+sizeof(char));
 	strcpy(prompt_cpy,prompt);
-	//memcpy(prompt_cpy,prompt,sizeof(prompt)+sizeof(char));
 
 	char * check_len = strtok(prompt_cpy, delimiter);
 
@@ -159,12 +158,10 @@ EG IF TOKEN IS "a" "b" AND "c" AND DELIMITERS "/" IT RETURNS "a/b/c"*/
 
 char * flatten(char ** tokens, char * delimiter){
 
-
 	char *ret = malloc(strlen(tokens[0])+sizeof(char));
 	strcpy(ret,tokens[0]);
 
 	int cpt=1;
-
 
 	while(tokens[cpt]!=NULL){
 
@@ -262,7 +259,6 @@ int file_exists_in_tar(char * path, char * tar){
 RETURNS NULL*/
 
 char * path_is_valid(char * path){
-
 	char ** tokens =decompose(path,"/");
 	char bufdir [PATH_MAX + 1];
 	getcwd(bufdir,sizeof(bufdir));
@@ -288,7 +284,6 @@ char * path_is_valid(char * path){
 	int cpt_tok=1;
 
 	while(tokens[cpt_tok]!=NULL){
-
 		/*HANDLING THE .. CASE*/
 
 		if(strcmp(tokens[cpt_tok],"..")==0){
@@ -310,7 +305,6 @@ char * path_is_valid(char * path){
 		/*ANY OTHER CASES*/
 
 		else{
-
 			i ++;
 		}
 
@@ -320,6 +314,10 @@ char * path_is_valid(char * path){
 	if(i<0){
 
 		return NULL;
+	}
+
+	if(i==0){
+		return tokens[0];
 	}
 
 	/*F_PATH CONTAINS THE TOKENS OF THE TRUE PATH WITHOUT ..*/
@@ -365,7 +363,6 @@ char * path_is_valid(char * path){
 
 
 	/*FLATTENING THE PATH INTO A STRING*/
-
 	char * pathf =flatten(f_path, "/");
 
 	/*IF SUCH A DIRECTORY EXISTS IN THE TAR THEN WE CAN RETURN PATH*/
@@ -387,7 +384,6 @@ char * path_is_valid(char * path){
 		final=strcat(final,"/");
 		final=realloc(final,strlen(final)+strlen(pathf)+sizeof(char));
 		final=strcat(final,pathf);
-
 		return final;
 	}
 

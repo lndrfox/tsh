@@ -10,7 +10,7 @@
 #include "lib.h"
 
 // ----------------------------------------------------------------------
-// 	 	     	        UTILITAIRE
+// 	 	     		UTILITAIRE
 // ----------------------------------------------------------------------
 
 // Retourne si le fichier appartient au repertoire
@@ -42,8 +42,34 @@ int profondeur (struct posix_header * p_hdr) {
 	return profondeur;   
 }
 
+int existant (char * tar, char * file) {
+
+	int fd = open(tar, O_RDONLY);
+	struct posix_header* p_hdr;
+	char * tampon[512];
+	unsigned int size;
+	int rd;
+
+	while(1) {
+	    if((rd = read(fd,tampon, BLOCKSIZE)) <0) {
+			perror("\033[1;31mErreur lors de la lecture du tar\033[0m");
+			exit(-1);
+		}
+		p_hdr = (struct posix_header*)tampon;
+
+		if(strcmp(p_hdr-> name, file) == 0) return 1;
+
+		// On passe a l'entete suivante
+		sscanf(p_hdr->size,"%o", &size);
+		lseek(fd,((size + BLOCKSIZE - 1) >> BLOCKBITS)*BLOCKSIZE,SEEK_CUR);
+	}
+
+	close(fd);
+	return 0;
+}
+
 // ----------------------------------------------------------------------
-// 	 	     	      AFFICHAGE TAR
+// 	 	     		AFFICHAGE TAR
 // ----------------------------------------------------------------------
 
 typedef struct affichage {
@@ -117,15 +143,12 @@ void ptemps(a * a, long temps) {
 // Affiche le type du fichier
 void ptype(a * a, char t) {
 	switch(t) {
-			case '0':  strcat(a -> affichage, "-"); break;
-			case '\0': strcat(a -> affichage, "-"); break;
-			case '1':  strcat(a -> affichage, "-"); break;
 			case '2':  strcat(a -> affichage, "l"); break;
 			case '3':  strcat(a -> affichage, "c"); break;
 			case '4':  strcat(a -> affichage, "b"); break;	
 			case '5':  strcat(a -> affichage, "d"); break;
 			case '6':  strcat(a -> affichage, "p"); break;
-			case '7':  strcat(a -> affichage, "s"); break;
+			default :  strcat(a -> affichage, "-"); break;
 		}
 }
 
@@ -194,17 +217,27 @@ void plink(a * a, char * tar, struct posix_header * p_hdr1) {
 }
 
 // Affiche le nom du fichier
-void afficheNom(a * a,struct posix_header * p_hdr, char* rep, int repexiste, int option) {
+void afficheNom(a * a,struct posix_header * p_hdr, char* rep, int repexiste, int option, char * tar) {
 
 	// Si c'est un repertoire: couleur bleu
 	if(p_hdr -> typeflag == '5') 
 		strcat(a -> affichage, "\033[1;34m");
-	// Si c'est un lien symbolique couleur cyan
-	if(p_hdr -> typeflag == '2')
-		strcat(a -> affichage, "\033[1;36m");
+	// Si c'est un lien symbolique couleur cyan/rouge
+	else if(p_hdr -> typeflag == '2') {
+		if(existant(tar, p_hdr -> linkname) == 1)
+			strcat(a -> affichage, "\033[1;36m");
+		else
+			strcat(a -> affichage, "\033[1;31m\033[48;5;236m");
+	}
 	// Si c'est un tube couleur jaune
-	if(p_hdr -> typeflag == '6')
+	else if(p_hdr -> typeflag == '6')
 		strcat(a -> affichage, "\033[0;33m\033[48;5;236m");
+	// Si c'est un fichier spécial caractère/bloc couleur jaune en gras
+	else if(p_hdr -> typeflag == '3' || p_hdr -> typeflag == '4')
+		strcat(a -> affichage, "\033[1;33m\033[48;5;236m");
+	// Si c'est un executable couleur verte
+	else if(strchr(p_hdr -> mode, '1') || strchr(p_hdr -> mode, '3') || strchr(p_hdr -> mode, '5') || strchr(p_hdr -> mode, '7'))
+		strcat(a -> affichage, "\033[1;32m");
 
 	// Si c'est un fichier du repertoire choisi on affiche que le nom apres rep/...
 	if(rep != NULL && repexiste == 1) {
