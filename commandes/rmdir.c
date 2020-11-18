@@ -6,31 +6,28 @@
 #include <stdlib.h>		// exit
 #include "tar.h"
 #include "print.h"
-
+#include "lib.h"
 
 // Format: ./rmdir fichiertar.tar directory otherdirectory ...
 // (Un repertoire doit avoir '/' a la fin)
 
-// Retourne si le fichier appartient au repertoire
-int estDansRep(char * name, char * rep) {
-	char * repertoire = malloc(strlen(rep) +1);
-	char * isrep = malloc(strlen(rep) +1);
-	strncpy(isrep, name, strlen(rep));
-	strncpy(repertoire, rep, strlen(rep));
-
-	if(strcmp(isrep, repertoire) == 0)
-		return 1;
-	else
-		return 0;
-}
-
 int main(int argc, char *argv[]){
 
 	// ======================================================================
-	// 	 			INITIALISATION
+	// 	 		     INITIALISATION
 	// ======================================================================
 
 	char * tar = getenv("tar");
+	char * var_rep = NULL;
+
+	// Si la variable d'nevironnement est dans un repertoire du tar
+	if(strchr(tar, '/') != NULL) {
+		strtok(tar, "/");
+		char * var_r = strtok(NULL, "");
+		var_rep = malloc(strlen(var_r) + 2);
+		strcpy(var_rep, var_r);
+		strcat(var_rep, "/");
+	}
 
 	// Conditions des valeurs d'entrée
 	if (argc < 2){
@@ -49,7 +46,7 @@ int main(int argc, char *argv[]){
 	char tampon[512];
 
 	// ======================================================================
-	// 	 	    PARCOURS DU TAR POUR CHAQUE REPERTOIRE
+	// 	 	  PARCOURS DU TAR POUR CHAQUE REPERTOIRE
 	// ======================================================================
 
 	for (int i=1; i<argc;i++){
@@ -62,9 +59,34 @@ int main(int argc, char *argv[]){
 		off_t longueur = 0;		// Somme de la taille des fichiers avant le repertoire
 		off_t supp = 0;			// Somme de la taille du repertoire et de ses fichiers
 		off_t dep = 0;			// Somme de la taille des fichiers apres le repertoire
+		char * arg;				// argument argv[i]
 
 		// ----------------------------------------------------------------------
-		// 	 		       PARCOURS DU TAR
+		// 	 	     	REPERTOIRE A SUPPRIMER
+		// ----------------------------------------------------------------------
+
+		// Si un repertoire est entre sans '/'
+		if(argv[i][strlen(argv[i]) - 1] != '/') {
+			arg = malloc(strlen(argv[i]) + 2);
+			strcpy(arg, argv[i]);
+			strcat(arg, "/");
+		}
+		else {
+			arg = malloc(strlen(argv[i]) + 1);
+			strcpy(arg,argv[i]);
+		}
+
+		// Si la variable d'environnement se trouve dans un repertoire du tar
+		if (var_rep != NULL) {
+			char * nouv_arg = malloc(strlen(var_rep) + strlen(arg) + 1);
+			strcpy(nouv_arg, var_rep);
+			strcat(nouv_arg, arg);
+			arg = realloc(arg, strlen(var_rep) + strlen(arg) + 1);
+			strcpy(arg, nouv_arg);
+		}
+
+		// ----------------------------------------------------------------------
+		// 	 		     PARCOURS DU TAR
 		// ----------------------------------------------------------------------
 
 		while(1) {
@@ -105,9 +127,9 @@ int main(int argc, char *argv[]){
 
 			// Si on trouve le repertoire
 
-			if(strcmp(p_hdr -> name, argv[i]) == 0 && p_hdr->typeflag == '5') {
-				rep = malloc(strlen(p_hdr->name) + 1);
-				strcpy(rep, p_hdr->name);
+			if(strcmp(p_hdr -> name, arg) == 0 && p_hdr->typeflag == '5') {
+					rep = malloc(strlen(p_hdr->name) + 1);
+					strcpy(rep, p_hdr->name);
 			}
 
 			// Stockage des octets a utiliser lors de la suppresion
@@ -132,7 +154,7 @@ int main(int argc, char *argv[]){
 		}
 
 		// ----------------------------------------------------------------------
-		// 	 		  TRAITEMENT DU REPERTOIRE
+		// 	 		 TRAITEMENT DU REPERTOIRE
 		// ----------------------------------------------------------------------
 
 		if (valide == 1) {

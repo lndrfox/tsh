@@ -24,6 +24,9 @@ tsh: tsh.o tar_nav.o print.o cd.o
 tsh.o: tsh.c  cd.h 
 	$(CC) -o $@ -c $< $(CFLAGS)
 
+lib.o: lib.c lib.h
+	$(CC) -o $@ -c $< $(CFLAGS)
+
 ls: ls.o tar.o print.o
 	$(CC) -o $@ $^ $(LDFLAGS)
 
@@ -48,7 +51,7 @@ mkdir: mkdir.o tar.o print.o tar_nav.o
 mkdir.o: mkdir.c 
 	$(CC) -o $@ -c $< $(CFLAGS)
 
-rmdir: rmdir.o tar.o print.o
+rmdir: rmdir.o tar.o print.o lib.o
 	$(CC) -o $@ $^ $(LDFLAGS)
 
 rmdir.o: rmdir.c 
