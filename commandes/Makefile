@@ -2,7 +2,7 @@
 CC=gcc
 CFLAGS=-W -Wall
 LDFLAGS=
-EXEC=cat ls mkdir rmdir cp tsh
+EXEC=cat ls mkdir rmdir rm cp tsh
 
 all: $(EXEC)
 
@@ -55,6 +55,12 @@ rmdir: rmdir.o tar.o print.o lib.o
 	$(CC) -o $@ $^ $(LDFLAGS)
 
 rmdir.o: rmdir.c 
+	$(CC) -o $@ -c $< $(CFLAGS)
+
+rm: rm.o tar.o print.o lib.o
+	$(CC) -o $@ $^ $(LDFLAGS)
+
+rm.o: rm.c 
 	$(CC) -o $@ -c $< $(CFLAGS)
 
 clean:
