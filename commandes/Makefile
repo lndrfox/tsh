@@ -27,7 +27,7 @@ tsh.o: tsh.c  cd.h
 lib.o: lib.c lib.h
 	$(CC) -o $@ -c $< $(CFLAGS)
 
-ls: ls.o tar.o print.o
+ls: ls.o tar.o print.o lib.o
 	$(CC) -o $@ $^ $(LDFLAGS)
 
 ls.o: ls.c 

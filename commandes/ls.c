@@ -7,148 +7,28 @@
 #include <time.h>      // localtime time
 #include "tar.h"
 #include "print.h"
-
-// Affiche la date
-void ptemps(long temps) {
-	struct tm * tempsformat = localtime(&temps);
-	long tactuel = time(NULL);
-
-	switch (tempsformat->tm_mon) {
-		case 0: prints("janv."); break;
-		case 1: prints("fevr."); break;
-		case 2: prints("mars "); break;
-		case 3: prints("avril"); break;
-		case 4: prints("mai  "); break;
-		case 5: prints("juin "); break;
-		case 6: prints("juil."); break;
-		case 7: prints("août "); break;
-		case 8: prints("sept."); break;
-		case 9: prints("oct. "); break;
-		case 10: prints("nov. "); break;
-		case 11: prints("dec. "); break;
-
-	}
-	prints(" ");
-	printd(tempsformat -> tm_mday);
-	prints(" ");
-
-	// Si le fichier a ete modifie il y a moins de un an
-	if(tactuel-temps < 60*60*24*365) {
-		printd(tempsformat -> tm_hour);
-		prints(":");
-		printd(tempsformat -> tm_min);
-	}
-	else{
-		printd(tempsformat -> tm_year +1900);
-	}
-	prints(" ");
-}
-
-// Affiche le type du fichier
-void ptype(char t) {
-	switch(t) {
-			case '0': prints("-"); break;
-			case '\0': prints("-"); break;
-			case '1': prints("l"); break;
-			case '2': prints("l"); break;
-			case '3': prints("c"); break;
-			case '4': prints("b"); break;	
-			case '5': prints("d"); break;
-			case '6': prints("p"); break;
-			case '7': prints("s"); break;
-		}
-}
-
-// Affiche les droits d'acces du fichier
-void pdroit(char *d) {
-	for(int i = 4; i < 7; i++) {
-		switch(d[i]) {
-			case '0': prints("---"); break;
-			case '1': prints("--x"); break;
-			case '2': prints("-w-"); break;
-			case '3': prints("-wx"); break;
-			case '4': prints("r--"); break;
-			case '5': prints("r-x"); break;
-			case '6': prints("rw-"); break;
-			case '7': prints("rwx"); break;
-		}
-	}
-}
-
-// Affiche le nom du fichier
-void afficheNom(struct posix_header * p_hdr, char* rep, int repexiste) {
-
-	// Si c'est un repertoire: couleur bleu
-	if(p_hdr -> typeflag == '5') 
-		prints("\033[1;34m");
-
-	// Si c'est un fichier du repertoire choisi on affiche que le nom apres rep1/rep2/...
-	if(rep != NULL && repexiste == 1) {
-
-		char * nom = malloc(strlen(p_hdr ->name) - strlen(rep) + 1);
-		strcpy(nom, &p_hdr -> name[strlen(rep)]);
-		printsss("", nom, "\n");
-	}
-
-	// Sinon on affiche son nom complet
-	else
-		printsss("", p_hdr-> name, "\n");
-
-	// Renitialise la couleur
-	if(p_hdr -> typeflag == '5')
-		prints("\033[0m"); 
-}
-
-// Retourne la profondeur d'un fichier
-int profondeur (struct posix_header * p_hdr) {
-	int profondeur = -1;
-
-	char * nom = malloc(strlen(p_hdr->name)+1);
-	strcpy(nom, p_hdr -> name);
-	char *buf = strtok(nom, "/");
-
-	while(buf != NULL) {
-		profondeur ++;
-		buf = strtok(NULL, "/");
-	}
-
-	return profondeur;   
-}
-
-// Retourne si le fichier appartient au repertoire
-int estDansRep(char * name, char * rep) {
-	char * repertoire = malloc(strlen(rep) +1);
-	char * isrep = malloc(strlen(rep) +1);
-	strncpy(isrep, name, strlen(rep));
-	strncpy(repertoire, rep, strlen(rep));
-
-	if(strcmp(isrep, repertoire) == 0)
-		return 1;
-	else
-		return 0;
-}
+#include "lib.h"
 
 int main (int argc, char *argv[]) {
-	// On suppose que la lecture se fait uniquement depuis le tar
-	// Quatre formats possibles:
-	// (1) ls
-	// (2) ls rep1/rep2/...
-	// (3) ls -l
-	// (4) ls -l /rep1/rep2/...
-
-	char * tar = getenv("tar");
+	
+	// ======================================================================
+	// 			      INITIALISATION
+	// ======================================================================
 
 	// Conditions des valeurs d'entrée
-	if(argc != 1 && argc != 2 && (argc != 3 || strcmp(argv[1], "-l") != 0)) {
+	if(argc < 1) {
 		prints("\033[1;31mEntrée invalide\n\033[0m");
 		exit(-1);
 	}
 
 	// S'il y a l'option "-l"
-	int l = 1;
-	if(argc > 1) {
-		if(strcmp(argv[1], "-l") == 0)
-			l = 2;
+	int l = 0;
+	int nbrep = 0;
+	for(int i = 1; i < argc; i++) {
+		if(strcmp(argv[i], "-l") == 0)
+			l = 1;
+		else
+			nbrep++;
 	}
 	
 	// ======================================================================
@@ -156,11 +36,16 @@ int main (int argc, char *argv[]) {
 	// ======================================================================
 
 	int fd;
-	char* rep = NULL;
-	
-	// Si on veut afficher un repertoire du tar
-	if((argc == 2 && l == 1) || (argc == 3 && l == 2))
-		rep = argv[l];
+	char * tar = getenv("tar");
+	char * var_rep = NULL;
+
+	if(strchr(tar, '/') != NULL) {
+		strtok(tar, "/");
+		char * var_r = strtok(NULL, "");
+		var_rep = malloc(strlen(var_r) + 2);
+		strcpy(var_rep, var_r);
+		strcat(var_rep, "/");
+	}
 
 	fd = open(tar, O_RDONLY);
 	if (fd<0) {
@@ -172,92 +57,204 @@ int main (int argc, char *argv[]) {
 	// 	 			LECTURE DU TAR
 	// ======================================================================
 
-	char tampon[512];
-	int n;
-	unsigned int size;
-	struct posix_header * p_hdr;
-
+	char tampon[512];		// lecture du bloc stocke ici
+	int n;				// nombre de caractres lus dans un tampon
+	unsigned int size;		// taille du fichier lu
+	struct posix_header * p_hdr;	// header du fichier
 	int p;				// profondeur
+	int start;			// debut de la boucle
+	char * dernier_rep = "";	// dernier repertoire existant dans argv
 
-	int repexiste = 0;		// 0: Le repertoire correspondant a rep n'a pas ete trouve
-					// 1: Le repertoire a ete trouve
+	affichage format = malloc(sizeof(affichage));	// affichage final
+	init(format, 1);
 
-	while(1) {
-		// Lecture du bloc
-		n = read(fd, &tampon, 512);
-		if(n<0) {
-			perror("\033[1;31mErreur lors de la lecture du tar\033[0m");
-			exit(-1);
-		}
-		if(n == 0) break;
+	// Si il y au moins un repertoire en argument on definie le dernier reperoitre existant
+	if(nbrep > 0)
+		dernier_rep = dernier_existant(tar, var_rep, argc, argv);
 
-		// Extraction des informations
-		p_hdr = (struct posix_header*)tampon;
+	// S'il n'y a pas de repertoire en argument
+	if(nbrep == 0)
+		start = 0;
 
-		// On evite les deux blocs finaux formés uniquement de zéros
-		if(strlen(p_hdr-> name)!=0) {
-			
+	// S'il y a au moins un repertoire en argument
+	else
+		start = 1;
+
+	// ----------------------------------------------------------------------
+	// 	 	     	PARCOURS DU TAR POUR CHAQUE ARGUMENT
+	// ----------------------------------------------------------------------
+
+	for (int i = start; i < argc; i++) {
+
+		lseek(fd,0 ,SEEK_SET);
+
+		char* rep = NULL;			// nom du repertoire
+		int repexiste = 0;			// 1: Le repertoire a ete trouve
+
+		affichage a = malloc(sizeof(affichage));// affichage a la fin du traitement
+		init(a, 100);
+
+		// On evite "-l"
+		if(strcmp(argv[i], "-l") != 0) {
+
 			// ----------------------------------------------------------------------
-			// 	 	     CONDITION DE LA NATURE DU FICHIER
+			// 	 	     REPERTOIRE A AFFICHER
 			// ----------------------------------------------------------------------
 
-			// Si c'est un répertoire
-			if(p_hdr->typeflag == '5') {
-				// Si le repertoire correspond au repertoire a afficher
-				if(rep != NULL) {
-					if (strcmp(p_hdr -> name, rep) == 0) {
-						repexiste = 1;
-						p = profondeur(p_hdr) + 1;
+			// Si il n'y a pas de repertoire en argument et que
+			// la variable d'environnement se trouve dans un repertoire du tar
+			if(i == 0 && var_rep != NULL)
+				rep = var_rep;
+
+			// Si on veut afficher un repertoire en argument
+			if(i != 0) {
+				char * arg;
+				// Si un repertoire est entre sans '/'
+				if(argv[i][strlen(argv[i]) - 1] != '/') {
+					arg = malloc(strlen(argv[i]) + 2);
+					strcpy(arg, argv[i]);
+					strcat(arg, "/");
+				}
+				else 
+					arg = argv[i];
+
+				// Si la variable d'environnement se trouve dans un repertoire du tar
+				if (var_rep != NULL) {
+					char * nouv_rep = malloc(strlen(var_rep) + strlen(arg) + 1);
+					strcpy(nouv_rep, var_rep);
+					strcat(nouv_rep, arg);
+					rep = nouv_rep;
+				}
+				else
+					rep = arg;
+			}
+
+			// ----------------------------------------------------------------------
+			// 	 		       PARCOURS DU TAR
+			// ----------------------------------------------------------------------
+
+			while(1) {
+
+				// Lecture du bloc
+				n = read(fd, &tampon, BLOCKSIZE);
+				if(n<0) {
+					perror("\033[1;31mErreur lors de la lecture du tar\033[0m");
+					exit(-1);
+				}
+				if(n == 0) break;
+
+				// Extraction des informations
+				p_hdr = (struct posix_header*)tampon;
+
+				// On evite les deux blocs finaux formés uniquement de zéros
+				if(strlen(p_hdr-> name)!=0) {
+					
+					// ----------------------------------------------------------------------
+					// 	 	     REPERTOIRE TROUVE
+					// ----------------------------------------------------------------------
+
+					// Si le repertoire correspond au repertoire a afficher
+					if(p_hdr->typeflag == '5' && rep != NULL) {
+						if (strcmp(p_hdr -> name, rep) == 0) {
+							repexiste = 1;
+							p = profondeur(p_hdr) + 1;
+						}
+					}
+
+					// ----------------------------------------------------------------------
+					// 	 		STOCKAGE DES INFORMATIONS
+					// ----------------------------------------------------------------------
+
+					// On affiche uniquement les fichiers dans le tar/repertoire, si ce repertoire contient
+					// au moins un repertoire on affiche seulement le nom de celui-ci (pas ses fichiers)
+					if((rep == NULL && profondeur(p_hdr) == 0) || (rep != NULL && repexiste == 1 && profondeur(p_hdr) == p && estDansRep(p_hdr -> name, rep) == 1)) {
+
+						// On realloue de la memoire afin que l'affichage puisse tout contenir
+						etendre (a, 100);
+
+						// S'il y a l'option "-l"
+						if(l == 1) { 
+
+							// Type de fichier
+							ptype(a, p_hdr-> typeflag);
+
+							// Droits d'accès
+							pdroit(a, p_hdr-> mode);
+
+							// Liens physiques
+							plink(a, tar, p_hdr);
+
+							// Nom propriétaire
+							char proprietaire[strlen(p_hdr-> uname)+2];
+							sprintf(proprietaire, "%s ", p_hdr-> uname);
+							ajout(a, proprietaire);
+
+							// Nom du groupe
+							char groupe[strlen(p_hdr-> gname)+1];
+							sprintf(groupe, "%s ", p_hdr-> gname);
+							ajout(a, groupe);
+
+							// Taille en octets
+							sscanf(p_hdr->size,"%o", &size);
+							char taille[40];
+							sprintf(taille, "%d  ", size);
+							ajout(a, taille);
+
+							// Date de dernière modification 
+							long temps;
+							sscanf(p_hdr-> mtime,"%lo", &temps);
+							ptemps(a, temps);
+						}
+
+						// Nom du fichier
+						afficheNom(a, p_hdr, rep, l, tar);
 					}
 				}
+
+				// On passe a l'entete suivante
+				sscanf(p_hdr->size,"%o", &size);
+				lseek(fd,((size + BLOCKSIZE - 1) >> BLOCKBITS)*BLOCKSIZE,SEEK_CUR);
 			}
 
 			// ----------------------------------------------------------------------
-			// 	 		AFFICHAGE DES INFORMATIONS
+			// 	 		FINALISATION DES INFORMATIONS A STOCKER
 			// ----------------------------------------------------------------------
 
-			// Format test.tar: Si le fichier est dans un repertoire on ne l'affiche pas
-			// Format test.tar/rep1/rep2/...: Sinon on affiche uniquement ses fichiers
-			if((rep == NULL && profondeur(p_hdr) == 0) || (rep != NULL && repexiste == 1 && profondeur(p_hdr) == p && estDansRep(p_hdr -> name, rep) == 1)) {
+			// Si on ne rencontre pas le repertoire en argument
+			if(rep!= NULL && repexiste == 0) 
+				printsss("ls: impossible d'accéder à '", argv[i] ,"': Aucun fichier ou dossier de ce type\n");
 
-				// S'il y a l'option "-l"
-				if(l == 2) { 
-					// Type de fichier
-					ptype(p_hdr-> typeflag);
+			// Sinon on affiche ce tar/repertoire
+			else {
 
-					// Droits d'accès
-					pdroit(p_hdr-> mode);
+				etendre(format, taille(a) + 100);
 
-					// Nom propriétaire
-					printsss(" ", p_hdr-> uname, " ");
+				if(nbrep > 1) {
+					char repertoire[strlen(argv[i]) + 2];
+					sprintf(repertoire, "%s:\n", argv[i]);
+					ajout(format, repertoire);
+				}				
 
-					// Nom du groupe
-					printsss("", p_hdr-> gname, " ");
-
-					// Taille en octets
-					sscanf(p_hdr->size,"%o", &size);
-					printd(size);
-					prints(" ");
-
-					// Date de dernière modification 
-					long temps;
-					sscanf(p_hdr-> mtime,"%lo", &temps);
-					ptemps(temps);
+				if(l == 1) {
+					char totale[30];
+					sprintf(totale, "total %d\n", total(tar, rep));
+					ajout(format, totale);
 				}
-				// Nom du fichier
-				afficheNom(p_hdr, rep, repexiste);
 
+				ajout(format, afficher(a));
+
+				if(strcmp(argv[i], dernier_rep) != 0 && nbrep  > 0)
+					ajout(format, "\n");
 			}
 		}
-
-		// On passe a l'entete suivante
-		sscanf(p_hdr->size,"%o", &size);
-		lseek(fd,((size + BLOCKSIZE - 1) >> BLOCKBITS)*512,SEEK_CUR);
+	
 	}
 
-	// Si on ne rencontre pas le repertoire recherche
-	if(rep!= NULL && repexiste == 0) 
-		printsss("ls: impossible d'accéder à '", rep ,"': Aucun fichier ou dossier de ce type\n");
+	// ----------------------------------------------------------------------
+	// 	 		AFFICHAGE DES INFORMATIONS
+	// ----------------------------------------------------------------------
+
+	prints(afficher(format));
 
 	close(fd);
 	exit(0);

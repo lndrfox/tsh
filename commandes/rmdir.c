@@ -8,6 +8,7 @@
 #include "print.h"
 #include "lib.h"
 
+
 // Format: ./rmdir fichiertar.tar directory otherdirectory ...
 // (Un repertoire doit avoir '/' a la fin)
 
