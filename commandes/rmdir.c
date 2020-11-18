@@ -21,7 +21,7 @@ int main(int argc, char *argv[]){
 	char * tar = getenv("tar");
 	char * var_rep = NULL;
 
-	// Si la variable d'nevironnement est dans un repertoire du tar
+	// Si la variable d'environnement est dans un repertoire du tar
 	if(strchr(tar, '/') != NULL) {
 		strtok(tar, "/");
 		char * var_r = strtok(NULL, "");
@@ -60,7 +60,7 @@ int main(int argc, char *argv[]){
 		off_t longueur = 0;		// Somme de la taille des fichiers avant le repertoire
 		off_t supp = 0;			// Somme de la taille du repertoire et de ses fichiers
 		off_t dep = 0;			// Somme de la taille des fichiers apres le repertoire
-		char * arg;				// argument argv[i]
+		char * arg;			// argument argv[i]
 
 		// ----------------------------------------------------------------------
 		// 	 	     	REPERTOIRE A SUPPRIMER
