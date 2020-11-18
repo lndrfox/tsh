@@ -43,6 +43,15 @@ int main (int argc, char *argv[]) {
 
 	int fd;
 	char * tar = getenv("tar");
+	char * var_rep = NULL;
+
+	if(strchr(tar, '/') != NULL) {
+		strtok(tar, "/");
+		char * var_r = strtok(NULL, "");
+		var_rep = malloc(strlen(var_r) + 2);
+		strcpy(var_rep, var_r);
+		strcat(var_rep, "/");
+	}
 
 	fd = open(tar, O_RDONLY);
 	if (fd<0) {
@@ -59,10 +68,15 @@ int main (int argc, char *argv[]) {
 	unsigned int size;				// taille du fichier lu
 	struct posix_header * p_hdr;	// header du fichier
 	int p;							// profondeur
-	int start;
+	int start;						// debut de la boucle
+	char * dernier_rep = "";		// dernier repertoire existant dans argv
 
 	affichage format = malloc(sizeof(affichage));	// affichage final
 	init(format, 1);
+
+	// Si il y au moins un repertoire en argument on definie le dernier reperoitre existant
+	if(nbrep > 0)
+		dernier_rep = dernier_existant(tar, var_rep, argc, argv);
 
 	// S'il n'y a pas de repertoire en argument
 	if(nbrep == 0)
@@ -89,9 +103,37 @@ int main (int argc, char *argv[]) {
 		// On evite "-l"
 		if(strcmp(argv[i], "-l") != 0) {
 
-			// Si on veut afficher un repertoire du tar
-			if(i != 0)
-				rep = argv[i];
+			// ----------------------------------------------------------------------
+			// 	 	     REPERTOIRE A AFFICHER
+			// ----------------------------------------------------------------------
+
+			// Si il n'y a pas de repertoire en argument et que
+			// la variable d'environnement se trouve dans un repertoire du tar
+			if(i == 0 && var_rep != NULL)
+				rep = var_rep;
+
+			// Si on veut afficher un repertoire en argument
+			if(i != 0) {
+				char * arg;
+				// Si un repertoire est entre sans '/'
+				if(argv[i][strlen(argv[i]) - 1] != '/') {
+					arg = malloc(strlen(argv[i]) + 2);
+					strcpy(arg, argv[i]);
+					strcat(arg, "/");
+				}
+				else 
+					arg = argv[i];
+
+				// Si la variable d'environnement se trouve dans un repertoire du tar
+				if (var_rep != NULL) {
+					char * nouv_rep = malloc(strlen(var_rep) + strlen(arg) + 1);
+					strcpy(nouv_rep, var_rep);
+					strcat(nouv_rep, arg);
+					rep = nouv_rep;
+				}
+				else
+					rep = arg;
+			}
 
 			// ----------------------------------------------------------------------
 			// 	 		       PARCOURS DU TAR
@@ -114,7 +156,7 @@ int main (int argc, char *argv[]) {
 				if(strlen(p_hdr-> name)!=0) {
 					
 					// ----------------------------------------------------------------------
-					// 	 	     REPERTOIRE A AFFICHER
+					// 	 	     REPERTOIRE TROUVE
 					// ----------------------------------------------------------------------
 
 					// Si le repertoire correspond au repertoire a afficher
@@ -129,8 +171,8 @@ int main (int argc, char *argv[]) {
 					// 	 		STOCKAGE DES INFORMATIONS
 					// ----------------------------------------------------------------------
 
-					// Format ls / ls -l: Si le fichier est dans un repertoire on ne l'affiche pas
-					// Format ls / ls -l rep1/ rep2/ ...: Sinon on affiche uniquement ses fichiers
+					// On affiche uniquement les fichiers dans le tar/repertoire, si ce repertoire contient
+					// au moins un repertoire on affiche seulement le nom de celui-ci (pas ses fichiers)
 					if((rep == NULL && profondeur(p_hdr) == 0) || (rep != NULL && repexiste == 1 && profondeur(p_hdr) == p && estDansRep(p_hdr -> name, rep) == 1)) {
 
 						// On realloue de la memoire afin que l'affichage puisse tout contenir
@@ -171,8 +213,7 @@ int main (int argc, char *argv[]) {
 						}
 
 						// Nom du fichier
-						afficheNom(a, p_hdr, rep, repexiste, l, tar);
-
+						afficheNom(a, p_hdr, rep, l, tar);
 					}
 				}
 
@@ -185,18 +226,18 @@ int main (int argc, char *argv[]) {
 			// 	 		FINALISATION DES INFORMATIONS A STOCKER
 			// ----------------------------------------------------------------------
 
-			// Si on ne rencontre pas le repertoire recherche
+			// Si on ne rencontre pas le repertoire en argument
 			if(rep!= NULL && repexiste == 0) 
-				printsss("ls: impossible d'accéder à '", rep ,"': Aucun fichier ou dossier de ce type\n");
+				printsss("ls: impossible d'accéder à '", argv[i] ,"': Aucun fichier ou dossier de ce type\n");
 
-			// Sinon on affiche ce repertoire
+			// Sinon on affiche ce tar/repertoire
 			else {
 
 				etendre(format, taille(a) + 100);
 
 				if(nbrep > 1) {
-					char repertoire[strlen(rep) + 2];
-					sprintf(repertoire, "%s:\n", rep);
+					char repertoire[strlen(argv[i]) + 2];
+					sprintf(repertoire, "%s:\n", argv[i]);
 					ajout(format, repertoire);
 				}				
 
@@ -208,7 +249,7 @@ int main (int argc, char *argv[]) {
 
 				ajout(format, afficher(a));
 
-				if(i < argc - 1 && nbrep  > 0)
+				if(strcmp(argv[i], dernier_rep) != 0 && nbrep  > 0)
 					ajout(format, "\n");
 			}
 		}

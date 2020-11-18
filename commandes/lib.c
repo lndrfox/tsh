@@ -42,7 +42,7 @@ int profondeur (struct posix_header * p_hdr) {
 	return profondeur;   
 }
 
-int existant (char * tar, char * file) {
+int existant (char * tar, char * file, char * rep) {
 
 	int fd = open(tar, O_RDONLY);
 	struct posix_header* p_hdr;
@@ -50,14 +50,30 @@ int existant (char * tar, char * file) {
 	unsigned int size;
 	int rd;
 
+	// Format du nom
+	char * f;
+
+	if(rep != NULL) {
+		f = malloc(strlen(file) + strlen(rep) + 1);
+		strcpy(f, rep);
+		strcat(f, file);
+	}
+	else {
+		f = malloc(strlen(file) + 1);
+		strcpy(f, file);
+	}
+
+
 	while(1) {
-	    if((rd = read(fd,tampon, BLOCKSIZE)) <0) {
+	    if((rd = read(fd,tampon, BLOCKSIZE)) < 0) {
 			perror("\033[1;31mErreur lors de la lecture du tar\033[0m");
 			exit(-1);
 		}
+		if (rd == 0) break;
+
 		p_hdr = (struct posix_header*)tampon;
 
-		if(strcmp(p_hdr-> name, file) == 0) return 1;
+		if(strcmp(p_hdr-> name, f) == 0) return 1;
 
 		// On passe a l'entete suivante
 		sscanf(p_hdr->size,"%o", &size);
@@ -66,6 +82,66 @@ int existant (char * tar, char * file) {
 
 	close(fd);
 	return 0;
+}
+
+char * dernier_existant (char * tar, char * var_rep, int argc, char *argv[]) {
+
+	int fd = open(tar, O_RDONLY);
+	struct posix_header* p_hdr;
+	char * tampon[512];
+	unsigned int size;
+	int rd;
+	char * rep;
+	char * dernier_rep = "";
+
+	for(int i = 1; i < argc; i++) { 
+
+		lseek(fd,0 ,SEEK_SET);
+
+		if(strcmp(argv[i], "-l") != 0) {
+
+			char * arg;
+			// Si un repertoire est entre sans '/'
+			if(argv[i][strlen(argv[i]) - 1] != '/') {
+				arg = malloc(strlen(argv[i]) + 2);
+				strcpy(arg, argv[i]);
+				strcat(arg, "/");
+			}
+			else 
+				arg = argv[i];
+
+			if (var_rep != NULL) {
+				char * nouv_rep = malloc(strlen(var_rep) + strlen(arg) + 1);
+				strcpy(nouv_rep, var_rep);
+				strcat(nouv_rep, arg);
+				rep = nouv_rep;
+			}
+			else
+				rep = arg;
+
+			while(1) {
+			    if((rd = read(fd,tampon, BLOCKSIZE)) < 0) {
+					perror("\033[1;31mErreur lors de la lecture du tar\033[0m");
+					exit(-1);
+				}
+				if (rd == 0) break;
+
+				p_hdr = (struct posix_header*)tampon;
+
+				if(strlen(p_hdr-> name) != 0 && strcmp(p_hdr-> name, rep) == 0) {
+					if(var_rep == NULL || (var_rep != NULL && estDansRep(rep, var_rep) == 1))
+						dernier_rep = argv[i];
+				}
+
+				// On passe a l'entete suivante
+				sscanf(p_hdr->size,"%o", &size);
+				lseek(fd,((size + BLOCKSIZE - 1) >> BLOCKBITS)*BLOCKSIZE,SEEK_CUR);
+			}
+		}
+	}
+	
+	close(fd);
+	return dernier_rep;
 }
 
 // ----------------------------------------------------------------------
@@ -217,14 +293,22 @@ void plink(a * a, char * tar, struct posix_header * p_hdr1) {
 }
 
 // Affiche le nom du fichier
-void afficheNom(a * a,struct posix_header * p_hdr, char* rep, int repexiste, int option, char * tar) {
+void afficheNom(a * a, struct posix_header * p_hdr, char* rep, int option, char * tar) {
+
+	char * name = p_hdr-> name;
+	char n[strlen(p_hdr-> name)];
 
 	// Si c'est un repertoire: couleur bleu
-	if(p_hdr -> typeflag == '5') 
+	if(p_hdr -> typeflag == '5'){
 		strcat(a -> affichage, "\033[1;34m");
+		// Supprimer '/' du nom
+		strcpy(n, p_hdr-> name);
+		n[strlen(n) - 1] = '\0';
+		name = n;
+	}
 	// Si c'est un lien symbolique couleur cyan/rouge
 	else if(p_hdr -> typeflag == '2') {
-		if(existant(tar, p_hdr -> linkname) == 1)
+		if(existant(tar, p_hdr -> linkname, rep) == 1)
 			strcat(a -> affichage, "\033[1;36m");
 		else
 			strcat(a -> affichage, "\033[1;31m\033[48;5;236m");
@@ -236,19 +320,20 @@ void afficheNom(a * a,struct posix_header * p_hdr, char* rep, int repexiste, int
 	else if(p_hdr -> typeflag == '3' || p_hdr -> typeflag == '4')
 		strcat(a -> affichage, "\033[1;33m\033[48;5;236m");
 	// Si c'est un executable couleur verte
-	else if(strchr(p_hdr -> mode, '1') || strchr(p_hdr -> mode, '3') || strchr(p_hdr -> mode, '5') || strchr(p_hdr -> mode, '7'))
+	else if(strchr(p_hdr -> mode, '1') != NULL || strchr(p_hdr -> mode, '3') != NULL || 
+			strchr(p_hdr -> mode, '5') != NULL || strchr(p_hdr -> mode, '7') != NULL)
 		strcat(a -> affichage, "\033[1;32m");
 
 	// Si c'est un fichier du repertoire choisi on affiche que le nom apres rep/...
-	if(rep != NULL && repexiste == 1) {
-		char * nom = malloc(strlen(p_hdr ->name) - strlen(rep) + 1);
-		strcpy(nom, &p_hdr -> name[strlen(rep)]);
+	if(rep != NULL) {
+		char * nom = malloc(strlen(name) - strlen(rep) + 1);
+		strcpy(nom, &name[strlen(rep)]);
 		strcat(a -> affichage, nom);
 	}
 
 	// Sinon on affiche son nom complet
 	else
-		strcat(a -> affichage, p_hdr-> name);
+		strcat(a -> affichage, name);
 
 	// Renitialise la couleur
 	strcat(a -> affichage, "\033[0m");
