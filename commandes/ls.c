@@ -10,13 +10,7 @@
 #include "lib.h"
 
 int main (int argc, char *argv[]) {
-	// On suppose que la lecture se fait uniquement depuis le tar
-	// Quatre formats possibles:
-	// (1) ls
-	// (2) ls rep1/ rep2/blablah/ rep3/ ...
-	// (3) ls -l
-	// (4) ls -l rep1/ rep2/blablah/ rep3/ ...
-
+	
 	// ======================================================================
 	// 			      INITIALISATION
 	// ======================================================================
@@ -63,13 +57,13 @@ int main (int argc, char *argv[]) {
 	// 	 			LECTURE DU TAR
 	// ======================================================================
 
-	char tampon[512];				// lecture du bloc stocke ici
-	int n;							// nombre de caractres lus dans un tampon
-	unsigned int size;				// taille du fichier lu
+	char tampon[512];		// lecture du bloc stocke ici
+	int n;				// nombre de caractres lus dans un tampon
+	unsigned int size;		// taille du fichier lu
 	struct posix_header * p_hdr;	// header du fichier
-	int p;							// profondeur
-	int start;						// debut de la boucle
-	char * dernier_rep = "";		// dernier repertoire existant dans argv
+	int p;				// profondeur
+	int start;			// debut de la boucle
+	char * dernier_rep = "";	// dernier repertoire existant dans argv
 
 	affichage format = malloc(sizeof(affichage));	// affichage final
 	init(format, 1);
@@ -97,7 +91,7 @@ int main (int argc, char *argv[]) {
 		char* rep = NULL;			// nom du repertoire
 		int repexiste = 0;			// 1: Le repertoire a ete trouve
 
-		affichage a = malloc(sizeof(affichage));	// affichage a la fin du traitement
+		affichage a = malloc(sizeof(affichage));// affichage a la fin du traitement
 		init(a, 100);
 
 		// On evite "-l"
