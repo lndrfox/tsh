@@ -17,6 +17,8 @@
 
 int run=1;
 int d_stdout=1;
+int d_stdin=0;
+int d_stderr=2;
 /*READS A LINE ENTERED IN THE TERMINAL AND RETURNS IT*/
 
 char * get_line(){
@@ -31,6 +33,8 @@ GETCWD*/
 
 char * get_last_dir(){
 
+	/*IF THE CURRENT DIRECTORY ISN'T A TAR, WE DECOMPOSE BUFDIR IN TOKENS*/
+
 	char ** tokens;
 	if(!current_dir_is_tar()){
 
@@ -38,6 +42,8 @@ char * get_last_dir(){
 		getcwd(bufdir,sizeof(bufdir));
 		tokens=decompose(bufdir,"/");
 	}
+
+	/*ELSE WE DECOMPSE THE CURRENT PATH IN THE TAR */
 
 	else{
 
@@ -48,12 +54,16 @@ char * get_last_dir(){
 
 	}
 
+	/*WE GET TO THE LAST TOKEN OF TOKENS TO GET THE LAST DIRECTORY OF THE PATH*/
+
 	int cpt=0;
 
 	while(tokens[cpt]!=NULL){
 
 		cpt++;
 	}
+	/*WE COPY THE LAST DIRECTORY IN A STRING AND WE RETURN IT*/
+
 	char * ret=malloc(strlen(tokens[cpt-1])+sizeof(char));
 
 	if(ret==NULL){
@@ -86,38 +96,139 @@ void pwd(){
 
 }
 
-/*HANDLES REDIRECTIONS : CHANGES THE DESCRIPTORS SO SATISFY THE REDIRACTIONS 
-SPECIFIED IN PROMPT*/
 
-char * redir(char * prompt){
+char * redir_out(char *prompt){
+	/*WE SAVE THE FORMER DESCRIPTOR*/
+	d_stdout=dup(STDOUT_FILENO);
+	d_stderr=dup(STDERR_FILENO);
 
-	char * check_1 =malloc(strlen(prompt)+sizeof(char));
-	strcpy(check_1,prompt);
+	/*WE COPY THE STRING BECAUSE STRTOK IN DECOMPSOE MIGHT MESS WITH IT*/
 
-	char ** tokens= decompose(check_1,">>");
+	char * check =malloc(strlen(prompt)+sizeof(char));
 
-	if(strcmp(tokens[0],prompt)!=0){	
+	if(check==NULL){
+		perror("malloc");
+		exit(-1);
+	}
 
-		int fd=open(tokens[1],O_RDWR|O_APPEND|O_CREAT,S_IRUSR|S_IWUSR|S_IRGRP|S_IROTH);
+	strcpy(check,prompt);
 
-		if(fd<0){
+	/*WE DECOMPOSE LOOKING FOR ERROR REDIRECTIONS*/
 
-			perror("open");
-			exit(-1);
+	char ** tokens= decompose(check,">");
+
+	/*IF A REDIRECTION WAS FOUND*/
+
+	if(strcmp(tokens[0],prompt)!=0){
+
+		int cpt=1;
+		int flag=0;
+		while(tokens[cpt]!=NULL){
+
+			int fd=-1;
+
+			/*IF THE NEXT REDIRECTION IS AN ERRROR REDIRECTION
+			WE IGNORE THE 2 AT THE END OF THE TOKEN*/
+
+			if(	strlen(tokens[cpt])>=2 &&
+				tokens[cpt+1]!=NULL &&
+				tokens[cpt][strlen(tokens[cpt])-1]=='2'&&
+				tokens[cpt][strlen(tokens[cpt])-2]==' '){
+
+				char * path=malloc(strlen(tokens[cpt])-2+sizeof(char));
+				memset(path,0,strlen(tokens[cpt])-2+sizeof(char));
+				strncpy(path,tokens[cpt],strlen(tokens[cpt])-2);
+
+				/*WE OPEN THE REDIRECTION FILE AND CREATE IT IF NEEDED*/
+				fd=open(path,O_RDWR|O_CREAT,S_IRUSR|S_IWUSR|S_IRGRP|S_IROTH);
+
+				/*ERROR MANGEMENT*/
+				if(fd<0){
+					perror("open");
+					exit(-1);
+				}
+			}
+
+			/*IF NOT WE SIMPLY USE THE CURRENT TOKEN TO OPEN THE DESCRIPTOR*/
+
+			else{
+				/*WE OPEN THE REDIRECTION FILE AND CREATE IT IF NEEDED*/
+				fd=open(tokens[cpt],O_RDWR|O_CREAT,S_IRUSR|S_IWUSR|S_IRGRP|S_IROTH);
+
+				/*ERROR MANGEMENT*/
+				if(fd<0){
+					perror("open");
+					exit(-1);
+				}
+			}
+
+			if(	strlen(tokens[cpt-1])>=2 &&
+				tokens[cpt-1][strlen(tokens[cpt-1])-1]=='2'&&
+				tokens[cpt-1][strlen(tokens[cpt-1])-2]==' '){
+				if(cpt==1){
+					flag=1;
+				}
+				/*WE CHANGE THE DESCRITPOR*/
+				dup2(fd,STDERR_FILENO);
+
+			}
+			else{
+				/*WE CHANGE THE DESCRITPOR*/
+				dup2(fd,STDOUT_FILENO);
+			}
+
+			cpt++;
+
 		}
 
-		d_stdout=dup(STDOUT_FILENO);
-		dup2(fd,STDOUT_FILENO);
+		/*WE RETURN THE PROMPT WITHOUT THE REDIRECTION PART*/
+		if(flag){
+
+			char * ret= malloc(strlen(tokens[0])-2+sizeof(char));
+
+			if(ret==NULL){
+				perror("malloc");
+				exit(-1);
+			}
+			strncpy(ret,tokens[0],strlen(tokens[0])-2);
+			return ret;
+		}
 		return tokens[0];
+
 	}
 
 	return "";
 }
 
+char * redir_in(char * prompt){
+	return "";
+
+}
+
+
 void reinit_descriptors(){
 
 	dup2(d_stdout,STDOUT_FILENO);
+	dup2(d_stdin,STDIN_FILENO);
+	dup2(d_stderr,STDERR_FILENO);
 
+}
+
+/*HANDLES REDIRECTIONS : CHANGES THE DESCRIPTORS SO SATISFY THE REDIRACTIONS 
+SPECIFIED IN PROMPT*/
+
+char * redir(char * prompt){
+
+	char * tmp = redir_out(prompt);
+
+	//reinit_descriptors();
+	return tmp;
+	/*if(strcmp(tmp,"")!=0){
+		tmp=redir_out(tmp);
+	}
+
+	return tmp;*/
+	
 }
 
 /*PARSE TOKENS AND EXEC THE APPROPRIATE COMMAND*/
@@ -248,25 +359,24 @@ int main (void){
 		strcpy(prompt_cpy,prompt);
 		char * prompt_clear=redir(prompt_cpy);
 		free(prompt_cpy);
-		char * prompt_check1;
+		char * prompt_check;
 		if(strcmp(prompt_clear,"")!=0){
 
-			prompt_check1=malloc(strlen(prompt_clear)+sizeof(char));
-			strcpy(prompt_check1,prompt_clear);
+			prompt_check=malloc(strlen(prompt_clear)+sizeof(char));
+			strcpy(prompt_check,prompt_clear);
 
 		}
 
 
 		else{
 
-			 prompt_check1=prompt;
+			 prompt_check=prompt;
 		}
-
 
 
 		/*DECOMPOSING THE COMMAND */
 
-		char ** tokens = decompose(prompt_check1," ");
+		char ** tokens = decompose(prompt_check," ");
 
 		/*PARSING THE COMMAND*/
 
