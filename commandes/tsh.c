@@ -193,16 +193,57 @@ char * redir_out(char *prompt){
 			strncpy(ret,tokens[0],strlen(tokens[0])-2);
 			return ret;
 		}
+
 		return tokens[0];
 
 	}
-
+	free(check);
+	free(tokens);
 	return "";
 }
 
 char * redir_in(char * prompt){
-	return "";
 
+	/*WE SAVE THE FORMER DESCRIPTOR*/
+	d_stdin=dup(STDIN_FILENO);
+	/*WE COPY THE STRING BECAUSE STRTOK IN DECOMPSOE MIGHT MESS WITH IT*/
+	char * check =malloc(strlen(prompt)+sizeof(char));
+	if(check==NULL){
+		perror("malloc");
+		exit(-1);
+	}
+
+	strcpy(check,prompt);
+
+	/*WE DECOMPOSE LOOKING FOR ERROR REDIRECTIONS*/
+
+	char ** tokens= decompose(check,"<");
+	/*IF A REDIRECTION WAS FOUND*/
+	if(strcmp(tokens[0],prompt)!=0){
+
+		int cpt=1;
+
+		while(tokens[cpt]!=NULL){
+
+			/*WE OPEN THE REDIRECTION FILE AND CREATE IT IF NEEDED*/
+			int fd=open(tokens[cpt],O_RDWR);//|O_CREAT,S_IRUSR|S_IWUSR|S_IRGRP|S_IROTH);
+
+			/*ERROR MANGEMENT*/
+			if(fd<0){
+				perror("open");
+				return "";
+			}
+
+			dup2(fd,STDIN_FILENO);
+			cpt++;
+		}
+		/*WE RETURN THE PROMPT WITHOUT THE REDIRECTION PART*/
+		return tokens[0];
+	}
+	
+	free(check);
+	free(tokens);
+	return "";
 }
 
 
@@ -219,15 +260,19 @@ SPECIFIED IN PROMPT*/
 
 char * redir(char * prompt){
 
-	char * tmp = redir_out(prompt);
+	char * cpy=malloc(strlen(prompt)+sizeof(char));
+	strcpy(cpy,prompt);
+	char * ret = redir_out(cpy);
 
-	//reinit_descriptors();
-	return tmp;
-	/*if(strcmp(tmp,"")!=0){
-		tmp=redir_out(tmp);
+	if(strcmp(ret,"")==0){
+		ret=redir_in(prompt);
 	}
 
-	return tmp;*/
+	else{
+		ret=redir_in(ret);
+	}
+	free(cpy);
+	return ret;
 	
 }
 
@@ -347,32 +392,39 @@ int main (void){
 			continue;
 		}
 
-		/*HANDLING REDIRECTIONS*/
+		/*-----HANDLING REDIRECTIONS------*/
 
+		/*WE COPY THE PROMPT TO NOT BREAK IT*/
 		char * prompt_cpy =malloc(strlen(prompt)+sizeof(char));
 
+		/*ERROR MANGEMENT*/
 		if(prompt_cpy==NULL){
 			perror("malloc");
 			exit(-1);
 		}
 
 		strcpy(prompt_cpy,prompt);
+
+		/*WE CALL THE REDIR FUNCTION*/
+
 		char * prompt_clear=redir(prompt_cpy);
-		free(prompt_cpy);
 		char * prompt_check;
+
+		/*IF A REDIRECTION HAPPENED, WE USE THE RETURNED STRING AS OUR PROMPT FOR
+		THE REST OF THE PROGRAM*/
+
 		if(strcmp(prompt_clear,"")!=0){
 
 			prompt_check=malloc(strlen(prompt_clear)+sizeof(char));
 			strcpy(prompt_check,prompt_clear);
-
 		}
 
-
+		/*ELSE WE SIMPLY USE OUR PROMPT*/
+		
 		else{
 
 			 prompt_check=prompt;
 		}
-
 
 		/*DECOMPOSING THE COMMAND */
 
@@ -386,8 +438,8 @@ int main (void){
 		reinit_descriptors();
 		free(prompt);
 		free(last_dir);
-		free(tokens);
-		
+		free(prompt_cpy);
+		free(tokens);		
 	}
 
 	return 0;
