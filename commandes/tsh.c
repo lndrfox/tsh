@@ -19,6 +19,7 @@ int run=1;
 int d_stdout=1;
 int d_stdin=0;
 int d_stderr=2;
+
 /*READS A LINE ENTERED IN THE TERMINAL AND RETURNS IT*/
 
 char * get_line(){
@@ -93,6 +94,13 @@ void pwd(){
 	char bufdir [PATH_MAX + 1];
 	getcwd(bufdir,sizeof(bufdir));
 	char * entry=malloc(sizeof(bufdir)+sizeof(getenv("tar"))+sizeof("/"));
+
+	if(entry==NULL){
+
+		perror("malloc");
+		exit(-1);
+	}
+
 	memset(entry,0,sizeof(bufdir)+sizeof(getenv("tar")));
 	entry= strcat(entry,bufdir);
 	entry=strcat(entry,"/");
@@ -103,6 +111,9 @@ void pwd(){
 
 
 }
+
+/*HANLDES > AND 2>> REDIRECTIONS, RETURNS THE COMMAND WITHOUT THE 
+REDIRECTION PART OR "" IF NO REDIRECTION HAPPENED*/
 
 
 char * redir_out(char *prompt){
@@ -144,6 +155,13 @@ char * redir_out(char *prompt){
 				tokens[cpt][strlen(tokens[cpt])-2]==' '){
 
 				char * path=malloc(strlen(tokens[cpt])-2+sizeof(char));
+
+				if(path==NULL){
+
+					perror("malloc");
+					exit(-1);
+				}
+
 				memset(path,0,strlen(tokens[cpt])-2+sizeof(char));
 				strncpy(path,tokens[cpt],strlen(tokens[cpt])-2);
 
@@ -170,6 +188,9 @@ char * redir_out(char *prompt){
 				}
 			}
 
+			/*IF THE LAST CHAR OF THE FORMER TOKEN WAS 2 THEN WE
+			NEED TO TO A REDIR OF STDERR*/
+
 			if(	strlen(tokens[cpt-1])>=2 &&
 				tokens[cpt-1][strlen(tokens[cpt-1])-1]=='2'&&
 				tokens[cpt-1][strlen(tokens[cpt-1])-2]==' '){
@@ -180,6 +201,9 @@ char * redir_out(char *prompt){
 				dup2(fd,STDERR_FILENO);
 
 			}
+
+			/*ELSE THE REDIR IS ON STDOUT*/
+
 			else{
 				/*WE CHANGE THE DESCRITPOR*/
 				dup2(fd,STDOUT_FILENO);
@@ -189,7 +213,9 @@ char * redir_out(char *prompt){
 
 		}
 
-		/*WE RETURN THE PROMPT WITHOUT THE REDIRECTION PART*/
+		/*----WE RETURN THE PROMPT WITHOUT THE REDIRECTION PART-----*/
+
+		/*IF THE FLAG WAS RAISED, WE NEED TO REMOVE THE 2 FROM TOKENS[0]*/
 		if(flag){
 
 			char * ret= malloc(strlen(tokens[0])-2+sizeof(char));
@@ -198,15 +224,46 @@ char * redir_out(char *prompt){
 				perror("malloc");
 				exit(-1);
 			}
+
 			strncpy(ret,tokens[0],strlen(tokens[0])-2);
+			free(check);
+			free(tokens);
 			return ret;
 		}
 
-		return tokens[0];
+		/*ELSE WE RETURN TOKENS[0] BUT WE NEED TO MAKE A COPY TO BE ABLE TO FREE EVERYTHING
+		THAT NEED TO BE FREED*/
+
+		char * ret_1=malloc(strlen(tokens[0])+sizeof(char));
+
+		if(ret_1==NULL){
+
+			perror("malloc");
+			exit(-1);
+		}
+
+		strcpy(ret_1,tokens[0]);
+		free(check);
+		free(tokens);
+		return ret_1;
 
 	}
+
+	/*WE RETURN "" IF NO REDIR WAS FOUND AND WE NEED TO TO
+	A MALLOC TO BE ABLE TO FREE IT LATER IN THE MAIN LOOP*/
+
 	free(check);
 	free(tokens);
+	char * ret_v=malloc(2);
+
+	if(ret_v==NULL){
+
+		perror("malloc");
+		exit(-1);
+	}
+
+	strcpy(ret_v,"");
+	return ret_v;
 	return "";
 }
 
@@ -234,12 +291,16 @@ char * redir_in(char * prompt){
 		while(tokens[cpt]!=NULL){
 
 			/*WE OPEN THE REDIRECTION FILE AND CREATE IT IF NEEDED*/
-			int fd=open(tokens[cpt],O_RDWR);//|O_CREAT,S_IRUSR|S_IWUSR|S_IRGRP|S_IROTH);
+			int fd=open(tokens[cpt],O_RDWR);
 
 			/*ERROR MANGEMENT*/
 			if(fd<0){
 				perror("open");
-				return "";
+				free(check);
+				free(tokens);
+				char * ret_e=malloc(2);
+				strcpy(ret_e,"");
+				return ret_e;
 			}
 
 			dup2(fd,STDIN_FILENO);
@@ -280,19 +341,47 @@ SPECIFIED IN PROMPT*/
 
 char * redir(char * prompt){
 
+	/*WE COPY THE PROMPT TO NOT BREAK IT*/
+
 	char * cpy=malloc(strlen(prompt)+sizeof(char));
 	strcpy(cpy,prompt);
-	char * ret = redir_out(cpy);
 
-	if(strcmp(ret,"")==0){
-		ret=redir_in(prompt);
+	/*WE START BY LOOKING FOR > REDIRECTIONS*/
+
+	char * ret_out = redir_out(cpy);
+	char * ret_in;
+	free(cpy);
+
+	/*IF THERE ARE NONE, WE LOOK FOR < REDIRECTIONS IN THE ORIGINAL PROMPT AND 
+	RETURN THE STRING OBTAINED*/
+
+	if(strcmp(ret_out,"")==0){
+
+		ret_in=redir_in(prompt);
+		free(ret_out);
+		return ret_in;
 	}
+
+	/*IF THERE WERE > REDIRACTIONS*/
 
 	else{
-		ret=redir_in(ret);
+
+		/*WE LOOK FOR < REDIR LOOKING IN THE PROMPT
+		OBTAINED FROM THE FORMER SEARCH*/
+
+		ret_in=redir_in(ret_out);
+
+		/*IF WE FIND NONE WE RETURN THE RESULT FROM THE FORMER SEARCH*/
+
+		if(strcmp(ret_in,"")==0){
+			free(ret_in);
+			return ret_out;
+		}
+
+		/*OTHERWISE WE RETURN THE STRING OBTAINED*/
+		free(ret_out);
+		return ret_in;
 	}
-	free(cpy);
-	return ret;
 	
 }
 
