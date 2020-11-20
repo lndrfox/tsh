@@ -20,7 +20,7 @@ void cd (char * p){
 		if(chdir(home)!=0){
 			perror("chdir");
 		}
-
+		free(home);
 		return;
 	}
 
@@ -39,19 +39,21 @@ void cd (char * p){
 		
 		//CHECKING IF PATH IS VALID AND STORING IT
 
-		path = path_is_valid(path);
+		char* a_path = path_is_valid(path);
 
 		//IF THE PATH IS NOT VALID
 
-		if(path==NULL){
+		if(a_path==NULL){
 
 				write(2,"Path invalid\n",strlen("Path invalid\n"));
 		}
 
 		else{
 			
-			setenv("tar",path,1);
+			setenv("tar",a_path,1);
 		}
+
+		free(path);
 
 	}
 
@@ -109,6 +111,8 @@ void cd (char * p){
 			cpt++;
 
 		}
+
+		free(tokens);
 
 
 	}

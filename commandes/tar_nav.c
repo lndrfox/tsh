@@ -326,6 +326,7 @@ char * path_is_valid(char * path){
 
 	if(f_path==NULL){
 
+		perror("calloc");
 		exit(-1);
 	}
 
@@ -366,14 +367,24 @@ char * path_is_valid(char * path){
 	/*FLATTENING THE PATH INTO A STRING*/
 	char * pathf =flatten(f_path, "/");
 
+	free(f_path);
+
 	/*IF SUCH A DIRECTORY EXISTS IN THE TAR THEN WE CAN RETURN PATH*/
 
 	/*WE NEED TO ADD A / AT THE END TO SEARCH IN THE TAR*/
 
 	char * pathtest=(char * ) malloc(strlen(pathf)+sizeof(char));
+
+	if(pathtest==NULL){
+
+		perror("malloc");
+		exit(-1);
+	}
+
 	strcpy(pathtest,pathf);
 	pathtest=realloc(pathtest,strlen(pathtest)+strlen("/")+sizeof(char));
 	pathtest=strcat(pathtest,"/");
+
 
 	if(file_exists_in_tar(pathtest,tokens[0])){
 
@@ -385,8 +396,15 @@ char * path_is_valid(char * path){
 		final=strcat(final,"/");
 		final=realloc(final,strlen(final)+strlen(pathf)+sizeof(char));
 		final=strcat(final,pathf);
+
+		free(tokens);
+		free(pathf);
+		free(pathtest);
 		return final;
 	}
 
+	free(tokens);
+	free(pathf);
+	free(pathtest);
 	return NULL;
 }

@@ -36,6 +36,15 @@ char * get_last_dir(){
 	/*IF THE CURRENT DIRECTORY ISN'T A TAR, WE DECOMPOSE BUFDIR IN TOKENS*/
 
 	char ** tokens;
+	size_t size_tmp=strlen(getenv("tar"))+sizeof(char);
+	char *tmp=malloc(size_tmp);
+
+		if(tmp==NULL){
+
+			perror("malloc");
+			exit(-1);
+		}
+
 	if(!current_dir_is_tar()){
 
 		char bufdir [PATH_MAX + 1];
@@ -47,11 +56,9 @@ char * get_last_dir(){
 
 	else{
 
-		size_t size_tmp=strlen(getenv("tar"))+sizeof(char);
-		char *tmp=malloc(size_tmp);
+		memset(tmp,0,size_tmp);
 		strcpy(tmp,getenv("tar"));
 		tokens=decompose(tmp,"/");
-
 	}
 
 	/*WE GET TO THE LAST TOKEN OF TOKENS TO GET THE LAST DIRECTORY OF THE PATH*/
@@ -74,6 +81,7 @@ char * get_last_dir(){
 
 	ret=strcpy(ret,tokens[cpt-1]);
 	free(tokens);
+	free(tmp);
 	return ret;
 
 }
@@ -238,12 +246,24 @@ char * redir_in(char * prompt){
 			cpt++;
 		}
 		/*WE RETURN THE PROMPT WITHOUT THE REDIRECTION PART*/
-		return tokens[0];
+
+		char * ret = malloc(strlen(tokens[0])+sizeof(char));
+		if(ret==NULL){
+
+			perror("malloc");
+			exit(-1);
+		}
+		strcpy(ret,tokens[0]);
+		free(check);
+		free(tokens);
+		return ret;
 	}
-	
+
 	free(check);
 	free(tokens);
-	return "";
+	char * ret_v=malloc(2);
+	strcpy(ret_v,"");
+	return ret_v;
 }
 
 
@@ -408,27 +428,22 @@ int main (void){
 		/*WE CALL THE REDIR FUNCTION*/
 
 		char * prompt_clear=redir(prompt_cpy);
-		char * prompt_check;
+		char ** tokens ;
 
 		/*IF A REDIRECTION HAPPENED, WE USE THE RETURNED STRING AS OUR PROMPT FOR
 		THE REST OF THE PROGRAM*/
 
 		if(strcmp(prompt_clear,"")!=0){
 
-			prompt_check=malloc(strlen(prompt_clear)+sizeof(char));
-			strcpy(prompt_check,prompt_clear);
+			tokens = decompose(prompt_clear," ");
 		}
 
 		/*ELSE WE SIMPLY USE OUR PROMPT*/
 		
 		else{
 
-			 prompt_check=prompt;
+			tokens = decompose(prompt," ");
 		}
-
-		/*DECOMPOSING THE COMMAND */
-
-		char ** tokens = decompose(prompt_check," ");
 
 		/*PARSING THE COMMAND*/
 
@@ -439,7 +454,9 @@ int main (void){
 		free(prompt);
 		free(last_dir);
 		free(prompt_cpy);
-		free(tokens);		
+		free(prompt_clear);
+		free(tokens);
+		
 	}
 
 	return 0;
