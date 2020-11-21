@@ -126,6 +126,9 @@ AND RETURNS A STRING THAT IS PROMPT WITHOUT THESE REDIRECTIONS*/
 
 char * redir_out(char * prompt){
 
+	d_stdout=dup(STDOUT_FILENO);//WE SAVE STDOUT BEFORE USING DUP2 TO RESTORE IT LATER
+	d_stderr=dup(STDERR_FILENO); //WE SAVE STDERR BEFORE USING DUP2 TO RESTORE IT LATER
+
 	/*WE COPY THE PROMPT TO NOT BREAK IT*/
 
 	char * prompt_cpy=malloc(strlen(prompt)+sizeof(char));
@@ -158,8 +161,8 @@ char * redir_out(char * prompt){
 		/*ERROR MANGEmENT*/
 
 		if(anchor ==NULL){
-				
-			break;
+
+			return(save_pos);
 		}
 
 		/*WE RAISE THE FLAG ONLY IF THE NEXT CHARACTER IS ALSO ">" WHICH 
@@ -263,8 +266,6 @@ char * redir_out(char * prompt){
 			/*IF WE NEED TO REDIRECT STDERR_FILENO*/
 
 			if(anchor[-1]=='2'){
-
-				d_stderr=dup(STDERR_FILENO); //WE SAVE STDERR BEFORE USING DUP2 TO RESTORE IT LATER
 				dup2(fd,STDERR_FILENO);
 				flag_err=1;//WE RAISE THE ERR FLAG
 			}
@@ -272,7 +273,6 @@ char * redir_out(char * prompt){
 			/*IF WE NEED TO REDIRECT STDOUT_FILENO*/
 
 			else{
-				d_stdout=dup(STDOUT_FILENO);//WE SAVE STDOUT BEFORE USING DUP2 TO RESTORE IT LATER
 				dup2(fd,STDOUT_FILENO);
 			}
 		}
@@ -286,7 +286,6 @@ char * redir_out(char * prompt){
 			/*IF WE NEED TO REDIRECT STDERR_FILENO*/
 
 			if(anchor[-1]=='2'){
-				d_stderr=dup(STDERR_FILENO);//WE SAVE STDERR BEFORE USING DUP2 TO RESTORE IT LATER
 				dup2(fd,STDERR_FILENO);
 				flag_err=1;//WE RAISE THE ERR FLAG
 			}
@@ -294,7 +293,7 @@ char * redir_out(char * prompt){
 			/*IF WE NEED TO REDIRECT STDOUT_FILENO*/
 
 			else{
-				d_stdout=dup(STDOUT_FILENO);//WE SAVE STDOUT BEFORE USING DUP2 TO RESTORE IT LATER
+				
 				dup2(fd,STDOUT_FILENO);
 			}
 		}
@@ -323,6 +322,8 @@ char * redir_out(char * prompt){
 }
 
 char * redir_in(char * prompt){
+
+	d_stdin=dup(STDIN_FILENO);//WE SAVE STDOUT BEFORE USING DUP2 TO RESTORE IT LATER
 
 	/*WE COPY THE PROMPT TO NOT BREAK IT*/
 
@@ -353,8 +354,7 @@ char * redir_in(char * prompt){
 		/*ERROR MANGEMENT*/
 
 		if(anchor ==NULL){
-				
-			break;
+			return(save_pos);	
 		}
 
 		/*PATH IS WERE WE BUILD THE STRING OF WERE WE WILL REDIRECT*/
@@ -415,7 +415,6 @@ char * redir_in(char * prompt){
 		len_cut+=strlen(path);
 
 		int fd=open(path,O_RDWR|O_CREAT,S_IRUSR|S_IWUSR|S_IRGRP|S_IROTH);
-		d_stdin=dup(STDIN_FILENO);//WE SAVE STDOUT BEFORE USING DUP2 TO RESTORE IT LATER
 		dup2(fd,STDIN_FILENO);
 
 		/* WE CUT OUT THE < SYMBOLE + THE PATH*/
@@ -436,13 +435,14 @@ void reinit_descriptors(){
 
 }
 
-/*HANDLES REDIRECTIONS : CHANGES THE DESCRIPTORS SO SATISFY THE REDIRACTIONS 
+/*HANDLES REDIRECTIONS : CHANGES THE DESCRIPTORS SO SATISFY THE REDIRECTIONS 
 SPECIFIED IN PROMPT*/
 
 char * redir(char * prompt){
 	
-	char * ret =redir_out(prompt);
-	ret =redir_in(ret);
+	char * out =redir_out(prompt);
+	char *ret =redir_in(out);
+	free(out);
 	return ret;
 	
 }
@@ -584,13 +584,14 @@ int main (void){
 		/*PARSING THE COMMAND*/
 
 		parse(tokens);
+		reinit_descriptors();
 
 		/*FREE*/
-		reinit_descriptors();
+
 		free(prompt);
 		free(last_dir);
-		free(prompt_cpy);
 		free(prompt_clear);
+		free(prompt_cpy);
 		free(tokens);
 		
 	}
