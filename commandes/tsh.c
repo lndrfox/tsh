@@ -112,160 +112,185 @@ void pwd(){
 
 }
 
-/*HANLDES > AND 2>> REDIRECTIONS, RETURNS THE COMMAND WITHOUT THE 
-REDIRECTION PART OR "" IF NO REDIRECTION HAPPENED*/
+void str_cut(char *prompt ,int size){
+
+	int lenght= strlen(prompt);
+	memmove(prompt,prompt+size,lenght -size +1);
 
 
-char * redir_out(char *prompt){
-	/*WE SAVE THE FORMER DESCRIPTOR*/
-	d_stdout=dup(STDOUT_FILENO);
-	d_stderr=dup(STDERR_FILENO);
+}
 
-	/*WE COPY THE STRING BECAUSE STRTOK IN DECOMPSOE MIGHT MESS WITH IT*/
 
-	char * check =malloc(strlen(prompt)+sizeof(char));
+char * redir_out(char * prompt){
 
-	if(check==NULL){
+	/*WE COPY THE PROMPT TO NOT BREAK IT*/
+
+	char * prompt_cpy=malloc(strlen(prompt)+sizeof(char));
+
+	/*ERROR MANGEMENT*/
+
+	if(prompt_cpy==NULL){
+
 		perror("malloc");
 		exit(-1);
 	}
 
-	strcpy(check,prompt);
+	/*WE SAVE THE ADRESS OF THE FIRST CHAR OF PROMPT_CPY IN
+	SAVE_POS. WE DECLARE ANCHOR AS NULL*/
 
-	/*WE DECOMPOSE LOOKING FOR ERROR REDIRECTIONS*/
+	strcpy(prompt_cpy,prompt);
+	char * save_pos =prompt_cpy;
+	char * anchor =NULL;
+	int flag=0;
 
-	char ** tokens= decompose(check,">");
+	/*----- WHILE WE CAN FIND A ">" IN PROMPT_CPY, WE REPEAT THE LOOP-----*/
 
-	/*IF A REDIRECTION WAS FOUND*/
+	do{
 
-	if(strcmp(tokens[0],prompt)!=0){
+		/*WE LOOK FOR THE FIRST OCC OF ">" IN PROMPT_CPY AND STORE IT IN ANCHOR*/
 
-		int cpt=1;
-		int flag=0;
-		while(tokens[cpt]!=NULL){
+		anchor = strchr(prompt_cpy,'>');
 
-			int fd=-1;
+		/*ERROR MANGEmENT*/
 
-			/*IF THE NEXT REDIRECTION IS AN ERRROR REDIRECTION
-			WE IGNORE THE 2 AT THE END OF THE TOKEN*/
-
-			if(	strlen(tokens[cpt])>=2 &&
-				tokens[cpt+1]!=NULL &&
-				tokens[cpt][strlen(tokens[cpt])-1]=='2'&&
-				tokens[cpt][strlen(tokens[cpt])-2]==' '){
-
-				char * path=malloc(strlen(tokens[cpt])-2+sizeof(char));
-
-				if(path==NULL){
-
-					perror("malloc");
-					exit(-1);
-				}
-
-				memset(path,0,strlen(tokens[cpt])-2+sizeof(char));
-				strncpy(path,tokens[cpt],strlen(tokens[cpt])-2);
-
-				/*WE OPEN THE REDIRECTION FILE AND CREATE IT IF NEEDED*/
-				fd=open(path,O_RDWR|O_CREAT,S_IRUSR|S_IWUSR|S_IRGRP|S_IROTH);
-
-				/*ERROR MANGEMENT*/
-				if(fd<0){
-					perror("open");
-					exit(-1);
-				}
-			}
-
-			/*IF NOT WE SIMPLY USE THE CURRENT TOKEN TO OPEN THE DESCRIPTOR*/
-
-			else{
-				/*WE OPEN THE REDIRECTION FILE AND CREATE IT IF NEEDED*/
-				fd=open(tokens[cpt],O_RDWR|O_CREAT,S_IRUSR|S_IWUSR|S_IRGRP|S_IROTH);
-
-				/*ERROR MANGEMENT*/
-				if(fd<0){
-					perror("open");
-					exit(-1);
-				}
-			}
-
-			/*IF THE LAST CHAR OF THE FORMER TOKEN WAS 2 THEN WE
-			NEED TO TO A REDIR OF STDERR*/
-
-			if(	strlen(tokens[cpt-1])>=2 &&
-				tokens[cpt-1][strlen(tokens[cpt-1])-1]=='2'&&
-				tokens[cpt-1][strlen(tokens[cpt-1])-2]==' '){
-				if(cpt==1){
-					flag=1;
-				}
-				/*WE CHANGE THE DESCRITPOR*/
-				dup2(fd,STDERR_FILENO);
-
-			}
-
-			/*ELSE THE REDIR IS ON STDOUT*/
-
-			else{
-				/*WE CHANGE THE DESCRITPOR*/
-				dup2(fd,STDOUT_FILENO);
-			}
-
-			cpt++;
-
+		if(anchor ==NULL){
+				
+			break;
 		}
 
-		/*----WE RETURN THE PROMPT WITHOUT THE REDIRECTION PART-----*/
+		/*WE RAISE THE FLAG ONLY IF THE NEXT CHARACTER IS ALSO ">" WHICH 
+		MEANS WE ARE IN A ">>" SITUATION*/
 
-		/*IF THE FLAG WAS RAISED, WE NEED TO REMOVE THE 2 FROM TOKENS[0]*/
-		if(flag){
-
-			char * ret= malloc(strlen(tokens[0])-2+sizeof(char));
-
-			if(ret==NULL){
-				perror("malloc");
-				exit(-1);
-			}
-
-			strncpy(ret,tokens[0],strlen(tokens[0])-2);
-			free(check);
-			free(tokens);
-			return ret;
+		if(anchor[1]=='>'){
+			flag=1;
 		}
 
-		/*ELSE WE RETURN TOKENS[0] BUT WE NEED TO MAKE A COPY TO BE ABLE TO FREE EVERYTHING
-		THAT NEED TO BE FREED*/
+		/*PATH IS WERE WE BUILD THE STRING OF WERE WE WILL REDIRECT*/
+		
+		char * path=malloc(sizeof(char));
 
-		char * ret_1=malloc(strlen(tokens[0])+sizeof(char));
+		/*ERROR MANGEMENT*/
 
-		if(ret_1==NULL){
-
+		if(path==NULL){
 			perror("malloc");
 			exit(-1);
 		}
 
-		strcpy(ret_1,tokens[0]);
-		free(check);
-		free(tokens);
-		return ret_1;
+		memset(path,0,sizeof(char));
 
-	}
+		//CPT FOR ANCHOR
 
-	/*WE RETURN "" IF NO REDIR WAS FOUND AND WE NEED TO TO
-	A MALLOC TO BE ABLE TO FREE IT LATER IN THE MAIN LOOP*/
+		int cpt;
 
-	free(check);
-	free(tokens);
-	char * ret_v=malloc(2);
+		/*IF THE FLAG WAS RAISED, WE NEED TO IGNORE THE SECOND ">" CHARACTER
+		SO WE START CPT AT 2 INSTEAD OF 1*/
 
-	if(ret_v==NULL){
+		if(flag){
+			cpt=2;
+		}
+		else{
+			cpt=1;
+		}
+				
+		int cpt_path=0;//CPT FOR PATH
+		int len_cut=cpt;
 
-		perror("malloc");
-		exit(-1);
-	}
+		/*------ WE LOOP WHILE THE NEXT CHARACTER DOESN'T
+		INDICATE ANOTHER REDIRACTION OR THE END OF THE STRING------*/
 
-	strcpy(ret_v,"");
-	return ret_v;
-	return "";
+		while(anchor[cpt]!='\0' && anchor [cpt] != '>' 
+								&& anchor [cpt] != '<'){
+
+			/*IF THE STRING BEGINS BY A " " WE IGNORE IT, THE VALUE
+			OF CPT WE CHECK DEPENDS IF THE FLAG WAS RAISED OR NOT*/
+
+			if(flag){
+
+				if(cpt == 2 && anchor[cpt]==' '){
+					cpt++;
+					len_cut++;
+					continue;
+				}
+			}	
+
+			else{
+				if(cpt == 1 && anchor[cpt]==' '){
+					cpt++;
+					len_cut ++;
+					continue;
+					}
+				}
+
+			/*IF WE ENCOUNTER A " " NOT AT THE BEGGINIGN THEN
+			WE ARE DONE BULIDING THE STRING*/
+
+			if(anchor[cpt]==' ' && cpt!=1 && cpt !=2){
+				len_cut++;
+				break;
+			}
+
+			/*WE FILL THE STRING, HANDLES CPT AND REALLOC ENOUGH
+			MEMORY TO FILL THE STRONG AT THE NEXT ITERATION OF THE WHILE*/
+
+			path[cpt_path]=anchor[cpt];
+			cpt_path++;
+			path=realloc(path,(cpt_path+1)*sizeof(char));
+			cpt++;
+
+			}
+
+		/*WE END THE STRING*/
+		path[cpt_path]='\0';
+		len_cut+=strlen(path);
+		int flag_err=0;
+
+		if(flag){
+			int fd=open(path,O_RDWR|O_CREAT|O_APPEND,S_IRUSR|S_IWUSR|S_IRGRP|S_IROTH);
+
+			if(anchor[-1]=='2'){
+				d_stderr=dup(STDERR_FILENO);
+				dup2(fd,STDERR_FILENO);
+				flag_err=1;
+			}
+			else{
+				d_stdout=dup(STDOUT_FILENO);
+				dup2(fd,STDOUT_FILENO);
+				}
+		}
+
+		else{
+			int fd=open(path,O_RDWR|O_CREAT,S_IRUSR|S_IWUSR|S_IRGRP|S_IROTH);
+
+			if(anchor[-1]=='2'){
+				d_stderr=dup(STDERR_FILENO);
+				dup2(fd,STDERR_FILENO);
+				flag_err=1;
+			}
+
+			else{
+				d_stdout=dup(STDOUT_FILENO);
+				dup2(fd,STDOUT_FILENO);
+			}
+		}	
+
+		if(flag_err){
+			len_cut++;
+			str_cut(&(anchor[-1]),len_cut);
+		}
+		else{
+			str_cut(anchor,len_cut);
+		}
+
+		/*WE LOWER THE FLAG*/
+
+		flag=0;
+
+	}while(anchor!=NULL);
+
+	return save_pos;
+
 }
+
 
 char * redir_in(char * prompt){
 
@@ -340,48 +365,8 @@ void reinit_descriptors(){
 SPECIFIED IN PROMPT*/
 
 char * redir(char * prompt){
-
-	/*WE COPY THE PROMPT TO NOT BREAK IT*/
-
-	char * cpy=malloc(strlen(prompt)+sizeof(char));
-	strcpy(cpy,prompt);
-
-	/*WE START BY LOOKING FOR > REDIRECTIONS*/
-
-	char * ret_out = redir_out(cpy);
-	char * ret_in;
-	free(cpy);
-
-	/*IF THERE ARE NONE, WE LOOK FOR < REDIRECTIONS IN THE ORIGINAL PROMPT AND 
-	RETURN THE STRING OBTAINED*/
-
-	if(strcmp(ret_out,"")==0){
-
-		ret_in=redir_in(prompt);
-		free(ret_out);
-		return ret_in;
-	}
-
-	/*IF THERE WERE > REDIRACTIONS*/
-
-	else{
-
-		/*WE LOOK FOR < REDIR LOOKING IN THE PROMPT
-		OBTAINED FROM THE FORMER SEARCH*/
-
-		ret_in=redir_in(ret_out);
-
-		/*IF WE FIND NONE WE RETURN THE RESULT FROM THE FORMER SEARCH*/
-
-		if(strcmp(ret_in,"")==0){
-			free(ret_in);
-			return ret_out;
-		}
-
-		/*OTHERWISE WE RETURN THE STRING OBTAINED*/
-		free(ret_out);
-		return ret_in;
-	}
+	
+	return redir_out(prompt);
 	
 }
 
@@ -521,7 +506,6 @@ int main (void){
 
 		/*IF A REDIRECTION HAPPENED, WE USE THE RETURNED STRING AS OUR PROMPT FOR
 		THE REST OF THE PROGRAM*/
-
 		if(strcmp(prompt_clear,"")!=0){
 
 			tokens = decompose(prompt_clear," ");
@@ -530,7 +514,6 @@ int main (void){
 		/*ELSE WE SIMPLY USE OUR PROMPT*/
 		
 		else{
-
 			tokens = decompose(prompt," ");
 		}
 
