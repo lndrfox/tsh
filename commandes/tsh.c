@@ -112,14 +112,17 @@ void pwd(){
 
 }
 
+/*CUT THE SIZE FIRST CHAR FROM THE STRING PROMPT*/
+
 void str_cut(char *prompt ,int size){
 
 	int lenght= strlen(prompt);
 	memmove(prompt,prompt+size,lenght -size +1);
 
-
 }
 
+/*HANDLES THE > , >> , 2> AND 2>> REDIRECTIONS FROM PROMPT
+AND RETURNS A STRING THAT IS PROMPT WITHOUT THESE REDIRECTIONS*/
 
 char * redir_out(char * prompt){
 
@@ -136,7 +139,8 @@ char * redir_out(char * prompt){
 	}
 
 	/*WE SAVE THE ADRESS OF THE FIRST CHAR OF PROMPT_CPY IN
-	SAVE_POS. WE DECLARE ANCHOR AS NULL*/
+	SAVE_POS. WE DECLARE ANCHOR AS NULL
+	FLAG WILL BE RAISED IF WE ARE IN THE CASE OF A >> OR 2>> REDIRECTION*/
 
 	strcpy(prompt_cpy,prompt);
 	char * save_pos =prompt_cpy;
@@ -193,7 +197,8 @@ char * redir_out(char * prompt){
 		}
 				
 		int cpt_path=0;//CPT FOR PATH
-		int len_cut=cpt;
+		int len_cut=cpt;//THIS IS THE LENGHT OF THE SUB STRING WE WANT TO CUT FROM THE PROMPT
+						// INCLUDING THE > SYMBOL AND THE PATH
 
 		/*------ WE LOOP WHILE THE NEXT CHARACTER DOESN'T
 		INDICATE ANOTHER REDIRACTION OR THE END OF THE STRING------*/
@@ -240,43 +245,68 @@ char * redir_out(char * prompt){
 			}
 
 		/*WE END THE STRING*/
+
 		path[cpt_path]='\0';
 		len_cut+=strlen(path);
-		int flag_err=0;
+
+		int flag_err=0; //THIS FLAG IS RAISED IF WE NEED TO REDIRECT STDERR_FILENO
+
+		/*------IF FLAG IS RAISED THEN WE HAVE EITHER >> OR 2>> SO THE
+		DESCRIPTOR MUST BE OPENED IN APPEND MODE ------*/
 
 		if(flag){
+
+			/*WE OPEN THE DESCRIPTOR*/
+
 			int fd=open(path,O_RDWR|O_CREAT|O_APPEND,S_IRUSR|S_IWUSR|S_IRGRP|S_IROTH);
 
+			/*IF WE NEED TO REDIRECT STDERR_FILENO*/
+
 			if(anchor[-1]=='2'){
-				d_stderr=dup(STDERR_FILENO);
+
+				d_stderr=dup(STDERR_FILENO); //WE SAVE STDERR BEFORE USING DUP2 TO RESTORE IT LATER
 				dup2(fd,STDERR_FILENO);
-				flag_err=1;
+				flag_err=1;//WE RAISE THE ERR FLAG
 			}
+
+			/*IF WE NEED TO REDIRECT STDOUT_FILENO*/
+
 			else{
-				d_stdout=dup(STDOUT_FILENO);
+				d_stdout=dup(STDOUT_FILENO);//WE SAVE STDOUT BEFORE USING DUP2 TO RESTORE IT LATER
 				dup2(fd,STDOUT_FILENO);
-				}
+			}
 		}
+
+		/*------IF FLAG IS not RAISED THEN WE HAVE EITHER > OR 2> SO THE
+		DESCRIPTOR MUST NOT BE OPENED IN APPEND MODE ------*/
 
 		else{
 			int fd=open(path,O_RDWR|O_CREAT,S_IRUSR|S_IWUSR|S_IRGRP|S_IROTH);
 
+			/*IF WE NEED TO REDIRECT STDERR_FILENO*/
+
 			if(anchor[-1]=='2'){
-				d_stderr=dup(STDERR_FILENO);
+				d_stderr=dup(STDERR_FILENO);//WE SAVE STDERR BEFORE USING DUP2 TO RESTORE IT LATER
 				dup2(fd,STDERR_FILENO);
-				flag_err=1;
+				flag_err=1;//WE RAISE THE ERR FLAG
 			}
 
+			/*IF WE NEED TO REDIRECT STDOUT_FILENO*/
+
 			else{
-				d_stdout=dup(STDOUT_FILENO);
+				d_stdout=dup(STDOUT_FILENO);//WE SAVE STDOUT BEFORE USING DUP2 TO RESTORE IT LATER
 				dup2(fd,STDOUT_FILENO);
 			}
-		}	
+		}
+
+		/*IF THE ERR FLAG WAS RAISED, WE ALSO NEED TO CUT THE 2*/	
 
 		if(flag_err){
 			len_cut++;
 			str_cut(&(anchor[-1]),len_cut);
 		}
+
+		/*ELSE WE CUT OUT THE > SYMBOLE + THE PATH*/
 		else{
 			str_cut(anchor,len_cut);
 		}
@@ -284,6 +314,7 @@ char * redir_out(char * prompt){
 		/*WE LOWER THE FLAG*/
 
 		flag=0;
+		free(path);
 
 	}while(anchor!=NULL);
 
@@ -291,67 +322,111 @@ char * redir_out(char * prompt){
 
 }
 
-
 char * redir_in(char * prompt){
 
-	/*WE SAVE THE FORMER DESCRIPTOR*/
-	d_stdin=dup(STDIN_FILENO);
-	/*WE COPY THE STRING BECAUSE STRTOK IN DECOMPSOE MIGHT MESS WITH IT*/
-	char * check =malloc(strlen(prompt)+sizeof(char));
-	if(check==NULL){
+	/*WE COPY THE PROMPT TO NOT BREAK IT*/
+
+	char * prompt_cpy=malloc(strlen(prompt)+sizeof(char));
+
+	/*ERROR MANGEMENT*/
+
+	if(prompt_cpy==NULL){
+
 		perror("malloc");
 		exit(-1);
 	}
 
-	strcpy(check,prompt);
+	/*WE SAVE THE ADRESS OF THE FIRST CHAR OF PROMPT_CPY IN
+	SAVE_POS. WE DECLARE ANCHOR AS NULL*/
 
-	/*WE DECOMPOSE LOOKING FOR ERROR REDIRECTIONS*/
+	strcpy(prompt_cpy,prompt);
+	char * save_pos =prompt_cpy;
+	char * anchor =NULL;
 
-	char ** tokens= decompose(check,"<");
-	/*IF A REDIRECTION WAS FOUND*/
-	if(strcmp(tokens[0],prompt)!=0){
+	/*----- WHILE WE CAN FIND A "<" IN PROMPT_CPY, WE REPEAT THE LOOP-----*/
 
-		int cpt=1;
+	do{
+		/*WE LOOK FOR THE FIRST OCC OF "<" IN PROMPT_CPY AND STORE IT IN ANCHOR*/
 
-		while(tokens[cpt]!=NULL){
+		anchor = strchr(prompt_cpy,'<');
 
-			/*WE OPEN THE REDIRECTION FILE AND CREATE IT IF NEEDED*/
-			int fd=open(tokens[cpt],O_RDWR);
+		/*ERROR MANGEMENT*/
 
-			/*ERROR MANGEMENT*/
-			if(fd<0){
-				perror("open");
-				free(check);
-				free(tokens);
-				char * ret_e=malloc(2);
-				strcpy(ret_e,"");
-				return ret_e;
-			}
-
-			dup2(fd,STDIN_FILENO);
-			cpt++;
+		if(anchor ==NULL){
+				
+			break;
 		}
-		/*WE RETURN THE PROMPT WITHOUT THE REDIRECTION PART*/
 
-		char * ret = malloc(strlen(tokens[0])+sizeof(char));
-		if(ret==NULL){
+		/*PATH IS WERE WE BUILD THE STRING OF WERE WE WILL REDIRECT*/
+		
+		char * path=malloc(sizeof(char));
 
+		/*ERROR MANGEMENT*/
+
+		if(path==NULL){
 			perror("malloc");
 			exit(-1);
 		}
-		strcpy(ret,tokens[0]);
-		free(check);
-		free(tokens);
-		return ret;
-	}
 
-	free(check);
-	free(tokens);
-	char * ret_v=malloc(2);
-	strcpy(ret_v,"");
-	return ret_v;
+		memset(path,0,sizeof(char));
+
+		//CPT FOR ANCHOR
+
+		int cpt=1;
+				
+		int cpt_path=0;//CPT FOR PATH
+		int len_cut=cpt;//THIS IS THE LENGHT OF THE SUB STRING WE WANT TO CUT FROM THE PROMPT
+						// INCLUDING THE < SYMBOL AND THE PATH
+
+		/*------ WE LOOP WHILE THE NEXT CHARACTER DOESN'T
+		INDICATE ANOTHER REDIRACTION OR THE END OF THE STRING------*/
+
+		while(anchor[cpt]!='\0' && anchor [cpt] != '<'){
+
+			/*IF THE STRING BEGINS BY A " " WE IGNORE IT*/
+
+			if(cpt == 1 && anchor[cpt]==' '){
+				cpt++;
+				len_cut ++;
+				continue;
+			}
+
+			/*IF WE ENCOUNTER A " " NOT AT THE BEGGINIGN THEN
+			WE ARE DONE BULIDING THE STRING*/
+
+			if(anchor[cpt]==' ' && cpt!=1 ){
+				len_cut++;
+				break;
+			}
+
+			/*WE FILL THE STRING, HANDLES CPT AND REALLOC ENOUGH
+			MEMORY TO FILL THE STRONG AT THE NEXT ITERATION OF THE WHILE*/
+
+			path[cpt_path]=anchor[cpt];
+			cpt_path++;
+			path=realloc(path,(cpt_path+1)*sizeof(char));
+			cpt++;
+
+			}
+
+		/*WE END THE STRING*/
+
+		path[cpt_path]='\0';
+		len_cut+=strlen(path);
+
+		int fd=open(path,O_RDWR|O_CREAT,S_IRUSR|S_IWUSR|S_IRGRP|S_IROTH);
+		d_stdin=dup(STDIN_FILENO);//WE SAVE STDOUT BEFORE USING DUP2 TO RESTORE IT LATER
+		dup2(fd,STDIN_FILENO);
+
+		/* WE CUT OUT THE < SYMBOLE + THE PATH*/
+		
+		str_cut(anchor,len_cut);
+		free(path);
+
+	}while(anchor!=NULL);
+
+	return save_pos;
 }
-
 
 void reinit_descriptors(){
 
@@ -366,7 +441,9 @@ SPECIFIED IN PROMPT*/
 
 char * redir(char * prompt){
 	
-	return redir_out(prompt);
+	char * ret =redir_out(prompt);
+	ret =redir_in(ret);
+	return ret;
 	
 }
 
@@ -502,20 +579,7 @@ int main (void){
 		/*WE CALL THE REDIR FUNCTION*/
 
 		char * prompt_clear=redir(prompt_cpy);
-		char ** tokens ;
-
-		/*IF A REDIRECTION HAPPENED, WE USE THE RETURNED STRING AS OUR PROMPT FOR
-		THE REST OF THE PROGRAM*/
-		if(strcmp(prompt_clear,"")!=0){
-
-			tokens = decompose(prompt_clear," ");
-		}
-
-		/*ELSE WE SIMPLY USE OUR PROMPT*/
-		
-		else{
-			tokens = decompose(prompt," ");
-		}
+		char ** tokens=decompose(prompt_clear," ");
 
 		/*PARSING THE COMMAND*/
 
