@@ -112,6 +112,23 @@ void pwd(){
 
 }
 
+/*RETURNS 1 IF AT LEAST AN ELEMENT OF TOKEN IS A STRING THAT CONTAINS .TAR
+ELSE RETURNS*/
+
+int args_contain_tar(char ** tokens){
+
+	int cpt=0;
+	while(tokens[cpt]!=NULL){
+
+		if(string_contains_tar(tokens[cpt])){
+
+			return 1;
+		}
+	}
+
+	return 0;
+}
+
 /*CUT THE SIZE FIRST CHAR FROM THE STRING PROMPT*/
 
 void str_cut(char *prompt ,int size){
