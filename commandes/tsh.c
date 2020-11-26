@@ -124,6 +124,8 @@ int args_contain_tar(char ** tokens){
 
 			return 1;
 		}
+		
+		cpt++;
 	}
 
 	return 0;
@@ -511,7 +513,7 @@ void parse (char ** tokens){
 				  case 0: //SON
 				  //IF WE ARE WORKING WITH TAR FILES
 
-				  	if(current_dir_is_tar()){
+				  	if(current_dir_is_tar() || args_contain_tar(tokens)){
 
 				  		//WE CHECK IF THE TAR COMMAND EXISTS/IS HANDLED
 
