@@ -85,9 +85,10 @@ int main (int argc, char *argv[]) {
 	// S'il n'y a pas d'arguments et que la variable d'environnement est dans un répertoire
 	if(nbfich == 0 && var_rep != NULL){
 		// Adopte le meme comportement qu'un repertoire en argument
-		strcpy(tampon, var_rep);
-		memset(&tampon[strlen(var_rep)], '\0', 512 - strlen(var_rep));
+		memset(tampon, '\0', 512);
 		struct posix_header * p_hdr_vide = (struct posix_header*)tampon;
+		strcpy(p_hdr_vide -> name, var_rep);
+		p_hdr_vide -> typeflag  = '5';
 		a[0] = add(a[0], p_hdr_vide, var_rep);
 	}
 
@@ -218,7 +219,7 @@ int main (int argc, char *argv[]) {
 	// ======================================================================
 
 	affichage format = malloc(sizeof(affichage));	// affichage final
-	init(format, 1);								// initialisation de l'affichage
+	init(format);								// initialisation de l'affichage
 
 	// AFFICHAGE SANS ARGUMENT
 	if(nbfich == 0) {
@@ -331,7 +332,7 @@ int main (int argc, char *argv[]) {
 		for (int i = 0; i < length3 ; i++) {
 
 			affichage aff = malloc(sizeof(affichage));
-			init(aff, 1);
+			init(aff);
 			node_t * node = get_head(array[2][i]);
 			int total = 0;
 
@@ -345,7 +346,7 @@ int main (int argc, char *argv[]) {
 			// Repertoire stocké en 1ere position
 			node = get_next(node);
 
-			// Ajout dans l'affichage de chaque fichiers du repertoire
+			// Ajout dans l'affichage chaque fichiers du repertoire
 			while(node != NULL) {
 				afficher(aff, node, list_tar, l, &size, var_rep);
 				total += 1 + ((size + BLOCKSIZE - 1) >> BLOCKBITS);
@@ -354,7 +355,8 @@ int main (int argc, char *argv[]) {
 
 			// Total
 			if(l == 1) {
-				char totale[30];
+				int n = strlen_int(total);
+				char totale[n + strlen("total \n")];
 				sprintf(totale, "total %d\n", total);
 				ajout(format, totale);
 			}

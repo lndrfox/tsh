@@ -172,19 +172,29 @@ typedef struct affichage {
 	int size;
 } a;
 
-void init(a * a, int size) {
-	a -> affichage = malloc(size + 1);
-	a -> size = size;
+char * to_string(a * a) {
+	if (a -> affichage == NULL)
+		return "";
+	return a -> affichage;
+}
+
+void init(a * a) {
+	a -> affichage = NULL;
+	a -> size = 0;
 }
 
 void ajout(a * a, char * ajout) {
-	a -> affichage = realloc(a -> affichage, (a -> size) + strlen(ajout) + 1);
-	a -> size = (a -> size) + strlen(ajout) + 1;
+	if(a == NULL) {
+		a -> affichage = malloc(strlen(ajout) + 1);
+		a -> size = strlen(ajout) + 1;
+		memset(a -> affichage , '\0', a -> size);
+	}
+	else{
+		a -> affichage = realloc(a -> affichage, (a -> size) + strlen(ajout) + 1);
+		memset(&(a -> affichage)[a -> size] , '\0', strlen(ajout) + 1);
+		a -> size = (a -> size) + strlen(ajout) + 1;
+	}
 	strcat(a -> affichage, ajout);
-}
-
-char * to_string(a * a) {
-	return a -> affichage;
 }
 
 // Affiche la date
@@ -210,14 +220,27 @@ void ptemps(a * a, long temps) {
 	}
 
 	// Jour
-	char jour[4];
+	int n = strlen_int(tempsformat -> tm_mday);
+	char jour[n + 2];
 	sprintf(jour, " %d ", tempsformat -> tm_mday);
 	ajout(a, jour);
 
 	// Si le fichier a ete modifie il y a moins de 6 mois
 	if(tactuel-temps < 60*60*24*183) {
+		char hour[3];
+		char min[3];
 		char time[5];
-		sprintf(time, "%d:%d", tempsformat -> tm_hour, tempsformat -> tm_min);
+
+		if(tempsformat -> tm_hour < 10)
+			sprintf(hour, "0%d", tempsformat -> tm_hour);
+		else 
+			sprintf(hour, "%d", tempsformat -> tm_hour);
+		if(tempsformat -> tm_min < 10) 
+			sprintf(min, "0%d", tempsformat -> tm_min);
+		else 
+			sprintf(min, "%d", tempsformat -> tm_min);
+
+		sprintf(time, "%s:%s", hour, min);
 		ajout(a, time);
 	}
 	else{
@@ -279,7 +302,8 @@ void plink(a * a, node_t * tar, struct posix_header hdr) {
 		node = get_next(node);
 	}
 
-	char hardlink[4];
+	int n = strlen_int(compt);
+	char hardlink[n + 2];
 	sprintf(hardlink, " %d ", compt);
 	ajout(a, hardlink);
 }
@@ -292,6 +316,7 @@ void afficheNom(a * a, node_t * node, node_t * tar, int option, char * var_rep) 
 	char n[strlen(hdr.name)];
 	char * rep = NULL;
 	int existe = existant(tar, hdr.linkname, rep);
+	int couleur = 0;
 
 	// Repertoire
 	if(node -> head -> p.typeflag == '5')
@@ -302,28 +327,40 @@ void afficheNom(a * a, node_t * node, node_t * tar, int option, char * var_rep) 
 	// Si c'est un repertoire: couleur bleu
 	if(hdr.typeflag == '5'){
 		ajout(a, "\033[1;34m");
+		couleur = 1;
 		// Supprimer '/' du nom
 		strcpy(n, hdr.name);
 		n[strlen(n) - 1] = '\0';
 		name = n;
 	}
+
 	// Si c'est un lien symbolique couleur cyan/rouge
 	else if(hdr.typeflag == '2') {
 		if(existe == 1)
 			ajout(a, "\033[1;36m");
 		else
 			ajout(a, "\033[1;31m\033[48;5;236m");
+		couleur = 1;
 	}
+
 	// Si c'est un tube couleur jaune
-	else if(hdr.typeflag == '6')
+	else if(hdr.typeflag == '6'){
 		ajout(a, "\033[0;33m\033[48;5;236m");
+		couleur = 1;
+	}
+
 	// Si c'est un fichier spécial caractère/bloc couleur jaune en gras
-	else if(hdr.typeflag == '3' || hdr.typeflag == '4')
+	else if(hdr.typeflag == '3' || hdr.typeflag == '4'){
 		ajout(a, "\033[1;33m\033[48;5;236m");
+		couleur = 1;
+	}
+
 	// Si c'est un executable couleur verte
 	else if(strchr(hdr.mode, '1') != NULL || strchr(hdr.mode, '3') != NULL || 
-			strchr(hdr.mode, '5') != NULL || strchr(hdr.mode, '7') != NULL)
+			strchr(hdr.mode, '5') != NULL || strchr(hdr.mode, '7') != NULL){
 		ajout(a, "\033[1;32m");
+		couleur = 1;
+	}
 
 	// Si c'est un fichier du repertoire choisi on affiche que le nom apres rep/...
 	if(rep != NULL) {
@@ -337,7 +374,8 @@ void afficheNom(a * a, node_t * node, node_t * tar, int option, char * var_rep) 
 		ajout(a, name);
 
 	// Renitialise la couleur
-	ajout(a, "\033[0m");
+	if(couleur == 1)
+		ajout(a, "\033[0m");
 
 	// Si c'est un symbolique et qu'il y a l'option "-l" on affiche le fichier sur lequel il pointe 
 	if(hdr.typeflag == '2' && option == 1) {

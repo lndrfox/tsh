@@ -1,6 +1,8 @@
 #ifndef PRINT_H
 #define PRINT_H
 
+// Longueur d'un chiffre
+int strlen_int(int num);
 
 // Impression d'un char*
 void prints(char* s);

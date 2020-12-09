@@ -24,8 +24,8 @@ extern int existant (node_t * n, char * file, char * rep);
 // AFFICHAGE
 
 typedef struct affichage * affichage;
-extern void init(affichage a, int size);
 extern char * to_string(affichage a);
+extern void init(affichage a);
 extern void ajout(affichage a, char * ajout);
 extern void ptemps(affichage a, long temps);
 extern void ptype(affichage a, char t);
