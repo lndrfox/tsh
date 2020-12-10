@@ -229,7 +229,7 @@ void ptemps(a * a, long temps) {
 	if(tactuel-temps < 60*60*24*183) {
 		char hour[3];
 		char min[3];
-		char time[5];
+		char time[6];
 
 		if(tempsformat -> tm_hour < 10)
 			sprintf(hour, "0%d", tempsformat -> tm_hour);
