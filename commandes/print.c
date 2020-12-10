@@ -4,6 +4,16 @@
 #include <string.h>    // strlen
 #include "print.h"
 
+// Calcul la longueur d'un int pour le transofmer en string
+int strlen_int(int num) {
+	int n = 1;
+	while(num > 10) {
+		num = num/10;
+		n++;
+	}
+	return n;
+}
+
 // Impression d'un char*
 void prints(char* s) {
 	char buf[strlen(s)];
@@ -47,12 +57,7 @@ void printsss(char* s1, char* arg, char* s2) {
 
 // Impression d'un int
 void printd(int s) {
-	int num = s;
-	int n = 1;
-	while(num > 10) {
-		num = num/10;
-		n++;
-	}
+	int n = strlen_int(s);
 	char str[n];
 	if(sprintf(str, "%d", s) <0) {
 		perror("\033[1;31mMauvais format ('d') de print ");
