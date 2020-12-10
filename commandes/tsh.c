@@ -528,16 +528,26 @@ void exec(char ** tokens){
 
 }
 
+/*EXECUTES THE COMMANDS SPECIFIED BY TOKEN_1 AND TOKEN_2 WITH A PIPE
+IF NEXT IS NULL THEN IT STOPS THERE. IF THERE IS ANOTHER COMMAND
+TO COMBINE IN NEXT, IT CALLS ITSELF RECURSIVELY*/
 
-void exec_pipe( char ** token_1, char ** token_2){
+
+void exec_pipe( char ** token_1, char ** token_2, char ** next){
+
+	/*WE CREATE THE PIPE*/
 
 	int fd[2];
+
+	/*ERROR MANGEMENT*/
 
 	if(pipe(fd)<0){
 
 		perror("pipe");
 		exit(-1);
 	}
+
+	/*WE FORK A FIRST TIME*/
 
 	int r,r2,w;
 	r=fork();
@@ -549,7 +559,10 @@ void exec_pipe( char ** token_1, char ** token_2){
 			perror("fork");
 			exit(EXIT_FAILURE);
 
-		case 0: //SON , WRITER
+		case 0: //SON 
+
+			/*WE NEED TO FORK A SECOND TIME TO BE ABLE TO HAVE
+			TWO NEW PROCESS*/
 			
 			r2=fork();
 
@@ -571,7 +584,29 @@ void exec_pipe( char ** token_1, char ** token_2){
 
 					close(fd[1]);
 					dup2(fd[0],STDIN_FILENO);
-					exec_tar_or_bin(token_2);
+
+					/*IF THERE IS NOTHING ELSE IN NEXT, THEN WE SIMPLY 
+					EXEC THE COMMAND*/
+
+					if(next[1]==NULL){
+
+						exec_tar_or_bin(token_2);
+					}
+
+					/*ELSE WE DECOMPOSE THE COMMAND IN NEXT[1] AND
+					THEN WE CALL EXEC_PIPES RECURSIVELY WITH TOKEN_2, TOKEN_NEXT
+					AND NEXT[1] FOR THE ARGUMENT NEXT*/
+
+					else{
+
+						char * token_cpy= malloc(strlen(next[1])+sizeof(char));
+						strcpy(token_cpy,next[1]);
+
+						char ** tokens_next=decompose(token_cpy," ");
+
+						exec_pipe(token_2,tokens_next,&(next[1]));
+					}
+					
 					exit(EXIT_FAILURE);
 			}
 			
@@ -630,6 +665,10 @@ void parse (char * prompt){
 	if(strcmp(tokens[0],"exit")==0){
 
 		run =0;
+		free(tokens_pipe);
+		free(tokens);
+		free(token_1);
+		free(prompt_cpy);
 		return;
 	}
 
@@ -638,6 +677,10 @@ void parse (char * prompt){
 	if(strcmp(tokens[0],"pwd")==0  && current_dir_is_tar()){
 
 		pwd();
+		free(tokens_pipe);
+		free(tokens);
+		free(token_1);
+		free(prompt_cpy);
 		return;
 	}
 
@@ -647,6 +690,10 @@ void parse (char * prompt){
 	 if(strcmp(tokens[0],"cd")==0){
 
 			cd(tokens[1]);
+			free(tokens_pipe);
+			free(tokens);
+			free(token_1);
+			free(prompt_cpy);
 			return;			
 		}
 
@@ -658,8 +705,12 @@ void parse (char * prompt){
 
 		if(tokens_pipe[1]!=NULL){
 
+			/*WE COPY THE NEXT PART TO NOT BREAK IT EITHER*/
+
 			char * token_2=malloc(strlen(tokens_pipe[1])+sizeof(char));
 			strcpy(token_2,tokens_pipe[1]);
+
+			/*ERROR MANGEMENT*/
 
 			if(token_2==NULL){
 
@@ -667,10 +718,17 @@ void parse (char * prompt){
 				exit(-1);
 			}
 
+			/*WE DECOMPOSE TOKEN_2 WITH " "*/
+
 			char ** tokens_2 = decompose(token_2," ");
 
-			exec_pipe(tokens,tokens_2);
+			/*WE CALL EXEC_PIPE WITH OUR TWO TOKENS AND TOKENS_PIPE[1] FOR THE ARGUMENT
+			NEXT*/
 
+			exec_pipe(tokens,tokens_2,&(tokens_pipe[1]));
+
+			free(tokens_2);
+			free(token_2);
 		}
 
 		/*IF WE DON'T HAVE PIPES*/
@@ -681,6 +739,13 @@ void parse (char * prompt){
 
 		}
 	}
+
+	/*FREES*/
+
+	free(tokens_pipe);
+	free(tokens);
+	free(token_1);
+	free(prompt_cpy);
 
 }
 
@@ -718,6 +783,7 @@ int main (void){
 
 		if(strlen(prompt)==0){
 
+			prints("\n");
 			continue;
 		}
 
@@ -739,12 +805,12 @@ int main (void){
 
 		char * prompt_clear=redir(prompt_cpy);
 
-		/*PARSING THE COMMAND*/
+		/*------PARSING THE COMMAND------*/
 
 		parse(prompt_clear);
 		reinit_descriptors();
 
-		/*FREE*/
+		/*------FREE------*/
 
 		free(prompt);
 		free(last_dir);
