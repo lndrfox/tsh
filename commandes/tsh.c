@@ -446,6 +446,9 @@ char * redir_in(char * prompt){
 	return save_pos;
 }
 
+/*REINITIALIZE THE DESCRIPTORS THAT MIGHT HAVE BEEN CHANGED
+BECAUS EOF REDIRECTIONS*/
+
 void reinit_descriptors(){
 
 	dup2(d_stdout,STDOUT_FILENO);
@@ -495,8 +498,10 @@ void exec_tar_or_bin(char ** tokens){
 	}
 }
 
+/*GIVEN A CHAR ** TOKENS CONTAINING A COMMAND NAMES, ITS ARGUMENTS AND FINISHING BY NULL
+EXEC FORKS AND THE CHILD PROCESS EXECUTES THE COMMAND IN TOKENS*/
 
-void exec( char ** tokens){
+void exec(char ** tokens){
 
 	/*WE FORK TO GET A NEW PROCESS*/
 
@@ -513,19 +518,15 @@ void exec( char ** tokens){
 		case 0: //SON
 
 			exec_tar_or_bin(tokens);
-
 			exit(EXIT_FAILURE);
 
 		default: //FATHER
 
 			//WAITING FOR THE SON TO TERMINATE	
-
 			wait(&w);
 	}
 
-
 }
-
 
 
 void exec_pipe( char ** token_1, char ** token_2){
@@ -538,8 +539,7 @@ void exec_pipe( char ** token_1, char ** token_2){
 		exit(-1);
 	}
 
-
-	int r;
+	int r,r2,w;
 	r=fork();
 
 	switch(r){
@@ -551,20 +551,36 @@ void exec_pipe( char ** token_1, char ** token_2){
 
 		case 0: //SON , WRITER
 			
+			r2=fork();
+
+			switch(r2){
+
+				case -1: //ERROR
+
+					perror("fork");
+					exit(EXIT_FAILURE);
+
+				case 0: //SON, WRITER
+
+					close(fd[0]);
+					dup2(fd[1],STDOUT_FILENO);
+					exec_tar_or_bin(token_1);
+					exit(EXIT_FAILURE);
+
+				default: //FATHER, READER
+
+					close(fd[1]);
+					dup2(fd[0],STDIN_FILENO);
+					exec_tar_or_bin(token_2);
+					exit(EXIT_FAILURE);
+			}
+			
+		default: //FATHER
+
 			close(fd[0]);
-			dup2(fd[1],STDOUT_FILENO);
-			exec_tar_or_bin(token_1);
-			exit(EXIT_FAILURE);
-
-		default: //FATHER, READER
-
-			//WAITING FOR THE SON TO TERMINATE	
 			close(fd[1]);
-			dup2(fd[0],STDIN_FILENO);
-			exec_tar_or_bin(token_2);
-			exit(EXIT_FAILURE);
+			wait(&w);			
 	}
-
 
 }
 
@@ -593,7 +609,7 @@ void parse (char * prompt){
 	/*WE COPY THE TOKEN BECAUSE WE DON't WANT TO BREAK IT
 	WHEN WE USE DECOMPOSE*/
 
-	char * token_1 =malloc(strlen(tokens_pipe[1])+sizeof(char));
+	char * token_1 =malloc(strlen(tokens_pipe[0])+sizeof(char));
 	strcpy(token_1,tokens_pipe[0]);
 
 	/*WE DECOMPOSE THE FIRST TOKEN SO WE CAN LOOK FOR 
@@ -615,7 +631,6 @@ void parse (char * prompt){
 
 		run =0;
 		return;
-
 	}
 
 	/*IF THE COMMAND IS PWD*/
@@ -624,7 +639,6 @@ void parse (char * prompt){
 
 		pwd();
 		return;
-
 	}
 
 	/*CD CAN'T BE CALLED AFTER A FORK CAUSE THE CHANGES WOULDNT CARRY OVER TO
