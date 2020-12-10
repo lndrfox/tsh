@@ -7,51 +7,83 @@
 #include "tar.h"
 #include "print.h"
 #include "lib.h"
-
-
-// Format: ./rmdir fichiertar.tar directory otherdirectory ...
-// (Un repertoire doit avoir '/' a la fin)
+#include "tar_nav.h"
 
 int main(int argc, char *argv[]){
 
-	// ======================================================================
-	// 	 		     INITIALISATION
-	// ======================================================================
-
-	char * tar = getenv("tar");
-	char * var_rep = NULL;
-
-	// Si la variable d'environnement est dans un repertoire du tar
-	if(strchr(tar, '/') != NULL) {
-		strtok(tar, "/");
-		char * var_r = strtok(NULL, "");
-		var_rep = malloc(strlen(var_r) + 2);
-		strcpy(var_rep, var_r);
-		strcat(var_rep, "/");
-	}
-
-	// Conditions des valeurs d'entrée
-	if (argc < 2){
-		prints("rmdir: opérande manquant\n");
-		exit(-1);
-	}
-
-	// Ouverture du tar
-	int fd = open(tar, O_RDWR);
-	if(fd < 0){
-		perror("\033[1;31mErreur lors de l'ouverture du tar\033[0m");
-		exit(-1);
-	}
-
-	struct posix_header * p_hdr;
-	char tampon[512];
+	int fd;
 
 	// ======================================================================
-	// 	 	  PARCOURS DU TAR POUR CHAQUE REPERTOIRE
+	// 	 	  PARCOURS DU TAR POUR CHAQUE ARGUMENT
 	// ======================================================================
 
 	for (int i=1; i<argc;i++){
 
+		// ======================================================================
+		// 	 		     INITIALISATION
+		// ======================================================================
+
+		char *test;
+		test=argv[i];
+
+		//We set a path removing every .. for argv1
+		char path1[100]; 
+		strcpy(path1,true_path(test));
+
+
+		//Will be a counter 
+		int i2 = 0;
+
+		//Array of the decompositiob of argv[1]
+		char ar[100];
+		strcpy(ar,path1);
+		char ** tokens = decompose(ar,"/");
+
+		//Will be the name of the tar to open
+		char tar[100];
+
+		//Will be the name of the copy
+		char path[100];
+
+		//Reset tar to "" in case there is a issue
+		strcpy(tar,"");
+
+		//While we dont see a the name of the file strcat the path to the tar
+		while(string_contains_tar(tokens[i2]) != 1){
+			strcat(tar,tokens[i2]);
+			strcat(tar,"/");
+			i2++;
+		}
+
+		//Final strcat to cpy the name of the file
+		strcat(tar,tokens[i2]); 
+		i2++;
+
+		//Reset path by the the first argument after the name of the tar
+		strcpy(path,tokens[i2]);
+		i2++;
+
+		//While there are still argument, copy the path 
+		while(tokens[i2] != NULL){
+			strcat(path,"/");
+			strcat(path,tokens[i2]);    
+			i2++;
+		}
+
+		// ======================================================================
+		// 			      OUVERTURE DU TAR
+		// ======================================================================
+
+		// OPENING THE TAR FILE
+		fd=open(tar,O_RDWR);
+
+		if(fd < 0){
+			perror("\033[1;31mErreur lors de l'ouverture du tar\033[0m");
+			exit(-1);
+		}
+
+		struct posix_header * p_hdr;
+		char tampon[512];
 		int valide = 0;			// 0: le repertoire ne peut pas etre supprime
 						// 1: le repertoire peut etre supprime
 
@@ -68,23 +100,17 @@ int main(int argc, char *argv[]){
 
 		// Si un repertoire est entre sans '/'
 		if(argv[i][strlen(argv[i]) - 1] != '/') {
-			arg = malloc(strlen(argv[i]) + 2);
-			strcpy(arg, argv[i]);
+			arg = malloc(strlen(path) + 2);
+			strcpy(arg, path);
 			strcat(arg, "/");
 		}
 		else {
-			arg = malloc(strlen(argv[i]) + 1);
-			strcpy(arg,argv[i]);
+			arg = malloc(strlen(path) + 1);
+			strcpy(arg,path);
 		}
 
 		// Si la variable d'environnement se trouve dans un repertoire du tar
-		if (var_rep != NULL) {
-			char * nouv_arg = malloc(strlen(var_rep) + strlen(arg) + 1);
-			strcpy(nouv_arg, var_rep);
-			strcat(nouv_arg, arg);
-			arg = realloc(arg, strlen(var_rep) + strlen(arg) + 1);
-			strcpy(arg, nouv_arg);
-		}
+        
 
 		// ----------------------------------------------------------------------
 		// 	 		     PARCOURS DU TAR
@@ -190,9 +216,9 @@ int main(int argc, char *argv[]){
 		// Retour au depart
 
 		lseek(fd,0,SEEK_SET);
-
+	
 	}
-
+	
 	close(fd);
 	exit(0);
 }
