@@ -141,6 +141,18 @@ int tar_file_exists(char * path, char * tar){
 
 /*RETURNS THE NAME OF THE TAR FILE WE ARE CURRENTLY WORKING ON*/
 
+char * get_tar_name_file(char * path){
+
+	if(!string_contains_tar(path)){
+
+		return NULL;
+	}
+
+	char ** tokens = decompose(path,"/");
+	return tokens[0];
+
+}
+
 char * get_tar_name(){
 
 	if(!current_dir_is_tar()){
