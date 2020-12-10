@@ -477,15 +477,10 @@ void exec_tar_or_bin(char ** tokens){
 
 	//IF WE ARE WORKING WITH TAR FILES
 
-	if(current_dir_is_tar() || args_contain_tar(tokens)){
+	if((current_dir_is_tar() || args_contain_tar(tokens)) && access(tokens[0],F_OK|X_OK)==0){
 
 		//WE CHECK IF THE TAR COMMAND EXISTS/IS HANDLED
-
-		if(access(tokens[0],F_OK|X_OK)==0){
-
-			//EXEC THE COMMAND
-			execv(tokens[0],tokens);
-		}
+		execv(tokens[0],tokens);
 					  		
 	}
 
