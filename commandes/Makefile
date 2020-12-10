@@ -2,7 +2,7 @@
 CC=gcc
 CFLAGS=-W -Wall
 LDFLAGS=
-EXEC=cat ls mkdir rmdir rm cp tsh
+EXEC=cat ls mkdir rmdir rm cp tsh mv cp_r
 
 all: $(EXEC)
 
@@ -33,13 +33,25 @@ ls: ls.o tar.o print.o lib.o
 ls.o: ls.c 
 	$(CC) -o $@ -c $< $(CFLAGS)
 
-cp: cp.o tar.o
+cp: cp.o tar.o print.o tar_nav.o
 	$(CC) -o $@ $^ $(LDFLAGS)
 
 cp.o: cp.c 
 	$(CC) -o $@ -c $< $(CFLAGS)
 
-cat: cat.o tar_nav.o tar.o print.o
+mv: mv.o tar.o print.o tar_nav.o
+	$(CC) -o $@ $^ $(LDFLAGS)
+
+mv.o: mv.c 
+	$(CC) -o $@ -c $< $(CFLAGS)
+
+cp_r: cp_r.o tar.o print.o tar_nav.o
+	$(CC) -o $@ $^ $(LDFLAGS)
+
+cp_r.o: cp_r.c 
+	$(CC) -o $@ -c $< $(CFLAGS)
+
+cat: cat.o tar_nav.o tar.o print.o 
 	$(CC) -o $@ $^ $(LDFLAGS)
 
 cat.o: cat.c 
@@ -51,13 +63,13 @@ mkdir: mkdir.o tar.o print.o tar_nav.o
 mkdir.o: mkdir.c 
 	$(CC) -o $@ -c $< $(CFLAGS)
 
-rmdir: rmdir.o tar.o print.o lib.o
+rmdir: rmdir.o tar.o print.o lib.o tar_nav.o
 	$(CC) -o $@ $^ $(LDFLAGS)
 
 rmdir.o: rmdir.c 
 	$(CC) -o $@ -c $< $(CFLAGS)
 
-rm: rm.o tar.o print.o lib.o
+rm: rm.o tar.o print.o lib.o tar_nav.o
 	$(CC) -o $@ $^ $(LDFLAGS)
 
 rm.o: rm.c 
