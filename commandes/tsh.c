@@ -466,11 +466,150 @@ char * redir(char * prompt){
 	
 }
 
-/*PARSE TOKENS AND EXEC THE APPROPRIATE COMMAND*/
+/*GIVEN TOKENS A CHAR ** CONTAINING A COMMAND NAMES AND IT'S ARGUMENT AND FINISH BY NULL,
+EXEC_TAR_OR_BIN DECIDES IF THE ORIGINAL VERSION OR THE TAR VERSION OF THE COMMAND
+SHOULD BE CALLED AND CALLS IT WITH EXEC*/
 
-void parse (char ** tokens){
+void exec_tar_or_bin(char ** tokens){
 
-	/*WE HANDLE THE SPECIFIC CASES*/
+	//IF WE ARE WORKING WITH TAR FILES
+
+	if(current_dir_is_tar() || args_contain_tar(tokens)){
+
+		//WE CHECK IF THE TAR COMMAND EXISTS/IS HANDLED
+
+		if(access(tokens[0],F_OK|X_OK)==0){
+
+			//EXEC THE COMMAND
+			execv(tokens[0],tokens);
+		}
+					  		
+	}
+
+	//ELSE IF WE ARE NOT WORKING WITH A TAR FILE
+
+	else{
+
+		execvp(tokens[0],tokens);
+						  	 		
+	}
+}
+
+
+void exec( char ** tokens){
+
+	/*WE FORK TO GET A NEW PROCESS*/
+
+	int r,w;
+	r=fork();
+
+	switch(r){
+
+		case -1: //ERROR
+
+			perror("fork");
+			exit(EXIT_FAILURE);
+
+		case 0: //SON
+
+			exec_tar_or_bin(tokens);
+
+			exit(EXIT_FAILURE);
+
+		default: //FATHER
+
+			//WAITING FOR THE SON TO TERMINATE	
+
+			wait(&w);
+	}
+
+
+}
+
+
+
+void exec_pipe( char ** token_1, char ** token_2){
+
+	int fd[2];
+
+	if(pipe(fd)<0){
+
+		perror("pipe");
+		exit(-1);
+	}
+
+
+	int r;
+	r=fork();
+
+	switch(r){
+
+		case -1: //ERROR
+
+			perror("fork");
+			exit(EXIT_FAILURE);
+
+		case 0: //SON , WRITER
+			
+			close(fd[0]);
+			dup2(fd[1],STDOUT_FILENO);
+			exec_tar_or_bin(token_1);
+			exit(EXIT_FAILURE);
+
+		default: //FATHER, READER
+
+			//WAITING FOR THE SON TO TERMINATE	
+			close(fd[1]);
+			dup2(fd[0],STDIN_FILENO);
+			exec_tar_or_bin(token_2);
+			exit(EXIT_FAILURE);
+	}
+
+
+}
+
+/*PARSE THE PROMPT AND CALLS THE APPROPRIATE FUNCTIONS
+TO TAKE CARE OF PIPES AND CHOOSE WHAT COMMAND SHOULD BE CALLED WITH EXEC*/
+
+void parse (char * prompt){
+
+	/*WE COPY THE PROMPT BECAUSE DECOMPOSE WILL BREAK THE STRING*/
+
+	char * prompt_cpy=malloc(strlen(prompt)+sizeof(char));
+	strcpy(prompt_cpy,prompt);
+
+	/*ERROR MANAGMENT*/
+
+	if(prompt_cpy==NULL){
+		perror("malloc");
+		exit(-1);
+	}
+
+	/*WE DECOMPOSE THE PORMPT ACCORDING TO  | SO WE CAN CHECK IF 
+	PIPES SHOULD BE USED*/
+
+	char ** tokens_pipe=decompose(prompt_cpy,"|");
+
+	/*WE COPY THE TOKEN BECAUSE WE DON't WANT TO BREAK IT
+	WHEN WE USE DECOMPOSE*/
+
+	char * token_1 =malloc(strlen(tokens_pipe[1])+sizeof(char));
+	strcpy(token_1,tokens_pipe[0]);
+
+	/*WE DECOMPOSE THE FIRST TOKEN SO WE CAN LOOK FOR 
+	CD AND EXIT*/
+
+	char ** tokens=decompose(token_1," ");
+
+	/*ERROR MANGEMENT*/
+
+	if(tokens==NULL){
+
+		perror("malloc");
+		exit(-1);
+	}
+
+	/*IF THE COMMAND IS EXIT*/
 
 	if(strcmp(tokens[0],"exit")==0){
 
@@ -478,6 +617,8 @@ void parse (char ** tokens){
 		return;
 
 	}
+
+	/*IF THE COMMAND IS PWD*/
 
 	if(strcmp(tokens[0],"pwd")==0  && current_dir_is_tar()){
 
@@ -495,52 +636,36 @@ void parse (char ** tokens){
 			return;			
 		}
 
+	/*ELSE WE TAKE CARE OF PIPES AND THEN EXECUTE THE COMMANDS*/
 
 	else{
 
-			/*WE FORK TO GET A NEW PROCESS*/
+		/*IF WE HAVE PIPES*/
 
-			int r,w;
-			r=fork();
+		if(tokens_pipe[1]!=NULL){
 
-			switch(r){
+			char * token_2=malloc(strlen(tokens_pipe[1])+sizeof(char));
+			strcpy(token_2,tokens_pipe[1]);
 
-				  case -1: //ERROR
+			if(token_2==NULL){
 
-				  	perror("fork");
-				    exit(EXIT_FAILURE);
+				perror("malloc");
+				exit(-1);
+			}
 
-				  case 0: //SON
-				  //IF WE ARE WORKING WITH TAR FILES
+			char ** tokens_2 = decompose(token_2," ");
 
-				  	if(current_dir_is_tar() || args_contain_tar(tokens)){
+			exec_pipe(tokens,tokens_2);
 
-				  		//WE CHECK IF THE TAR COMMAND EXISTS/IS HANDLED
+		}
 
-				  		if(access(tokens[0],F_OK|X_OK)==0){
+		/*IF WE DON'T HAVE PIPES*/
 
-				  			//EXEC THE COMMAND
-				  			execv(tokens[0],tokens);
-				  		}
-				  		
-				  	}
+		else{
 
-				  	//ELSE IF WE ARE NOT WORKING WITH A TAR FILE
+			exec(tokens);
 
-				  	else{
-
-				  		execvp(tokens[0],tokens);
-					  	 		
-				  	}
-
-				  	exit(EXIT_FAILURE);
-
-				  default: //FATHER
-
-				  	//WAITING FOR THE SON TO TERMINATE	
-
-				    wait(&w);
-				  }
+		}
 	}
 
 }
@@ -595,14 +720,14 @@ int main (void){
 
 		strcpy(prompt_cpy,prompt);
 
+
 		/*WE CALL THE REDIR FUNCTION*/
 
 		char * prompt_clear=redir(prompt_cpy);
-		char ** tokens=decompose(prompt_clear," ");
 
 		/*PARSING THE COMMAND*/
 
-		parse(tokens);
+		parse(prompt_clear);
 		reinit_descriptors();
 
 		/*FREE*/
@@ -611,7 +736,6 @@ int main (void){
 		free(last_dir);
 		free(prompt_clear);
 		free(prompt_cpy);
-		free(tokens);
 		
 	}
 
