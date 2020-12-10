@@ -149,12 +149,12 @@ int main(int argc, char *argv[]){
 
 				if(strlen(p_hdr-> name) == 0) {
 					if (fich == NULL) {
-						printsss("rm: impossible de supprimer '", path, "': Aucun fichier ou dossier de ce type\n");
+						printsss("rm: impossible de supprimer '", argv[i], "': Aucun fichier ou dossier de ce type\n");
 						break;
 					}
 					else {
 						if(rep == 1 && r == 0) {
-							printsss("rm: impossible de supprimer '", path, "': est un dossier\n");
+							printsss("rm: impossible de supprimer '", argv[i], "': est un dossier\n");
 							break;
 						}
 						else {
