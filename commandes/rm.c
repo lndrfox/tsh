@@ -123,7 +123,6 @@ int main(int argc, char *argv[]){
 			// Si un repertoire est entre sans '/'
 			arg = malloc(strlen(path) + 1);
 			strcpy(arg,path);
-			prints(arg);
 
 			// ----------------------------------------------------------------------
 			// 	 		       PARCOURS DU TAR
