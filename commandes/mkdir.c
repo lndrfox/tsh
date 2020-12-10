@@ -15,49 +15,63 @@
 
 int main(int argc, char *argv[]){
 
-	char * tar=getenv("tar");
 
-	// CHECKING IF WE HAVE ENOUGH ARGUMENTS
+       
 
-	if (argc<2){
+  // WE LOOP ON EVERY DIRECTORY THAT WE NEED TO CREATE
+  int fd;
+  for (int i=1; i<argc;i++){
 
-		prints("Error invalid argument \n");
-		return -1;
-	}
+    struct posix_header hd;
+	  
+    char *test;
+    test=argv[i];
 
+    //We set a path removing every .. for argv1
+    char path1[100]; 
+    strcpy(path1,true_path(test));
 
+    //Will be a counter 
+    int i2 = 0;
 
+    //Array of the decompositiob of argv[1]
+    char ar[100];
+    strcpy(ar,path1);
+    char ** tokens = decompose(ar,"/");
 
+    //Will be the name of the tar to open
+    char tar[100];
 
-	// OPENING THE TAR FILE
+    //Will be the name of the copy
+    char path[100];
 
-	int fd=open(tar,O_RDWR);
+    //Reset tar to "" in case there is a issue
+    strcpy(tar,"");
 
-	//ERROR MANAGMENT
+    //While we dont see a the name of the file strcat the path to the tar
+    while(string_contains_tar(tokens[i2]) != 1){
+      strcat(tar,tokens[i2]);
+      strcat(tar,"/");
+      i2++;
+    }
+    
+    //Final strcat to cpy the name of the file
+    strcat(tar,tokens[i2]); 
+    i2++;
 
-	if(fd==-1){
-		perror("open tar file");
-		exit(-1);
-	}
+    //Reset path by the the first argument after the name of the tar
+    strcpy(path,tokens[i2]);
+    i2++;
 
-	// THIS IS WERE WE STORE HEADERS
+    //While there are still argument, copy the path 
+    while(tokens[i2] != NULL){
+      strcat(path,"/");
+      strcat(path,tokens[i2]);    
+      i2++;
+    }
 
-	struct posix_header hd;
-
-		// WE LOOP ON EVERY DIRECTORY THAT WE NEED TO CREATE
-
-	for (int i=1; i<argc;i++){
-
-
-		if(sizeof(argv[i])>sizeof(char[100])){
-
-			prints("Error directory ");
-			prints(argv[i]);
-			prints(" name is too long\n");
-			return -1;
-
-		}
-
+    // OPENING THE TAR FILE
+    fd=open(tar,O_RDWR);
 
 
 		do{
@@ -84,10 +98,10 @@ int main(int argc, char *argv[]){
 
 			//IF WE FOUND THE HEADER, IT ALREADY EXISTS AND WE HAVE AN ERROR
 
-			if(strcmp(hd.name,argv[i])==0){
+			if(strcmp(hd.name,path)==0){
 
 				prints("Error, the directory ");
-				prints(argv[i]);
+				prints(path);
 				prints(" already exists");
 				return -1;
 
@@ -118,7 +132,7 @@ int main(int argc, char *argv[]){
 		//  WE NEED TO ADD / AT THE END OF THE DIRECTORY NAME FOR IT TO BE VALID
 
 		char name_tmp[100];
-		sprintf(name_tmp, "%s", argv[i]);
+		sprintf(name_tmp, "%s", path);
 		char name_tmp2 [100]="/";
 		strcat(name_tmp, name_tmp2);
 		sprintf(dir.name, "%s", name_tmp);

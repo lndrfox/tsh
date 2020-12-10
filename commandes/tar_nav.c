@@ -141,18 +141,6 @@ int tar_file_exists(char * path, char * tar){
 
 /*RETURNS THE NAME OF THE TAR FILE WE ARE CURRENTLY WORKING ON*/
 
-char * get_tar_name_file(char * path){
-
-	if(!string_contains_tar(path)){
-
-		return NULL;
-	}
-
-	char ** tokens = decompose(path,"/");
-	return tokens[0];
-
-}
-
 char * get_tar_name(){
 
 	if(!current_dir_is_tar()){
@@ -419,4 +407,48 @@ char * path_is_valid(char * path){
 	free(pathf);
 	free(pathtest);
 	return NULL;
+}
+
+
+char * true_path(char *path){
+ 
+ 
+  char tar[100];
+ 
+  strcpy(tar,getenv("tar"));
+
+  char ** tokens = decompose(tar,"/");
+
+  char ar[100];
+  strcpy(ar, path);
+
+  
+  char ** tokens2 = decompose((ar),"/");
+  int i = 0; 
+  int i2 = 0;
+  
+  while (tokens[i] != NULL){
+    i++;
+  }
+  
+  while (tokens2[i2] != NULL){
+    if(strcmp(tokens2[i2],"..") == 0){
+      if(i == 0) {
+	perror ("error path");
+	return NULL;
+      }
+      tokens[i-1]=NULL;
+      i--;
+      
+    }
+    else{
+      tokens[i] = tokens2[i2];
+      i++;
+    }
+    i2++;
+  }
+  tokens[i] = NULL;
+  char *ret = flatten(tokens,"/");
+  return ret;
+  
 }

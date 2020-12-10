@@ -21,27 +21,60 @@ int main(int argc, char *argv[]){
 		prints("Error invalid argument \n");
 	}
 
-	// OPENING THE TAR FILE
+        // WE LOOP ON EVERY DIRECTORY THAT WE NEED TO CREATE
+  int fd;
+  for (int i=1; i<argc;i++){
 
-	char * tar =get_tar_name(getenv("tar"));
+    struct posix_header hd;
+	  
+    char *test;
+    test=argv[i];
 
-	int fd=open(tar,O_RDONLY);
+    //We set a path removing every .. for argv1
+    char path1[100]; 
+    strcpy(path1,true_path(test));
 
-	//ERROR MANAGMENT
+    //Will be a counter 
+    int i2 = 0;
 
-	if(fd==-1){
-		perror("open tar file");
-		exit(-1);
-	}
+    //Array of the decompositiob of argv[1]
+    char ar[100];
+    strcpy(ar,path1);
+    char ** tokens = decompose(ar,"/");
 
-	// THIS IS WERE WE STORE HEADERS
+    //Will be the name of the tar to open
+    char tar[100];
 
-	struct posix_header hd;
+    //Will be the name of the copy
+    char path[100];
 
+    //Reset tar to "" in case there is a issue
+    strcpy(tar,"");
 
-		// LOOPING ON EVERY FILE THAT WAS PUT AS AN ARGUMENT
+    //While we dont see a the name of the file strcat the path to the tar
+    while(string_contains_tar(tokens[i2]) != 1){
+      strcat(tar,tokens[i2]);
+      strcat(tar,"/");
+      i2++;
+    }
+    
+    //Final strcat to cpy the name of the file
+    strcat(tar,tokens[i2]); 
+    i2++;
 
-	for(int i=1; i<argc; i++){
+    //Reset path by the the first argument after the name of the tar
+    strcpy(path,tokens[i2]);
+    i2++;
+
+    //While there are still argument, copy the path 
+    while(tokens[i2] != NULL){
+      strcat(path,"/");
+      strcat(path,tokens[i2]);    
+      i2++;
+    }
+
+    // OPENING THE TAR FILE
+    fd=open(tar,O_RDWR);
 
 		unsigned int size;
 
@@ -80,8 +113,7 @@ int main(int argc, char *argv[]){
 
 			//IF WE FOUND THE RIGHT HEADER, WE GET OUT OF THE LOOP
 			if(strcmp(getenv("tar"),tar)==0){
-
-				if(strcmp(hd.name,argv[i])==0){
+				if(strcmp(hd.name,path)==0){
 
 					break;
 				}
@@ -93,7 +125,7 @@ int main(int argc, char *argv[]){
 				relative= realloc(relative,strlen(relative)+strlen(hd.name)+sizeof(char));
 				relative=strcat(relative,hd.name);
 
-				if(strcmp(relative,argv[i])==0){
+				if(strcmp(relative,path)==0){
 
 					break;
 				}
@@ -155,7 +187,7 @@ int main(int argc, char *argv[]){
 	prints("\n");
 
 	close(fd);
-	free(tar);
+
 
 
 	return 0;
