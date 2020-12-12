@@ -19,6 +19,7 @@ int run=1;
 int d_stdout=1;
 int d_stdin=0;
 int d_stderr=2;
+char path_home [PATH_MAX + 1];;
 
 /*READS A LINE ENTERED IN THE TERMINAL AND RETURNS IT*/
 
@@ -477,10 +478,19 @@ void exec_tar_or_bin(char ** tokens){
 
 	//IF WE ARE WORKING WITH TAR FILES
 
-	if((current_dir_is_tar() || args_contain_tar(tokens)) && access(tokens[0],F_OK|X_OK)==0){
+	char * true_path=malloc(strlen(path_home)+sizeof(char));
+	true_path=strcpy(true_path,path_home);
+	true_path=realloc(true_path,strlen(true_path)+2*(sizeof(char)));
+	true_path=strcat(true_path,"/");
+	true_path=realloc(true_path,strlen(true_path)+strlen(tokens[0])+sizeof(char));
+	true_path=strcat(true_path,tokens[0]);
+
+	if((current_dir_is_tar() || args_contain_tar(tokens)) && access(true_path,F_OK|X_OK)==0){
 
 		//WE CHECK IF THE TAR COMMAND EXISTS/IS HANDLED
-		execv(tokens[0],tokens);
+
+		execv(true_path,tokens);
+
 					  		
 	}
 
@@ -752,6 +762,7 @@ int main (void){
 
 	setenv("tar","",1);
 	prints("\n");
+	getcwd(path_home,sizeof(path_home));
 
 	while(run){
 
