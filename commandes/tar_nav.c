@@ -413,42 +413,125 @@ char * path_is_valid(char * path){
 char * true_path(char *path){
  
  
-  char tar[100];
- 
-  strcpy(tar,getenv("tar"));
+  	char ** tokens =decompose(path,"/");
+	
+	/*IF THERE IS NOTHING ELSE IN TOKEN THEN WE ARE DONE*/
 
-  char ** tokens = decompose(tar,"/");
+	if(tokens[1]==NULL){
 
-  char ar[100];
-  strcpy(ar, path);
+		return tokens[0];
+	}
 
-  
-  char ** tokens2 = decompose((ar),"/");
-  int i = 0; 
-  int i2 = 0;
-  
-  while (tokens[i] != NULL){
-    i++;
-  }
-  
-  while (tokens2[i2] != NULL){
-    if(strcmp(tokens2[i2],"..") == 0){
-      if(i == 0) {
-	perror ("error path");
-	return NULL;
-      }
-      tokens[i-1]=NULL;
-      i--;
-      
-    }
-    else{
-      tokens[i] = tokens2[i2];
-      i++;
-    }
-    i2++;
-  }
-  tokens[i] = NULL;
-  char *ret = flatten(tokens,"/");
-  return ret;
+	int i=0;
+
+	/*WE LOOP ON ALL THE TOKENS TO COUNT HOW MANY TOKENS THE FINAL PATH HAS*/
+
+	int cpt_tok=1;
+
+	while(tokens[cpt_tok]!=NULL){
+		/*HANDLING THE .. CASE*/
+
+		if(strcmp(tokens[cpt_tok],"..")==0){
+
+			/*IF THERE IS NOTHING BEFORE THE .. THEN WE EXIT THE TAR*/
+
+			if(i ==0){
+
+				return "";
+			}
+
+			else{
+
+				i --;
+			}
+
+		}
+
+		/*ANY OTHER CASES*/
+
+		else{
+			i ++;
+		}
+
+		cpt_tok++;
+	}
+
+	if(i<0){
+
+		return NULL;
+	}
+
+	if(i==0){
+		return tokens[0];
+	}
+
+	/*F_PATH CONTAINS THE TOKENS OF THE TRUE PATH WITHOUT ..*/
+	char ** f_path =(char **) calloc(i+1,sizeof(char *));
+
+	if(f_path==NULL){
+
+		perror("calloc");
+		exit(-1);
+	}
+
+	/*CPT IS THE INDEX OF THE TOKEN WE ARE CURRENTLY ACCESSING IN F_PATH*/
+
+	int cpt=0;
+
+	/*WE LOOP ON ALL THE TOKENS */
+
+	cpt_tok=1;
+
+	while(tokens[cpt_tok]!=NULL){
+
+
+
+		/*HANDLING THE .. CASE*/
+
+		if(strcmp(tokens[cpt_tok],"..")==0){
+
+			cpt --;
+			f_path[cpt]=NULL;
+
+		}
+
+		/*ANY OTHER CASES*/
+
+		else{
+			f_path[cpt]=tokens[cpt_tok];
+			cpt ++;
+		}
+
+		cpt_tok++;
+	}
+
+	f_path[cpt]=NULL;
+
+
+	/*FLATTENING THE PATH INTO A STRING*/
+	char * pathf =flatten(f_path, "/");
+
+	free(f_path);
+
+	/*IF SUCH A DIRECTORY EXISTS IN THE TAR THEN WE CAN RETURN PATH*/
+
+	/*WE NEED TO ADD A / AT THE END TO SEARCH IN THE TAR*/
+
+
+
+		/*BUILDING THE STRING TO HAVE THE FORMAT "/PATH/PATH/../" */
+
+	char * final = (char * ) malloc(strlen(tokens[0])+sizeof(char));
+	strcpy(final,tokens[0]);
+	final=realloc(final,strlen(final)+strlen("/")+sizeof(char));
+	final=strcat(final,"/");
+	final=realloc(final,strlen(final)+strlen(pathf)+sizeof(char));
+	final=strcat(final,pathf);
+
+	free(tokens);
+	free(pathf);
+
+	printf("%s\n",final);
+	return final;
   
 }
