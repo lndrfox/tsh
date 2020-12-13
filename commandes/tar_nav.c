@@ -235,8 +235,7 @@ int file_exists_in_tar(char * path, char * tar){
 				return 1;
 
 			}
-
-			
+				
 			//READING THE SIZE OF THE FILE CORRESPONDING TO THE CURRENT HEADER
 
 			unsigned int size;
@@ -253,67 +252,92 @@ int file_exists_in_tar(char * path, char * tar){
 
 }
 
-
-
 /*IF PATH IS A VALID PATH, RETURN A CHAR * WITH THE PATH ( WITH .. PROCESSED ) ELSE
-RETURNS NULL*/
+RETURNS NULL, IF WE SIMPLY NEED TO EXIT THE TAR, RETURNS ""*/
 
 char * path_is_valid(char * path){
+
+	/*WE COPY THE PATH TO AVOID BREAKING IT*/
 
 	char* path_cpy= malloc(strlen(path)+sizeof(char));
 	strcpy(path_cpy,path);
 
+	/*WE DECOMPOSE THE PATH*/
+
 	char ** tokens = decompose(path_cpy,"/");
-	
+
+	/*TRUE PATH WILL GIVE US 
+
+	A - IF WE STAY IN THE TAR, A PATH LOOKING LIKE getenv("tar")+PATH PROCESSED
+	WITHOUT ANY ..
+
+	B - IF WE GET OUT OF THE TAR AND NOTHING ELSE IT WILL RETURN "exit"
+
+	C - IF WE NEED TO GET OUT OF THE TAR BUT THERE IS STILL A PATH TO PROCESS AFTER THAT
+	IT WILL RETURN THE PATH TO PROCESS AFTER GETTING OUT OF THE TAR, .. INCLUDED
+
+	D - IF THE PATH IS NOT VALID IT RETURNS NULL*/
+
 	char * pathf=true_path(path);
+
+	/*D - IF PATHF IS NULL WE SIMPLY RETURN IT AS IT MEANS THE PATH
+	ISN'T VALID*/
 
 	if(pathf==NULL){
 
 		return pathf;
 	}
 
+	/*WE COPY PATHF AND THEN DECOMPOSE IT*/
+
 	char * pathf_copy= malloc(strlen(pathf)+sizeof(char));
 	strcpy(pathf_copy,pathf);
-
 	char ** tokens_pathf=decompose(pathf_copy,"/");
 
-
-	printf("\n%s\n",pathf);
+	/*B - IF WE HAVE EXIT THEN WE SIMPLY EXIT THE TAR*/
 
 	if(strcmp(pathf,"exit")==0){
 
 		return "";
 	}
 
+	/*C - WE STILL HAVE A PATH TO PROCESS BUT NOT IN THE TAR
+	SO WE RETURN PATHF RIGHT AWAY*/
+
 	if(!string_contains_tar(tokens_pathf[0])){
 
 		return pathf;
-	}	
+	}
+
+	/*CHECKS THAT THE TAR FILE THE PATH IS IN IS IN THE CURRENT LAST NOT TAR DIRECTORY*/	
 
 	char bufdir [PATH_MAX + 1];
-	getcwd(bufdir,sizeof(bufdir));
-
-	/*	CHECKS THAT THE TAR FILE THE PATH IS IN IS IN THE CURRENT LAST NOT TAR DIRECTORY*/
+	getcwd(bufdir,sizeof(bufdir));	
 
 	if(!tar_file_exists(bufdir,tokens_pathf[0])){
 
 		return NULL;
 	}
 
+	/*IF THERE IS NO MORE TOKENS, AS WE JUST CHECKED THE EXISTENCE
+	OF THE .TAR, WE CAN RETURN PATHF*/
+
 	if(tokens_pathf[1]==NULL){
 
 		return pathf;
 	}
+
+	/*WE FLATTEN AND THEN MODIFY THE STRING SO WE CAN GET PATHF BUT WITHOUT 
+	THE XX.TAR TOKEN AT THE BEGGINING*/
 	
 	char * path_without_tar= flatten(&(tokens_pathf[1]),"/");
-
 	path_without_tar=realloc(path_without_tar,strlen(path_without_tar)+2*sizeof(char));
 	path_without_tar=strcat(path_without_tar,"/");;
 
-	
-	if(file_exists_in_tar(path_without_tar,tokens_pathf[0])){
+	/*WE CHECK THAT THE PATH WE OBTAINED DOES EXIST IN THE TAR
+	WE ARE CURRENTLY IN*/
 
-		/*BUILDING THE STRING TO HAVE THE FORMAT "/PATH/PATH/../" */
+	if(file_exists_in_tar(path_without_tar,tokens_pathf[0])){
 
 		free(tokens);
 		free(tokens_pathf);
@@ -322,6 +346,8 @@ char * path_is_valid(char * path){
 
 		return pathf;
 	}
+
+	/*IF NOTHING FITS THEN WE RETURN NULL*/
 
 	free(tokens);
 	free(pathf);

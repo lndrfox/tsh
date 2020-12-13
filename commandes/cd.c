@@ -36,7 +36,9 @@ void cd (char * p){
 
 		if(a_path==NULL){
 
-				write(2,"Path invalid\n",strlen("Path invalid\n"));
+				write(2,"tsh: cd: ",strlen("tsh: cd: "));
+				write(2,p,strlen(p));
+				write(2,": No such file or directory\n",strlen(": No such file or directory\n"));
 				return;
 		}
 
@@ -76,15 +78,21 @@ void cd (char * p){
 				cd(tokens_a_path[cpt]);
 				cpt++;
 			}
-			
+
+			free(tokens_a_path);
+			free(a_path_copy);
+			free(a_path);
 			return;
 		}
 
 		/*OTHERWISE WE SIMPLY UPDATE THE ENV VAR TAR*/
-		
+
 		else{
 	
 			setenv("tar",a_path,1);
+			free(tokens_a_path);
+			free(a_path_copy);
+			free(a_path);
 			return;
 		}
 
@@ -97,61 +105,73 @@ void cd (char * p){
 
 		/*TOKING THE PATH*/
 
-		char ** tokens = decompose(p,"/");
-		int cpt=0;
+		char * p_copy=malloc(strlen(p)+sizeof(char));
+		strcpy(p_copy,p);
+		char ** tokens = decompose(p_copy,"/");
+
+		/*THIS IS WHERE WE STORE THE PATH ONCE WE 
+		HAVE DEALTH WITH ABSOLUTE PATH*/
+
+		char * final;
 
 		/*-----ABSOLUTE PATH------*/
 
 		char c =p[0];
 
+		/*IF THE FIRST CHARACTER IS A "/" THEN THIS IS AN ABSOLUTE PATH*/
+
 		if(c == '/'){
 
-			char absolute [1+strlen(tokens[cpt])];
+			/*WE BUILD ABSOLUTE AS STRING CONTAINING
+			A "/" AND THE FIRST TOKEN OF THE PATH*/
+
+			char absolute [1+strlen(tokens[0])];
 			strcat(absolute,"/");
-			strcat(absolute,tokens[cpt]);
+			strcat(absolute,tokens[0]);
 
 			/*ERROR MANAGMENT*/
 
 			if(chdir(absolute)!=0){
 
-				perror("chdir");
+				write(2,"tsh: cd: ",strlen("tsh: cd: "));
+				write(2,p,strlen(p));
+				write(2,": No such file or directory\n",strlen(": No such file or directory\n"));
+				return;
 			}
 
-			cpt++;
+			/*SINCE IT WAS AN ABSOLUTE PATH, WE IGNORE THE FIRST TOKEN
+			WHEN WE FLATTEN THE PATH*/
 
+			final=flatten(&(tokens[1]),"/");
 		}
 
 
 		/*----RELATIVE PATH------*/
 
+		/*WE FLATTEN ALL THE PATH*/
+
 		else{
 
-			cpt=0;
+			final=flatten(tokens,"/");
+
 		}
 
-		/*WE ACCESS EACH TOKEN*/
+		/*ERROR MANAGMENT*/
 
-		while(tokens[cpt]!=NULL){
+		if(chdir(final)!=0){
 
-			/*ERROR MANAGMENT*/
-
-			if(chdir(tokens[cpt])!=0){
-
-				perror("chdir");
+			write(2,"tsh: cd: ",strlen("tsh: cd: "));
+			write(2,p,strlen(p));
+			write(2,": No such file or directory\n",strlen(": No such file or directory\n"));
+			
 				
-			}
-
-			cpt++;
-
 		}
 
 		free(tokens);
-
+		free(p_copy);
+		free(final);
+		return;
 
 	}
-
-	
-
-	
 
 }
