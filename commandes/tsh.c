@@ -470,6 +470,39 @@ char * redir(char * prompt){
 	
 }
 
+/*RETURNS 1 IF PATH ENDS IN A TAR DIRECTORY OR THE CHILD OF A TAR DIRECTORY, 0 OTHERWISE*/
+
+int goes_back_in_tar(char * path){
+
+	char * path_copy=malloc(strlen(path)+sizeof(char));
+	strcpy(path_copy,path);
+
+	char ** tokens=decompose(path_copy,"/");
+
+	int cpt=0;
+	int flag=0;
+	int ret=0;
+
+	while(tokens[cpt]!=NULL){
+
+		if(string_contains_tar(tokens[cpt])){
+			ret=1;
+			flag=1;
+		}
+
+		else if(flag && strcmp(tokens[cpt],"..")==0){
+
+			ret =0;
+			flag=0;
+		}
+
+		cpt++;
+	}
+
+	return ret;
+}
+
+
 /*GIVEN TOKENS A CHAR ** CONTAINING A COMMAND NAMES AND IT'S ARGUMENT AND FINISH BY NULL,
 EXEC_TAR_OR_BIN DECIDES IF THE ORIGINAL VERSION OR THE TAR VERSION OF THE COMMAND
 SHOULD BE CALLED AND CALLS IT WITH EXEC*/
@@ -481,7 +514,7 @@ void exec_tar_or_bin(char ** tokens){
 	/*TO BE ABLE TO CALL THE COMMANDS FROM EVERYWHERE, WE BUILD TRUE_PATH
 	AS A STRING CONTAINING PATH_HOME, THE DIRECTORY WHERE THE COMMAND FILES ARE
 	THEN A / AND THEN TOKENS[0]*/
-	
+
 	char * true_path=malloc(strlen(path_home)+sizeof(char));
 	true_path=strcpy(true_path,path_home);
 	true_path=realloc(true_path,strlen(true_path)+2*(sizeof(char)));
@@ -643,6 +676,7 @@ void parse (char * prompt){
 	/*ERROR MANAGMENT*/
 
 	if(prompt_cpy==NULL){
+
 		perror("malloc");
 		exit(-1);
 	}
