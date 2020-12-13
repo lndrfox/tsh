@@ -12,67 +12,9 @@
 #include "tar_nav.h"
 
 
+void create_dir(int fd, char *  arg, char * path){
 
-int main(int argc, char *argv[]){
-
-
-       
-
-  // WE LOOP ON EVERY DIRECTORY THAT WE NEED TO CREATE
-  int fd;
-  for (int i=1; i<argc;i++){
-
-    struct posix_header hd;
-	  
-    char *test;
-    test=argv[i];
-
-    //We set a path removing every .. for argv1
-    char path1[100]; 
-    strcpy(path1,true_path(test));
-
-    //Will be a counter 
-    int i2 = 0;
-
-    //Array of the decompositiob of argv[1]
-    char ar[100];
-    strcpy(ar,path1);
-    char ** tokens = decompose(ar,"/");
-
-    //Will be the name of the tar to open
-    char tar[100];
-
-    //Will be the name of the copy
-    char path[100];
-
-    //Reset tar to "" in case there is a issue
-    strcpy(tar,"");
-
-    //While we dont see a the name of the file strcat the path to the tar
-    while(string_contains_tar(tokens[i2]) != 1){
-      strcat(tar,tokens[i2]);
-      strcat(tar,"/");
-      i2++;
-    }
-    
-    //Final strcat to cpy the name of the file
-    strcat(tar,tokens[i2]); 
-    i2++;
-
-    //Reset path by the the first argument after the name of the tar
-    strcpy(path,tokens[i2]);
-    i2++;
-
-    //While there are still argument, copy the path 
-    while(tokens[i2] != NULL){
-      strcat(path,"/");
-      strcat(path,tokens[i2]);    
-      i2++;
-    }
-
-    // OPENING THE TAR FILE
-    fd=open(tar,O_RDWR);
-
+	struct posix_header hd;
 
 		do{
 
@@ -86,7 +28,7 @@ int main(int argc, char *argv[]){
 
 				perror("reading tar file");
 				close(fd);
-				return -1;
+				exit (-1);
 			}
 
 			//IF WE REACHED THE END OF THE TAR WITHOUT FINDING THE HEADER THEN IT DOESNT EXIST AND WE CAN CREATE IT
@@ -103,7 +45,7 @@ int main(int argc, char *argv[]){
 				prints("Error, the directory ");
 				prints(path);
 				prints(" already exists");
-				return -1;
+				exit(-1);
 
 			}
 
@@ -118,7 +60,7 @@ int main(int argc, char *argv[]){
 			lseek(fd,((size+ BLOCKSIZE - 1) >> BLOCKBITS)*BLOCKSIZE,SEEK_CUR);
 
 
-		}while(strcmp(hd.name,argv[i])!=0);
+		}while(strcmp(hd.name,arg)!=0);
 
 		//CREATING THE HEADER FOR THE NEW DIRECTORY
 
@@ -219,23 +161,72 @@ int main(int argc, char *argv[]){
 			}
 
 		}
+}
 
 
 
+int main(int argc, char *argv[]){    
 
-		//WE GO BACK TO THE BEGINNING OF THE TAR FILE TO MAKE SURE THAT WE DONT CREATE A DIRECTORY THAT ALREADY EXISTS 
-		// FOR THE NEXT ARGUMENT
+  // WE LOOP ON EVERY DIRECTORY THAT WE NEED TO CREATE
+ 
+  for (int i=1; i<argc;i++){
 
-		lseek(fd,0,SEEK_SET);
+	  
+    char *test;
+    test=argv[i];
+
+    //We set a path removing every .. for argv1
+    char path1[100]; 
+    strcpy(path1,true_path(test));
+
+    //Will be a counter 
+    int i2 = 0;
+
+    //Array of the decompositiob of argv[1]
+    char ar[100];
+    strcpy(ar,path1);
+    char ** tokens = decompose(ar,"/");
+
+    //Will be the name of the tar to open
+    char tar[100];
+
+    //Will be the name of the copy
+    char path[100];
+
+    //Reset tar to "" in case there is a issue
+    strcpy(tar,"");
+
+    //While we dont see a the name of the file strcat the path to the tar
+    while(string_contains_tar(tokens[i2]) != 1){
+      strcat(tar,tokens[i2]);
+      strcat(tar,"/");
+      i2++;
+    }
+    
+    //Final strcat to cpy the name of the file
+    strcat(tar,tokens[i2]); 
+    i2++;
+
+    //Reset path by the the first argument after the name of the tar
+    strcpy(path,tokens[i2]);
+    i2++;
+
+    //While there are still argument, copy the path 
+    while(tokens[i2] != NULL){
+      strcat(path,"/");
+      strcat(path,tokens[i2]);    
+      i2++;
+    }
+
+    // OPENING THE TAR FILE
+    int fd=open(tar,O_RDWR);
+
+    printf("\n%s\n",tar);
+
+    create_dir(fd,argv[i],path);
+    close(fd);
 
 	}
-
-
-	
-
-	close(fd);
-
-
 
 	return 0;
 }

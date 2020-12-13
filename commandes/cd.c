@@ -28,39 +28,72 @@ void cd (char * p){
 
 	else if(current_dir_is_tar() || string_contains_tar(p)){
 
-		/*BUILDING THE FULL TAR PATH, ACTUAL PATH IN TAR + ARG */
-
-		char * path=(char * ) malloc(strlen(getenv("tar"))+sizeof(char));
-		strcpy(path,getenv("tar"));
-		path=realloc(path,strlen(path)+strlen("/")+sizeof(char));
-		path=strcat(path,"/");
-		path=realloc(path,strlen(path)+strlen(p)+sizeof(char));
-		path=strcat(path,p);
-		
 		//CHECKING IF PATH IS VALID AND STORING IT
 
-		char* a_path = path_is_valid(path);
+		char * a_path = path_is_valid(p);
 
 		//IF THE PATH IS NOT VALID
 
 		if(a_path==NULL){
 
 				write(2,"Path invalid\n",strlen("Path invalid\n"));
+				return;
 		}
 
-		else{
-			
+		/*IF WE EXIT THE TAR*/
+
+		if(strcmp("",a_path)==0){
+
 			setenv("tar",a_path,1);
+			return;
 		}
 
-		free(path);
+		/*WE COPY A_PATH SO WE CAN DECOMOOSE IT WITHOUT BREAKING IT*/
+
+		char * a_path_copy=malloc(strlen(a_path)+sizeof(char));
+		strcpy(a_path_copy,a_path);
+
+		/*WE DECOMPOSE A_PATH_COPY*/
+
+		char ** tokens_a_path=decompose(a_path_copy,"/");
+
+		/*IN THAT CASE, WE ARE OUT OF THE TAR, BUT THERE IS
+		STILL A PATH LEFT TO ACCESS*/
+
+		if(!string_contains_tar(tokens_a_path[0])){
+
+			/*WE RESET THE TAR ENV VAR OTHERWISE WE ARE STUCK IN A LOOP*/
+
+			setenv("tar","",1);
+
+			/*WE LOOP ON THE TOKENS OF A_PATH AND CALL CD ON EACH OF THEM
+			ALLOWING US TO CHOOSE IF WE NEED TO USE THE TAR VERSION OF CD
+			OR THE NORMAL VERSION*/
+
+			int cpt=0;
+			while(tokens_a_path[cpt]!=NULL){
+
+				cd(tokens_a_path[cpt]);
+				cpt++;
+			}
+			
+			return;
+		}
+
+		/*OTHERWISE WE SIMPLY UPDATE THE ENV VAR TAR*/
+		
+		else{
+	
+			setenv("tar",a_path,1);
+			return;
+		}
+
 
 	}
 
 	/*-----IF WE ARE NOT DEALING WITH TAR FILES-----*/
 
 	else{
-
 
 		/*TOKING THE PATH*/
 
