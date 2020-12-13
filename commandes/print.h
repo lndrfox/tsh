@@ -21,4 +21,8 @@ void printc(char s);
 // Impression d'un int en base octal
 void printo(int s);
 
+void print_stderr(char* buf);
+
+void print_error(char * where, char * who, char * what);
+
 #endif

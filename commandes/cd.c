@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include "tar_nav.h"
+#include "print.h"
 
 
 void cd (char * p){
@@ -18,8 +19,9 @@ void cd (char * p){
 		home=strcat(home,log);
 
 		if(chdir(home)!=0){
-			perror("chdir");
+			print_error("cd",p,"no such file or directory");
 		}
+
 		free(home);
 		return;
 	}
@@ -35,10 +37,7 @@ void cd (char * p){
 		//IF THE PATH IS NOT VALID
 
 		if(a_path==NULL){
-
-				write(2,"tsh: cd: ",strlen("tsh: cd: "));
-				write(2,p,strlen(p));
-				write(2,": No such file or directory\n",strlen(": No such file or directory\n"));
+				print_error("cd",p,"No such file or directory");
 				return;
 		}
 
@@ -133,9 +132,7 @@ void cd (char * p){
 
 			if(chdir(absolute)!=0){
 
-				write(2,"tsh: cd: ",strlen("tsh: cd: "));
-				write(2,p,strlen(p));
-				write(2,": No such file or directory\n",strlen(": No such file or directory\n"));
+				print_error("cd",p,"no such file or directory");
 				return;
 			}
 
@@ -160,11 +157,7 @@ void cd (char * p){
 
 		if(chdir(final)!=0){
 
-			write(2,"tsh: cd: ",strlen("tsh: cd: "));
-			write(2,p,strlen(p));
-			write(2,": No such file or directory\n",strlen(": No such file or directory\n"));
-			
-				
+			print_error("cd",p,"no such file or directory");
 		}
 
 		free(tokens);

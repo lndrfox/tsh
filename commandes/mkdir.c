@@ -46,9 +46,7 @@ void create_dir(int fd ,char * path){
 			//IF WE FOUND THE HEADER, IT ALREADY EXISTS AND WE HAVE AN ERROR
 			if(strcmp(hd.name,path)==0){
 
-				prints("Error, the directory ");
-				prints(path);
-				prints(" already exists");
+				print_error("mkdir",path,"can't create this directory as it already exists");
 				return;
 
 			}

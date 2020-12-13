@@ -478,6 +478,10 @@ void exec_tar_or_bin(char ** tokens){
 
 	//IF WE ARE WORKING WITH TAR FILES
 
+	/*TO BE ABLE TO CALL THE COMMANDS FROM EVERYWHERE, WE BUILD TRUE_PATH
+	AS A STRING CONTAINING PATH_HOME, THE DIRECTORY WHERE THE COMMAND FILES ARE
+	THEN A / AND THEN TOKENS[0]*/
+	
 	char * true_path=malloc(strlen(path_home)+sizeof(char));
 	true_path=strcpy(true_path,path_home);
 	true_path=realloc(true_path,strlen(true_path)+2*(sizeof(char)));
@@ -501,6 +505,8 @@ void exec_tar_or_bin(char ** tokens){
 		execvp(tokens[0],tokens);
 						  	 		
 	}
+
+	print_error(NULL,tokens[0],"command not found");
 }
 
 /*GIVEN A CHAR ** TOKENS CONTAINING A COMMAND NAMES, ITS ARGUMENTS AND FINISHING BY NULL

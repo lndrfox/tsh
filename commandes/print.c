@@ -14,6 +14,35 @@ int strlen_int(int num) {
 	return n;
 }
 
+void print_stderr(char * buf){
+
+	int n=write(STDERR_FILENO,buf,strlen(buf));
+	if(n<0){
+
+		perror("\033[1;31mErreur d'impression");
+		exit(-1);
+	}
+}
+
+/*Affiche l'erreur tsh: where: who: what*/
+void print_error(char * where, char * who, char * what){
+
+	print_stderr("tsh: ");
+	if(where!=NULL)
+	{
+		print_stderr(where);
+		print_stderr(": ");
+	}
+	
+	if(who!=NULL){
+		print_stderr(who);
+		print_stderr(": ");
+	}
+
+	print_stderr(what);
+	print_stderr("\n");
+}
+
 // Impression d'un char*
 void prints(char* s) {
 	char buf[strlen(s)];
