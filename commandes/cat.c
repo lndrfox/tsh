@@ -27,8 +27,9 @@ int main(int argc, char *argv[]){
 
     struct posix_header hd;
 
+		//we get the tar to open and the path for the file
+		//from tar_and_path
 		char ** arg = tar_and_path(argv[i]);
-
  	 char * tar = malloc(strlen(arg[0])+sizeof(char));
  	 strcpy (tar,arg[0]);
  	 char * path = malloc(strlen(arg[1])+sizeof(char));

@@ -44,7 +44,8 @@ int main(int argc, char *argv[]){
 
 	for (int i=1; i<argc;i++){
 
-
+		//we get the tar to open and the path for the file
+		//from tar_and_path
 		char ** ar = tar_and_path(argv[i]);
 
  	 char * tar = malloc(strlen(ar[0])+sizeof(char));

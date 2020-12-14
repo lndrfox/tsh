@@ -362,27 +362,36 @@ char * path_is_valid(char * path){
 
 char * true_path(char * path){
 
+	//copy the getenv into "tar"
   char * tar= malloc(strlen(getenv("tar"))+sizeof(char));
   strcpy(tar,getenv("tar"));
 
+	//decompose tar to browse throught it in "tokens"
   char ** tokens = decompose(tar,"/");
 
+	//copy the path into "ar"
   char * ar =malloc(strlen(path)+sizeof(char));
   strcpy(ar, path);
 
+	//decompose ar to browe throught it in "tokens2"
   char ** tokens2 = decompose(ar,"/");
 
+	//i and i2 are counter
   int i = 0;
   int i2 = 0;
 
+	//we count the number of argument in tokens
   while (tokens[i] != NULL){
 
     i++;
 
   }
 
+//while there are arguments in tokens2
   while (tokens2[i2] != NULL){
 
+//if the arguments is a ".." we either remove a arguments of "tokens"
+//or add a ".." in the end of the path
     if(strcmp(tokens2[i2],"..") == 0){
 
       if(i == 0||strcmp(tokens[i-1],"..")==0) {
@@ -401,7 +410,7 @@ char * true_path(char * path){
       }
 
     }
-
+//if the argument is not a ".." we add the argument at the end
     else{
 
       tokens=realloc(tokens,(i+1)*sizeof(char *));
@@ -412,7 +421,7 @@ char * true_path(char * path){
 
     i2++;
   }
-
+//we add a "NULL" at the end of "tokens"
   tokens=realloc(tokens,(i+1)*sizeof(char *));
   tokens[i] = NULL;
 
@@ -420,6 +429,7 @@ char * true_path(char * path){
   	return "exit";
   }
 
+//we flatten tokens to get the and return the path
   char *ret = flatten(tokens,"/");
   return ret;
 }
@@ -459,13 +469,14 @@ char ** tar_and_path(char *p){
 
 	char * path= flatten(&(tokens[i2]),"/");
 
-	/* THIS WERE WE STORE ALL THE TOKENS*/
+	//We make a " char ** tokens3" where we stock "tar" in tokens3[0]
+	//and "path" in tokens3[1];
 	char ** tokens3= (char **) calloc(2,sizeof(char *));
 
 
 	tokens3[0] = tar;
 	tokens3[1] = path;
 
-
+	
 	return tokens3;
 }

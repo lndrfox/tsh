@@ -19,6 +19,8 @@ int tar_vers_ext(char *argv[]){
 
   unsigned int size; //Size of the file that will be initialized later
 
+  //we get the tar to open and the path for the file
+  //from tar_and_path
   char ** arg = tar_and_path(argv[1]);
 
   char * tar = malloc(strlen(arg[0])+sizeof(char));
@@ -184,6 +186,8 @@ int ext_vers_tar(char *argv[]){
 
   unsigned int size; //Size of the file that will be initialized later
 
+  //we get the tar to open and the path for the file
+  //from tar_and_path
   char ** arg = tar_and_path(argv[2]);
 
   char * tar = malloc(strlen(arg[0])+sizeof(char));
@@ -394,6 +398,10 @@ int tar_vers_tar(char *argv[]){
 
   //HEADER FOR THE SECOND TAR WE COPIED FILE WILL BE
   struct posix_header hd2;
+
+  //we get the tar to open and the path for the file
+  //from tar_and_path but since there are 2 different tar
+  //we do it 2 time for the copied file and the paste one
 
   //Size of the file
   unsigned int size;
