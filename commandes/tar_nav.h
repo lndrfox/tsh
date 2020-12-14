@@ -12,4 +12,5 @@ char * path_is_valid(char * path);
 int file_exists_in_tar(char * path, char *  tar);
 char * true_path(char *path);
 
+
 #endif

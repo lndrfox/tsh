@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include "tar_nav.h"
+#include "print.h"
 
 
 void cd (char * p){
@@ -18,8 +19,9 @@ void cd (char * p){
 		home=strcat(home,log);
 
 		if(chdir(home)!=0){
-			perror("chdir");
+			print_error("cd",p,"no such file or directory");
 		}
+
 		free(home);
 		return;
 	}
@@ -28,32 +30,71 @@ void cd (char * p){
 
 	else if(current_dir_is_tar() || string_contains_tar(p)){
 
-		/*BUILDING THE FULL TAR PATH, ACTUAL PATH IN TAR + ARG */
-
-		char * path=(char * ) malloc(strlen(getenv("tar"))+sizeof(char));
-		strcpy(path,getenv("tar"));
-		path=realloc(path,strlen(path)+strlen("/")+sizeof(char));
-		path=strcat(path,"/");
-		path=realloc(path,strlen(path)+strlen(p)+sizeof(char));
-		path=strcat(path,p);
-		
 		//CHECKING IF PATH IS VALID AND STORING IT
 
-		char* a_path = path_is_valid(path);
+		char * a_path = path_is_valid(p);
 
 		//IF THE PATH IS NOT VALID
 
 		if(a_path==NULL){
-
-				write(2,"Path invalid\n",strlen("Path invalid\n"));
+				print_error("cd",p,"No such file or directory");
+				return;
 		}
+
+		/*IF WE EXIT THE TAR*/
+
+		if(strcmp("",a_path)==0){
+
+			setenv("tar",a_path,1);
+			return;
+		}
+
+		/*WE COPY A_PATH SO WE CAN DECOMOOSE IT WITHOUT BREAKING IT*/
+
+		char * a_path_copy=malloc(strlen(a_path)+sizeof(char));
+		strcpy(a_path_copy,a_path);
+
+		/*WE DECOMPOSE A_PATH_COPY*/
+
+		char ** tokens_a_path=decompose(a_path_copy,"/");
+
+		/*IN THAT CASE, WE ARE OUT OF THE TAR, BUT THERE IS
+		STILL A PATH LEFT TO ACCESS*/
+
+		if(!string_contains_tar(tokens_a_path[0])){
+
+			/*WE RESET THE TAR ENV VAR OTHERWISE WE ARE STUCK IN A LOOP*/
+
+			setenv("tar","",1);
+
+			/*WE LOOP ON THE TOKENS OF A_PATH AND CALL CD ON EACH OF THEM
+			ALLOWING US TO CHOOSE IF WE NEED TO USE THE TAR VERSION OF CD
+			OR THE NORMAL VERSION*/
+
+			int cpt=0;
+			while(tokens_a_path[cpt]!=NULL){
+
+				cd(tokens_a_path[cpt]);
+				cpt++;
+			}
+
+			free(tokens_a_path);
+			free(a_path_copy);
+			free(a_path);
+			return;
+		}
+
+		/*OTHERWISE WE SIMPLY UPDATE THE ENV VAR TAR*/
 
 		else{
-			
+	
 			setenv("tar",a_path,1);
+			free(tokens_a_path);
+			free(a_path_copy);
+			free(a_path);
+			return;
 		}
 
-		free(path);
 
 	}
 
@@ -61,64 +102,69 @@ void cd (char * p){
 
 	else{
 
-
 		/*TOKING THE PATH*/
 
-		char ** tokens = decompose(p,"/");
-		int cpt=0;
+		char * p_copy=malloc(strlen(p)+sizeof(char));
+		strcpy(p_copy,p);
+		char ** tokens = decompose(p_copy,"/");
+
+		/*THIS IS WHERE WE STORE THE PATH ONCE WE 
+		HAVE DEALTH WITH ABSOLUTE PATH*/
+
+		char * final;
 
 		/*-----ABSOLUTE PATH------*/
 
 		char c =p[0];
 
+		/*IF THE FIRST CHARACTER IS A "/" THEN THIS IS AN ABSOLUTE PATH*/
+
 		if(c == '/'){
 
-			char absolute [1+strlen(tokens[cpt])];
+			/*WE BUILD ABSOLUTE AS STRING CONTAINING
+			A "/" AND THE FIRST TOKEN OF THE PATH*/
+
+			char absolute [1+strlen(tokens[0])];
 			strcat(absolute,"/");
-			strcat(absolute,tokens[cpt]);
+			strcat(absolute,tokens[0]);
 
 			/*ERROR MANAGMENT*/
 
 			if(chdir(absolute)!=0){
 
-				perror("chdir");
+				print_error("cd",p,"no such file or directory");
+				return;
 			}
 
-			cpt++;
+			/*SINCE IT WAS AN ABSOLUTE PATH, WE IGNORE THE FIRST TOKEN
+			WHEN WE FLATTEN THE PATH*/
 
+			final=flatten(&(tokens[1]),"/");
 		}
 
 
 		/*----RELATIVE PATH------*/
 
+		/*WE FLATTEN ALL THE PATH*/
+
 		else{
 
-			cpt=0;
+			final=flatten(tokens,"/");
+
 		}
 
-		/*WE ACCESS EACH TOKEN*/
+		/*ERROR MANAGMENT*/
 
-		while(tokens[cpt]!=NULL){
+		if(chdir(final)!=0){
 
-			/*ERROR MANAGMENT*/
-
-			if(chdir(tokens[cpt])!=0){
-
-				perror("chdir");
-				
-			}
-
-			cpt++;
-
+			print_error("cd",p,"no such file or directory");
 		}
 
 		free(tokens);
-
+		free(p_copy);
+		free(final);
+		return;
 
 	}
-
-	
-
-	
 
 }

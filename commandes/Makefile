@@ -57,7 +57,7 @@ cat: cat.o tar_nav.o tar.o print.o
 cat.o: cat.c 
 	$(CC) -o $@ -c $< $(CFLAGS)
 
-mkdir: mkdir.o tar.o print.o tar_nav.o
+mkdir: mkdir.o tar.o print.o tar_nav.o print.o
 	$(CC) -o $@ $^ $(LDFLAGS)
 
 mkdir.o: mkdir.c 
