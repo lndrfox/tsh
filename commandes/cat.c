@@ -26,52 +26,13 @@ int main(int argc, char *argv[]){
   for (int i=1; i<argc;i++){
 
     struct posix_header hd;
-	  
-    char *test;
-    test=argv[i];
 
-    //We set a path removing every .. for argv1
-    char path1[100]; 
-    strcpy(path1,true_path(test));
+		char ** arg = tar_and_path(argv[i]);
 
-    //Will be a counter 
-    int i2 = 0;
-
-    //Array of the decompositiob of argv[1]
-    char ar[100];
-    strcpy(ar,path1);
-    char ** tokens = decompose(ar,"/");
-
-    //Will be the name of the tar to open
-    char tar[100];
-
-    //Will be the name of the copy
-    char path[100];
-
-    //Reset tar to "" in case there is a issue
-    strcpy(tar,"");
-
-    //While we dont see a the name of the file strcat the path to the tar
-    while(string_contains_tar(tokens[i2]) != 1){
-      strcat(tar,tokens[i2]);
-      strcat(tar,"/");
-      i2++;
-    }
-    
-    //Final strcat to cpy the name of the file
-    strcat(tar,tokens[i2]); 
-    i2++;
-
-    //Reset path by the the first argument after the name of the tar
-    strcpy(path,tokens[i2]);
-    i2++;
-
-    //While there are still argument, copy the path 
-    while(tokens[i2] != NULL){
-      strcat(path,"/");
-      strcat(path,tokens[i2]);    
-      i2++;
-    }
+ 	 char * tar = malloc(strlen(arg[0])+sizeof(char));
+ 	 strcpy (tar,arg[0]);
+ 	 char * path = malloc(strlen(arg[1])+sizeof(char));
+ 	 strcpy (path,arg[1]);
 
     // OPENING THE TAR FILE
     fd=open(tar,O_RDWR);
@@ -108,7 +69,7 @@ int main(int argc, char *argv[]){
 
 			//READING THE SIZE OF THE FILE CORRESPONDING TO THE CURRENT HEADER
 
-			
+
 			sscanf(hd.size, "%o",&size);
 
 			//IF WE FOUND THE RIGHT HEADER, WE GET OUT OF THE LOOP
@@ -132,7 +93,7 @@ int main(int argc, char *argv[]){
 
 
 			}
-			
+
 
 			//OTHERWISE WE GET TO THE NEXT HEADER
 
@@ -147,7 +108,7 @@ int main(int argc, char *argv[]){
 
 		prints("\n");
 
-		//WE READ THE CONTENT OF THE FILE AND THEN WRITE IT IN THE STDOUT	
+		//WE READ THE CONTENT OF THE FILE AND THEN WRITE IT IN THE STDOUT
 
 		for(unsigned int i=0; i<((size+ BLOCKSIZE - 1) >> BLOCKBITS); i++){
 
