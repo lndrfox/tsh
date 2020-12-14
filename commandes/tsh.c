@@ -503,6 +503,30 @@ int goes_back_in_tar(char * path){
 }
 
 
+char ** split_args(char ** args){
+
+	/*int len=1;
+
+	char ** token_out_tar= calloc(1,sizeof(char *));
+	token_out_tar[0]=NULL;
+
+	while(tokens[len]!=NULL){
+		
+		len ++;
+	}
+
+	int cpt=0;
+
+	while(tokens[cpt]!=NULL){
+
+		if()
+
+		cpt++;
+	}*/
+	return NULL;
+
+}
+
 /*GIVEN TOKENS A CHAR ** CONTAINING A COMMAND NAMES AND IT'S ARGUMENT AND FINISH BY NULL,
 EXEC_TAR_OR_BIN DECIDES IF THE ORIGINAL VERSION OR THE TAR VERSION OF THE COMMAND
 SHOULD BE CALLED AND CALLS IT WITH EXEC*/
