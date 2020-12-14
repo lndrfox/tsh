@@ -448,6 +448,7 @@ char ** tar_and_path(char *p){
 	strcpy(path_1_copy,path1);
 	char ** tokens = decompose(path_1_copy,"/");
 
+
 	//Will be the name of the tar to open
 	char * tar=malloc(strlen("")+sizeof(char));
 	strcpy(tar,"");
@@ -467,8 +468,10 @@ char ** tar_and_path(char *p){
 	strcat(tar,tokens[i2]);
 	i2++;
 
-	char * path= flatten(&(tokens[i2]),"/");
 
+	char * path= flatten(&(tokens[i2]),"/");
+	free(path_1_copy);
+	free(tokens);
 	//We make a " char ** tokens3" where we stock "tar" in tokens3[0]
 	//and "path" in tokens3[1];
 	char ** tokens3= (char **) calloc(2,sizeof(char *));
@@ -477,6 +480,7 @@ char ** tar_and_path(char *p){
 	tokens3[0] = tar;
 	tokens3[1] = path;
 
-	
+
+
 	return tokens3;
 }

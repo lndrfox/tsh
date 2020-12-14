@@ -28,10 +28,13 @@ int tar_vers_ext(char *argv[]){
   char * path = malloc(strlen(arg[1])+sizeof(char));
   strcpy (path,arg[1]);
 
+  free(arg);
+
   argv[2] = true_path(argv[2]);
   // OPENING THE TAR FILE
 
   int fd=open(tar,O_RDWR);
+  free(tar);
   //ERROR MANAGMENT
 
   if(fd==-1){
@@ -46,7 +49,7 @@ int tar_vers_ext(char *argv[]){
     // READING AN HEADER
 
     int rdcount=read(fd,&hd,BLOCKSIZE);
-    prints(hd.name);
+
     //ERROR MANAGMENT
 
     if(rdcount<0){
@@ -82,7 +85,7 @@ int tar_vers_ext(char *argv[]){
 
 
   }while(strcmp(hd.name,path)!=0);
-
+  free(path);
   //CREATING THE FILE TO COPY
 
   //Finding the right permission
@@ -169,6 +172,7 @@ int tar_vers_ext(char *argv[]){
 
   //CLOSING WRITING FILE
 
+
   close(fd);
 
   close(fd2);
@@ -195,6 +199,7 @@ int ext_vers_tar(char *argv[]){
   char * path = malloc(strlen(arg[1])+sizeof(char));
   strcpy (path,arg[1]);
 
+  free(arg);
   argv[1] = true_path(argv[1]);
   // OPENING THE TAR FILE
 
@@ -250,7 +255,7 @@ int ext_vers_tar(char *argv[]){
 
 
   }while(hd.name[1]!=0);//While the header is not at the end block of 0
-
+  free(tar);
 
   struct posix_header temporaire;//The 'entete' we will put at the end of the tar
 
@@ -262,12 +267,12 @@ int ext_vers_tar(char *argv[]){
   //Naming the file as argv[3]
 
   sprintf(temporaire.name,"%s",path);
+  free(path);
 
 
   //FILLING MODE
   struct stat f;
   stat(argv[1],&f);
-
  sprintf(temporaire.mode,"%07o",f.st_mode);
  sprintf(temporaire.mode,"%s",temporaire.mode - 10000);
 
@@ -406,13 +411,15 @@ int tar_vers_tar(char *argv[]){
   //Size of the file
   unsigned int size;
   unsigned int size2;
-  prints(true_path(argv[1]));
+
   char ** arg = tar_and_path(argv[1]);
 
   char * tar = malloc(strlen(arg[0])+sizeof(char));
   strcpy (tar,arg[0]);
   char * path = malloc(strlen(arg[1])+sizeof(char));
   strcpy (path,arg[1]);
+
+  free(arg);
 
   char ** arg2 = tar_and_path(argv[2]);
 
@@ -421,10 +428,12 @@ int tar_vers_tar(char *argv[]){
   char * path2 = malloc(strlen(arg2[1])+sizeof(char));
   strcpy (path2,arg2[1]);
 
+  free(arg2);
 
   int fd = open(tar,O_RDWR);
+  free(tar);
   int fd2= open(tar2,O_RDWR);
-
+  free(tar2);
 
 
   char rd [BLOCKSIZE] ;
@@ -469,7 +478,7 @@ int tar_vers_tar(char *argv[]){
 
 
   }while(strcmp(hd.name,path)!=0);
-
+  free(path);
 
   ////////////////////////////////////////////
   ////////////////////////////////////////////
@@ -521,7 +530,7 @@ int tar_vers_tar(char *argv[]){
 
  // CHOOSE NAME FILE
  sprintf(temporaire.name,"%s",path2);
-
+ free(path2);
   //FILLING MODE
 
  sprintf(temporaire.mode,"%s",hd.mode);
@@ -640,6 +649,7 @@ int tar_vers_tar(char *argv[]){
    }
   lseek(fd2,0,SEEK_SET);
   lseek(fd,0,SEEK_SET);
+
   close (fd);
   close (fd2);
   return 0;
@@ -665,32 +675,35 @@ int main (int argc, char *argv[]){
   char * path2 = malloc(strlen(true_path(test2))+sizeof(char));
   strcpy(path2,true_path(test2));
 
+  free(test);
+  free(test2);
 
 
   if (argc == 3){
 
     //if argv1 is not inside a tar and argv2 is insiede a tar call ext_vers_tar
     if((string_contains_tar(path1) == 0) && (string_contains_tar(path2) == 1)){
-      if (ext_vers_tar(argv) == 0){
-	return 0;
-      }
+      ext_vers_tar(argv);
     }
 
     //if argv1 is inside a tar and argv2 is not inside a tar call _tar_vers_ext
     if((string_contains_tar(path1) == 1) && (string_contains_tar(path2) == 0)){
-      if(tar_vers_ext(argv)){
-	return 0;
-      }
+      tar_vers_ext(argv);
     }
 
     //if argv1 and argv2 are inside tar then call tar_vers_tar
     if((string_contains_tar(path1) == 1) && (string_contains_tar(path2) == 1)){
-      if (tar_vers_tar(argv)==0){
-	return 0;
-      }
+      tar_vers_tar(argv);
     }
+
+    free(path1);
+    free(path2);
+    return 0;
   }
   else{
+
+    free(path1);
+    free(path2);
     prints("cp needs 2 argument of the format cp copied_file paste_file \n");
     return -1;
   }
