@@ -42,7 +42,7 @@ char path_home [PATH_MAX + 1];;
 char * get_line(){
 
 	char * line = NULL;
-	line= readline("");
+	line= readline(" ");
 	return line;
 }
 
@@ -128,7 +128,6 @@ void pwd(){
 
 
 }
-
 
 /*CUT THE SIZE FIRST CHAR FROM THE STRING PROMPT*/
 
