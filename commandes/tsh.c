@@ -15,7 +15,7 @@
 #include "cd.h"
 #include "print.h"
 
-void exec_custom(char ** tokens);
+void exec_custom(char ** tokens,int boolean);
 
 int run=1;
 int d_stdout=1;
@@ -118,9 +118,10 @@ void pwd(){
 /*RETURNS 1 IF AT LEAST AN ELEMENT OF TOKEN IS A STRING THAT CONTAINS .TAR
 ELSE RETURNS*/
 
-int args_contain_tar(char ** tokens){
+/*int args_contain_tar(char ** tokens){
 
 	int cpt=0;
+
 	while(tokens[cpt]!=NULL){
 
 		if(string_contains_tar(tokens[cpt])){
@@ -132,7 +133,7 @@ int args_contain_tar(char ** tokens){
 	}
 
 	return 0;
-}
+}*/
 
 /*CUT THE SIZE FIRST CHAR FROM THE STRING PROMPT*/
 
@@ -510,6 +511,9 @@ int goes_back_in_tar(char * path){
 	return flag;
 }
 
+/*GIVEN A CHAR ** ARGS STARTING WITH A COMMAND NAME, THEN ITS ARGUMENTS AND ENDING WITH NULL, 
+SPLIT_ARGS REMOVES THE ARGUMENTS THAT ARE PATH OUTSIDE OF A TAR AND PUT THEM IN TOKEN_OUT_TAR
+, A CHAR ** ALSO STARTING WITH THE COMMAND NAME AND ENDING BY NULL, AND THEN RETURNS IT*/
 
 char ** split_args(char ** args){
 
@@ -563,32 +567,34 @@ char ** split_args(char ** args){
 }
 
 /*GIVEN TOKENS A CHAR ** CONTAINING A COMMAND NAMES AND IT'S ARGUMENT AND FINISH BY NULL,
-EXEC_TAR_OR_BIN DECIDES IF THE ORIGINAL VERSION OR THE TAR VERSION OF THE COMMAND
-SHOULD BE CALLED AND CALLS IT WITH EXEC*/
+AS WELL AS A BOOLEAN, EXEC_TAR_OR_BIN, CHECKS THAT THE TAR VERSION OR THE COMMAND EXISTS AND
+EXEXCUTES IT IF BOOLEAN IS 1 AND EXACUTE THE COMMAND IGNORING TAR ELSE*/
 
-void exec_tar_or_bin(char ** tokens){
+void exec_tar_or_bin(char ** tokens, int boolean){
 
 	//IF WE ARE WORKING WITH TAR FILES
 
-	/*TO BE ABLE TO CALL THE COMMANDS FROM EVERYWHERE, WE BUILD TRUE_PATH
-	AS A STRING CONTAINING PATH_HOME, THE DIRECTORY WHERE THE COMMAND FILES ARE
-	THEN A / AND THEN TOKENS[0]*/
+	
+	if(boolean){
 
-	char * true_path=malloc(strlen(path_home)+sizeof(char));
-	true_path=strcpy(true_path,path_home);
-	true_path=realloc(true_path,strlen(true_path)+2*(sizeof(char)));
-	true_path=strcat(true_path,"/");
-	true_path=realloc(true_path,strlen(true_path)+strlen(tokens[0])+sizeof(char));
-	true_path=strcat(true_path,tokens[0]);
+		/*TO BE ABLE TO CALL THE COMMANDS FROM EVERYWHERE, WE BUILD TRUE_PATH
+		AS A STRING CONTAINING PATH_HOME, THE DIRECTORY WHERE THE COMMAND FILES ARE
+		THEN A / AND THEN TOKENS[0]*/
 
-	if((current_dir_is_tar() || args_contain_tar(tokens)) && access(true_path,F_OK|X_OK)==0){
+		char * true_path=malloc(strlen(path_home)+sizeof(char));
+		true_path=strcpy(true_path,path_home);
+		true_path=realloc(true_path,strlen(true_path)+2*(sizeof(char)));
+		true_path=strcat(true_path,"/");
+		true_path=realloc(true_path,strlen(true_path)+strlen(tokens[0])+sizeof(char));
+		true_path=strcat(true_path,tokens[0]);
 
 		//WE CHECK IF THE TAR COMMAND EXISTS/IS HANDLED
 
-		execv(true_path,tokens);
+		if( access(true_path,F_OK|X_OK)==0){
 
-					  		
-	}
+			execv(true_path,tokens);				  		
+		}
+	}	
 
 	//ELSE IF WE ARE NOT WORKING WITH A TAR FILE
 
@@ -601,50 +607,75 @@ void exec_tar_or_bin(char ** tokens){
 	print_error(NULL,tokens[0],"command not found");
 }
 
-/*GIVEN A CHAR ** TOKENS CONTAINING A COMMAND NAMES, ITS ARGUMENTS AND FINISHING BY NULL
-EXEC FORKS AND THE CHILD PROCESS EXECUTES THE COMMAND IN TOKENS*/
+
+/*SPLITS THE ARGUMENTS OF TOKEN IN TWO, A CHAR ** STARRTING WITH TOKENS[0]
+AND THEN CONTAINING THE ARGUMENTS THAT ARE PATH INSIDE OF A TAR
+THE OTHER STARTS THE SAME BUT CONTAIN THE ARGUMENTS TAR ARE A PATH OUTSIDE OF A TAR AND
+THEN EXECUTE BOTH OF THEM*/
 
 void exec_split(char ** tokens){
 
-
-	int flag=0;
+	/*---- IF THERE IS NO ARGUMENT ----*/
 
 	if(tokens[1]==NULL){
+
+		/*IF THE CURRENT DIRECTORY IS A TAR*/
+
+		if(current_dir_is_tar()){
+			exec_custom(tokens,1);
+		}
+
+		/*IF THE CURRENT DIRECTORY IS NOT A TAR*/
+
+		else{
+			exec_custom(tokens,0);
+		}
 		
-		flag=1;
-	}
-
-	if(flag){
-
-		exec_custom(tokens);
 		return;
 	}
+
+	/*---- HANDELING CP AND MV ----*/
+
+	if(strcmp(tokens[0],"mv")==0|| strcmp(tokens[0],"cp")==0){
+
+
+	}
+
+	/*-----SPLLITING THE ARGUMENTS, ARGS CONTAINS IN TAR ARG, OUT_TAR CONTAINS OUT TAR ARGUMENTS ----*/
 
 	char ** out_tar=split_args(tokens);
 
+	/*IF OUT_TAR HAS NO ARGUMENTS*/
+
 	if(out_tar[1]==NULL){
 
-		exec_custom(tokens);
+		exec_custom(tokens,1);
 		return;
 
 	}
+
+	/*IF TOKENS HAS NO ARGUMENTS*/
 
 	if(tokens[1]==NULL){
-		exec_custom(out_tar);
+		exec_custom(out_tar,0);
 		return;
 	}
+
+	/*IF THEY BOTH HAVE ARGUMENTS*/
 
 	else{
 
-		exec_custom(tokens);
-		exec_custom(out_tar);
+		exec_custom(tokens,1);
+		exec_custom(out_tar,0);
 	}
 
 }
 
+/*GIVEN A CHAR ** TOKENS CONTAINING A COMMAND NAMES, ITS ARGUMENTS AND FINISHING BY NULL
+EXEC FORKS AND THE CHILD PROCESS EXECUTES THE COMMAND IN TOKENS*/
 
 
-void exec_custom(char ** tokens){
+void exec_custom(char ** tokens,int boolean){
 
 	/*WE FORK TO GET A NEW PROCESS*/
 	int r,w;
@@ -658,7 +689,7 @@ void exec_custom(char ** tokens){
 			exit(EXIT_FAILURE);
 
 		case 0: //SON
-			exec_tar_or_bin(tokens);
+			exec_tar_or_bin(tokens,boolean);
 			exit(EXIT_FAILURE);
 
 		default: //FATHER
@@ -718,7 +749,7 @@ void exec_pipe( char ** token_1, char ** token_2, char ** next){
 
 					close(fd[0]);
 					dup2(fd[1],STDOUT_FILENO);
-					exec_tar_or_bin(token_1);
+					exec_tar_or_bin(token_1,0);
 					exit(EXIT_FAILURE);
 
 				default: //FATHER, READER
@@ -731,7 +762,7 @@ void exec_pipe( char ** token_1, char ** token_2, char ** next){
 
 					if(next[1]==NULL){
 
-						exec_tar_or_bin(token_2);
+						exec_tar_or_bin(token_2,0);
 					}
 
 					/*ELSE WE DECOMPOSE THE COMMAND IN NEXT[1] AND
