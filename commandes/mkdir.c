@@ -51,7 +51,7 @@ void create_dir(int fd ,char * path){
 
 			}
 
-			
+
 			//READING THE SIZE OF THE FILE CORRESPONDING TO THE CURRENT HEADER
 
 			unsigned int size;
@@ -75,10 +75,10 @@ void create_dir(int fd ,char * path){
 
 		//  WE NEED TO ADD / AT THE END OF THE DIRECTORY NAME FOR IT TO BE VALID
 
-		
+
 		sprintf(dir.name, "%s",  path);
 
-		//FILLING MODE 
+		//FILLING MODE
 
 
 		sprintf(dir.mode,"0000700");
@@ -126,7 +126,7 @@ void create_dir(int fd ,char * path){
 		//SETTING CHECKSUM ONCE ALL THE OTHER FIELDS ARE FILLED
 
 		set_checksum(&dir);
-		
+
 		// SINCE WE READ THE FIRST EMPTY BLOCK (TAR ENDS WITH 2 EMPTY BLOCKS) TO CHECK IF WE HAD READ ALL OF THE HEADERS
 		// WE NEED TO GO BACK ONE BLOCK
 
@@ -164,43 +164,22 @@ void create_dir(int fd ,char * path){
 
 
 
-int main(int argc, char *argv[]){    
+
+int main(int argc, char *argv[]){
 
   // WE LOOP ON EVERY DIRECTORY THAT WE NEED TO CREATE
- 
+
   for (int i=1; i<argc;i++){
 
-    //We set a path removing every .. for argv1
-    char * path1 = true_path(argv[i]);
+		//we get the tar to open and the path for the file 
+		//from tar_and_path
+	 char ** arg = tar_and_path(argv[i]);
 
-    //Will be a counter 
-    int i2 = 0;
+	 char * tar = malloc(strlen(arg[0])+sizeof(char));
+	 strcpy (tar,arg[0]);
+	 char * path = malloc(strlen(arg[1])+sizeof(char));
+	 strcpy (path,arg[1]);
 
-    //Array of the decompositiob of argv[1]
-    char * path_1_copy = malloc(strlen(path_1_copy)+sizeof(char));
-    strcpy(path_1_copy,path1);
-    char ** tokens = decompose(path_1_copy,"/");
-
-    //Will be the name of the tar to open
-    char * tar=malloc(strlen("")+sizeof(char));
-    strcpy(tar,"");
-    
-    //While we dont see a the name of the file strcat the path to the tar
-    while(string_contains_tar(tokens[i2]) != 1){
-
-    	tar=realloc(tar,strlen(tar)+strlen(tokens[i2])+sizeof(char));
-      	strcat(tar,tokens[i2]);
-     	tar=realloc(tar,strlen(tar)+2*(sizeof(char)));
-      	strcat(tar,"/");
-      	i2++;
-    }
-
-    //Final strcat to cpy the name of the file
-    tar=realloc(tar,strlen(tar)+strlen(tokens[i2])+sizeof(char));
-    strcat(tar,tokens[i2]); 
-    i2++;
-
-	char * path= flatten(&(tokens[i2]),"/");
 
     // OPENING THE TAR FILE
     int fd=open(tar,O_RDWR);

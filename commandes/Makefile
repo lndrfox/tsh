@@ -39,7 +39,7 @@ cp: cp.o tar.o print.o tar_nav.o
 cp.o: cp.c 
 	$(CC) -o $@ -c $< $(CFLAGS)
 
-mv: mv.o tar.o print.o tar_nav.o
+mv: mv.o tar.o print.o tar_nav.o lib.o
 	$(CC) -o $@ $^ $(LDFLAGS)
 
 mv.o: mv.c 

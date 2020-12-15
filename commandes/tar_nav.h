@@ -11,6 +11,6 @@ char * flatten(char ** tokens, char * delimiter);
 char * path_is_valid(char * path);
 int file_exists_in_tar(char * path, char *  tar);
 char * true_path(char *path);
-
+char ** tar_and_path(char *p);
 
 #endif

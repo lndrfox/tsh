@@ -9,75 +9,10 @@
 #include "tar_nav.h"
 #include "print.h"
 
+void cat_tar (int fd,char * arg){
 
-// TO USE : ./cat fichiertar.tar fichier autrefichier ...
-
-int main(int argc, char *argv[]){
-
-	// CHECKING IF WE HAVE ENOUGH ARGUMENTS
-
-	if (argc<1){
-
-		prints("Error invalid argument \n");
-	}
-
-        // WE LOOP ON EVERY DIRECTORY THAT WE NEED TO CREATE
-  int fd;
-  for (int i=1; i<argc;i++){
-
-    struct posix_header hd;
-	  
-    char *test;
-    test=argv[i];
-
-    //We set a path removing every .. for argv1
-    char path1[100]; 
-    strcpy(path1,true_path(test));
-
-    //Will be a counter 
-    int i2 = 0;
-
-    //Array of the decompositiob of argv[1]
-    char ar[100];
-    strcpy(ar,path1);
-    char ** tokens = decompose(ar,"/");
-
-    //Will be the name of the tar to open
-    char tar[100];
-
-    //Will be the name of the copy
-    char path[100];
-
-    //Reset tar to "" in case there is a issue
-    strcpy(tar,"");
-
-    //While we dont see a the name of the file strcat the path to the tar
-    while(string_contains_tar(tokens[i2]) != 1){
-      strcat(tar,tokens[i2]);
-      strcat(tar,"/");
-      i2++;
-    }
-    
-    //Final strcat to cpy the name of the file
-    strcat(tar,tokens[i2]); 
-    i2++;
-
-    //Reset path by the the first argument after the name of the tar
-    strcpy(path,tokens[i2]);
-    i2++;
-
-    //While there are still argument, copy the path 
-    while(tokens[i2] != NULL){
-      strcat(path,"/");
-      strcat(path,tokens[i2]);    
-      i2++;
-    }
-
-    // OPENING THE TAR FILE
-    fd=open(tar,O_RDWR);
-
+		struct posix_header hd;
 		unsigned int size;
-
 
 		// THIS LOOP ALLOWS US TO LOOK FOR THE HEADER CORRESPONDING TO THE FILE WE WANT TO
 		// FIND IN THE TAR
@@ -95,51 +30,35 @@ int main(int argc, char *argv[]){
 
 				perror("reading tar file");
 				close(fd);
-				return -1;
+				exit(-1);
 			}
 
 			//IF WE REACHED THE END OF THE TAR WITHOUT FINDING THE GOOD HEADER
 
 			if((hd.name[0]=='\0')){
 
-				prints("Error, file not found int the .tar\n");
-				return -1;
+				print_error("cat",arg,"No such file or directory");
+				return ;
 			}
 
 			//READING THE SIZE OF THE FILE CORRESPONDING TO THE CURRENT HEADER
 
-			
+
 			sscanf(hd.size, "%o",&size);
 
 			//IF WE FOUND THE RIGHT HEADER, WE GET OUT OF THE LOOP
-			if(strcmp(getenv("tar"),tar)==0){
-				if(strcmp(hd.name,path)==0){
-
-					break;
-				}
-			}
-
-			else{
-
-				char *relative = get_path_without_tar();
-				relative= realloc(relative,strlen(relative)+strlen(hd.name)+sizeof(char));
-				relative=strcat(relative,hd.name);
-
-				if(strcmp(relative,path)==0){
-
-					break;
-				}
-
-
-			}
 			
+			if(strcmp(hd.name,arg)==0){
 
+				break;
+			}
+	
 			//OTHERWISE WE GET TO THE NEXT HEADER
 
 			lseek(fd,((size+ BLOCKSIZE - 1) >> BLOCKBITS)*BLOCKSIZE,SEEK_CUR);
 
 
-		}while(strcmp(hd.name,argv[i])!=0);
+		}while(strcmp(hd.name,arg)!=0);
 
 		//BUFFER TO READ THE CONTENT OF THE FILE
 
@@ -147,7 +66,7 @@ int main(int argc, char *argv[]){
 
 		prints("\n");
 
-		//WE READ THE CONTENT OF THE FILE AND THEN WRITE IT IN THE STDOUT	
+		//WE READ THE CONTENT OF THE FILE AND THEN WRITE IT IN THE STDOUT
 
 		for(unsigned int i=0; i<((size+ BLOCKSIZE - 1) >> BLOCKBITS); i++){
 
@@ -177,18 +96,49 @@ int main(int argc, char *argv[]){
 			memset(buff, 0, BLOCKSIZE);
 		}
 
-		//WE GO BACK TO THE BEGINNING OF THE TAR FILE TO MAKE SURE WE DONT MISS
-		// THE HEADER WE WILL LOOK FOR
 
-		lseek(fd,0,SEEK_SET);
+
+}
+// TO USE : ./cat fichiertar.tar fichier autrefichier ...
+
+int main(int argc, char *argv[]){
+
+	// CHECKING IF WE HAVE ENOUGH ARGUMENTS
+
+	if (argc<1){
+
+		prints("Error invalid argument \n");
+	}
+
+  
+   // WE LOOP ON EVERY ARGUMENT
+
+  for (int i=1; i<argc;i++){
+
+    
+	//we get the tar to open and the path for the file
+	//from tar_and_path
+	char ** arg = tar_and_path(argv[i]);
+ 	char * tar = malloc(strlen(arg[0])+sizeof(char));
+ 	strcpy (tar,arg[0]);
+ 	char * path = malloc(strlen(arg[1])+sizeof(char));
+ 	strcpy (path,arg[1]);
+
+    // OPENING THE TAR FILE
+    int fd=open(tar,O_RDWR);
+
+    if(fd<0){
+
+    	print_error("cat",argv[i],"No such file or directory");
+    	return -1;
+    }
+
+	cat_tar(fd,path);
 
 
 	}
+
 	prints("\n");
-
-	close(fd);
-
-
 
 	return 0;
 }
