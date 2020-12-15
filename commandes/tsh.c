@@ -581,6 +581,9 @@ SPLIT_ARGS REMOVES THE ARGUMENTS THAT ARE PATH OUTSIDE OF A TAR AND PUT THEM IN 
 
 char ** split_args(char ** args){
 
+	/*------ WE CREATE THE CHAR ** TOKEN_OUT_TAR, STARTING WITH
+			ARGS[0] AND THEN A NULL TOKEN 						------*/
+
 	int cpt_token_out_tar=0;
 
 	char ** token_out_tar= calloc(2,sizeof(char *));
@@ -592,14 +595,25 @@ char ** split_args(char ** args){
 	token_out_tar[cpt_token_out_tar]=NULL;
 	int cpt=1;
 
+	/*---- WE LOOP ON ARGS ----*/
+
 	while(args[cpt]!=NULL){
 
+		/*IF THE ARGUMENT SHOULDNT BE CALLED IN A TAR, 
+		WE REMOVE IT FROM ARGS AND ADD IT TO TOKEN_OUT_TAR*/
+
 		if(!(goes_back_in_tar(args[cpt]))){
+
+			/*WE SAVE WHAT WE WANT TO COPY IN TOKEN_OUT_TAR*/
 
 			char * save = malloc(strlen(args[cpt])+sizeof(char));
 			strcpy(save,args[cpt]);
 
+			/*WE PUT THE ARG WE WANT TO REMOVE AT NULL*/
+
 			args[cpt]=NULL;
+
+			/*WE SHIT THE WHOLE CHAR ** */
 
 			int i=cpt+1;
 			while(args[i]!=NULL){
@@ -609,8 +623,14 @@ char ** split_args(char ** args){
 
 			}
 
+			/*WE PUT THE LAST ONE AS NULL AND WE DECREASE CPT
+			AS ARGS IS NOW SHORTER*/
+
 			args [i-1]=NULL;
 			cpt --;
+
+			/*WE ADD TRUE_PATH(SAVE) IN TOKEN OU TAR AND REALLOC ENOUGH SPACE
+			*/
 			
 			char * tmp =true_path(save);
 			token_out_tar[cpt_token_out_tar]=malloc(strlen(tmp)+sizeof(char));
@@ -623,6 +643,8 @@ char ** split_args(char ** args){
 
 		cpt++;
 	}
+
+	/*WE MAKE SURE THAT TOKEN_OUT_TAR ENDS WITH NULL*/
 
 	token_out_tar[cpt_token_out_tar]=NULL;
 	
@@ -637,7 +659,6 @@ EXEXCUTES IT IF BOOLEAN IS 1 AND EXACUTE THE COMMAND IGNORING TAR ELSE*/
 void exec_tar_or_bin(char ** tokens, int boolean){
 
 	//IF WE ARE WORKING WITH TAR FILES
-
 	
 	if(boolean){
 
@@ -658,16 +679,12 @@ void exec_tar_or_bin(char ** tokens, int boolean){
 
 			execv(true_path,tokens);				  		
 		}
+
 	}	
 
-	//ELSE IF WE ARE NOT WORKING WITH A TAR FILE
 
-	else{
-
-		execvp(tokens[0],tokens);
+	execvp(tokens[0],tokens);
 						  	 		
-	}
-
 	print_error(NULL,tokens[0],"command not found");
 }
 
@@ -824,7 +841,7 @@ void exec_pipe( char ** token_1, char ** token_2, char ** next){
 
 					close(fd[0]);
 					dup2(fd[1],STDOUT_FILENO);
-					exec_tar_or_bin(token_1,0);
+					exec_split(token_1);
 					exit(EXIT_FAILURE);
 
 				default: //FATHER, READER
@@ -837,7 +854,7 @@ void exec_pipe( char ** token_1, char ** token_2, char ** next){
 
 					if(next[1]==NULL){
 
-						exec_tar_or_bin(token_2,0);
+						exec_split(token_2);
 					}
 
 					/*ELSE WE DECOMPOSE THE COMMAND IN NEXT[1] AND
@@ -972,7 +989,6 @@ void parse (char * prompt){
 
 			/*WE CALL EXEC_PIPE WITH OUR TWO TOKENS AND TOKENS_PIPE[1] FOR THE ARGUMENT
 			NEXT*/
-			printf("\nPIPE\n");
 			exec_pipe(tokens,tokens_2,&(tokens_pipe[1]));
 
 			free(tokens_2);
