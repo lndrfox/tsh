@@ -15,6 +15,8 @@
 #include "cd.h"
 #include "print.h"
 
+void exec_custom(char ** tokens);
+
 int run=1;
 int d_stdout=1;
 int d_stdin=0;
@@ -474,56 +476,89 @@ char * redir(char * prompt){
 
 int goes_back_in_tar(char * path){
 
+	/*WE COPY THE PATH SO WE CAN DECOMPOSE IT*/
+
 	char * path_copy=malloc(strlen(path)+sizeof(char));
 	strcpy(path_copy,path);
 
 	char ** tokens=decompose(path_copy,"/");
 
-	int cpt=0;
-	int flag=0;
-	int ret=0;
+	int cpt=0;//CPT FOR TOKENS
+	int flag=0;// IS UP IF WE ENCOUNTERED A STRING WITH .TAR BUT NO .. RIGHT AFTER
 
 	while(tokens[cpt]!=NULL){
 
+		/*IF WE ENCOUNTER A STRING CONTAINING .TAR WE RAISE THE FLAG*/
+
 		if(string_contains_tar(tokens[cpt])){
-			ret=1;
+
 			flag=1;
-		}
 
-		else if(flag && strcmp(tokens[cpt],"..")==0){
+			/*IF THERE IS .. RIGHT AFTER THEN WE LOWER THE FLAG*/
 
-			ret =0;
-			flag=0;
+			if(tokens[cpt+1]!=NULL){
+
+				if(strcmp(tokens[cpt+1],"..")==0){
+					flag=0;
+				}		
+			}
 		}
 
 		cpt++;
 	}
 
-	return ret;
+	return flag;
 }
 
 
 char ** split_args(char ** args){
 
-	/*int len=1;
+	int cpt_token_out_tar=0;
 
-	char ** token_out_tar= calloc(1,sizeof(char *));
-	token_out_tar[0]=NULL;
+	char ** token_out_tar= calloc(2,sizeof(char *));
+	char * copy_name=malloc(strlen(args[0])+sizeof(char));
+	strcpy(copy_name,args[0]);
 
-	while(tokens[len]!=NULL){
-		
-		len ++;
-	}
+	token_out_tar[cpt_token_out_tar]=copy_name;
+	cpt_token_out_tar++;
+	token_out_tar[cpt_token_out_tar]=NULL;
+	int cpt=1;
 
-	int cpt=0;
+	while(args[cpt]!=NULL){
 
-	while(tokens[cpt]!=NULL){
+		if(!(goes_back_in_tar(args[cpt]))){
 
-		if()
+			char * save = malloc(strlen(args[cpt])+sizeof(char));
+			strcpy(save,args[cpt]);
+
+			args[cpt]=NULL;
+
+			int i=cpt+1;
+			while(args[i]!=NULL){
+
+				args[i-1]=args[i];
+				i++;
+
+			}
+
+			args [i-1]=NULL;
+			cpt --;
+			
+			char * tmp =true_path(save);
+			token_out_tar[cpt_token_out_tar]=malloc(strlen(tmp)+sizeof(char));
+			strcpy(token_out_tar[cpt_token_out_tar],tmp);			
+			cpt_token_out_tar++;
+
+			token_out_tar=realloc(token_out_tar,(cpt_token_out_tar+1)*(sizeof(char *)));
+
+		}
 
 		cpt++;
-	}*/
-	return NULL;
+	}
+
+	token_out_tar[cpt_token_out_tar]=NULL;
+	
+	return token_out_tar;
 
 }
 
@@ -569,10 +604,49 @@ void exec_tar_or_bin(char ** tokens){
 /*GIVEN A CHAR ** TOKENS CONTAINING A COMMAND NAMES, ITS ARGUMENTS AND FINISHING BY NULL
 EXEC FORKS AND THE CHILD PROCESS EXECUTES THE COMMAND IN TOKENS*/
 
-void exec(char ** tokens){
+void exec_split(char ** tokens){
+
+
+	int flag=0;
+
+	if(tokens[1]==NULL){
+		
+		flag=1;
+	}
+
+	if(flag){
+
+		exec_custom(tokens);
+		return;
+	}
+
+	char ** out_tar=split_args(tokens);
+
+	if(out_tar[1]==NULL){
+
+		exec_custom(tokens);
+		return;
+
+	}
+
+	if(tokens[1]==NULL){
+		exec_custom(out_tar);
+		return;
+	}
+
+	else{
+
+		exec_custom(tokens);
+		exec_custom(out_tar);
+	}
+
+}
+
+
+
+void exec_custom(char ** tokens){
 
 	/*WE FORK TO GET A NEW PROCESS*/
-
 	int r,w;
 	r=fork();
 
@@ -584,7 +658,6 @@ void exec(char ** tokens){
 			exit(EXIT_FAILURE);
 
 		case 0: //SON
-
 			exec_tar_or_bin(tokens);
 			exit(EXIT_FAILURE);
 
@@ -793,7 +866,7 @@ void parse (char * prompt){
 
 			/*WE CALL EXEC_PIPE WITH OUR TWO TOKENS AND TOKENS_PIPE[1] FOR THE ARGUMENT
 			NEXT*/
-
+			printf("\nPIPE\n");
 			exec_pipe(tokens,tokens_2,&(tokens_pipe[1]));
 
 			free(tokens_2);
@@ -804,7 +877,7 @@ void parse (char * prompt){
 
 		else{
 
-			exec(tokens);
+			exec_split(tokens);
 
 		}
 	}
