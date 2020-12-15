@@ -15,7 +15,21 @@
 #include "cd.h"
 #include "print.h"
 
+char * get_line();
+char * get_last_dir();
 void exec_custom(char ** tokens,int boolean);
+void str_cut(char *prompt ,int size);
+char * redir_out(char * prompt);
+char * redir_in(char * prompt);
+void reinit_descriptors();
+char * redir(char * prompt);
+int goes_back_in_tar(char * path);
+char ** split_args(char ** args);
+void exec_tar_or_bin(char ** tokens, int boolean);
+void exec_split(char ** tokens);
+void exec_custom(char ** tokens,int boolean);
+
+
 
 int run=1;
 int d_stdout=1;
@@ -484,8 +498,33 @@ int goes_back_in_tar(char * path){
 
 	char ** tokens=decompose(path_copy,"/");
 
+	/*WE COPY GETENV("TAR") SO WE CAN DECOMPOSE IT*/
+
+	char * get_env_copy=malloc(strlen(getenv("tar"))+sizeof(char));
+	strcpy(get_env_copy,getenv("tar"));
+
+	char ** tokens_env =decompose(get_env_copy,"/");
+
+	/*THIS CPT COUNTS HOW DEEP WE ARE IN THE TAR DIRECTORY*/
+
+	int cpt_env=0;
+
+	/*WE LOOP ON TOKENS_ENV TO GET THE CURRENT TAR DEPTH*/
+
+	while(tokens_env[cpt_env]!=NULL){
+		cpt_env++;
+	}
+
 	int cpt=0;//CPT FOR TOKENS
 	int flag=0;// IS UP IF WE ENCOUNTERED A STRING WITH .TAR BUT NO .. RIGHT AFTER
+
+	/*IF WE ARE CURRENTLY IN A TAR, WE SET THE FLAG AT 1 FOR CASES LIKE MKDIR REP*/
+
+	if(current_dir_is_tar()){
+		flag=1;
+	}
+
+	/*---- WE LOOP ON TOKENS ----*/
 
 	while(tokens[cpt]!=NULL){
 
@@ -494,6 +533,7 @@ int goes_back_in_tar(char * path){
 		if(string_contains_tar(tokens[cpt])){
 
 			flag=1;
+			cpt_env++;//WE ADD ONE TO THE TAR DEPTH
 
 			/*IF THERE IS .. RIGHT AFTER THEN WE LOWER THE FLAG*/
 
@@ -503,6 +543,30 @@ int goes_back_in_tar(char * path){
 					flag=0;
 				}		
 			}
+		}
+
+		/*IF WE ENCOUNTER A .. AND I THE TAR DEPTH IS STILL >0 , WE DECREASE IT*/
+
+		else if(strcmp(tokens[cpt],"..")==0){
+
+			if(cpt_env>0){
+				cpt_env--;
+			}
+
+		}
+
+		/*IF WE ARE STILL IN A TAR AND MEET SOMETHING ELSE THAN A .. WE
+		INCREASE THE TAR DEPTH*/
+
+		if(flag==1 && strcmp(tokens[cpt],"..")!=0){
+
+			cpt_env++;
+		}
+
+		/*IF THE TAR DEPTH IS NOT STRICTLY POSITIVE THEN WE LOWER THE FLAG*/
+
+		if(cpt_env<=0){
+			flag=0;
 		}
 
 		cpt++;
@@ -619,9 +683,8 @@ void exec_split(char ** tokens){
 
 	if(tokens[1]==NULL){
 
-		/*IF THE CURRENT DIRECTORY IS A TAR*/
-
-		if(current_dir_is_tar()){
+		/*IF THE CURRENT DIRECTORY IS A TAR*/	
+	if(current_dir_is_tar()){
 			exec_custom(tokens,1);
 		}
 
@@ -638,7 +701,19 @@ void exec_split(char ** tokens){
 
 	if(strcmp(tokens[0],"mv")==0|| strcmp(tokens[0],"cp")==0){
 
+		if(tokens[1]!=NULL && tokens[2]!=NULL){
 
+			if(!goes_back_in_tar(tokens[1]) && !goes_back_in_tar(tokens[2])){
+
+				tokens[1]=true_path(tokens[1]);
+				tokens[2]=true_path(tokens[2]);
+				exec_custom(tokens,0);
+				return;
+			}
+
+			exec_custom(tokens,1);
+			return;
+		}
 	}
 
 	/*-----SPLLITING THE ARGUMENTS, ARGS CONTAINS IN TAR ARG, OUT_TAR CONTAINS OUT TAR ARGUMENTS ----*/
