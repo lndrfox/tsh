@@ -129,25 +129,6 @@ void pwd(){
 
 }
 
-/*RETURNS 1 IF AT LEAST AN ELEMENT OF TOKEN IS A STRING THAT CONTAINS .TAR
-ELSE RETURNS*/
-
-/*int args_contain_tar(char ** tokens){
-
-	int cpt=0;
-
-	while(tokens[cpt]!=NULL){
-
-		if(string_contains_tar(tokens[cpt])){
-
-			return 1;
-		}
-		
-		cpt++;
-	}
-
-	return 0;
-}*/
 
 /*CUT THE SIZE FIRST CHAR FROM THE STRING PROMPT*/
 
@@ -681,8 +662,6 @@ void exec_tar_or_bin(char ** tokens, int boolean){
 		}
 
 	}	
-
-
 	execvp(tokens[0],tokens);
 						  	 		
 	print_error(NULL,tokens[0],"command not found");
