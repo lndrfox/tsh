@@ -98,12 +98,16 @@ int main(int argc, char *argv[]){
 
 			if(strlen(p_hdr-> name) == 0) {
 				if (rep == NULL) {
-					printsss("rmdir: impossible de supprimer '", argv[i], "': Aucun fichier ou dossier de ce type\n");
+					print_stderr("rmdir: impossible de supprimer '");
+					print_stderr(argv[i]);
+					print_stderr("': Aucun fichier ou dossier de ce type\n");
 					break;
 				}
 				else {
 					if(supp != BLOCKSIZE) {
-						printsss("rmdir: impossible de supprimer '", argv[i], "': Le dossier n'est pas vide\n");
+						print_stderr("rmdir: impossible de supprimer '");
+						print_stderr(argv[i]);
+						print_stderr("': Le dossier n'est pas vide\n");
 						break;
 					}
 					else {
