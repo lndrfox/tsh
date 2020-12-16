@@ -10,7 +10,6 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 
-
 #include "tar_nav.h"
 #include "cd.h"
 #include "print.h"
@@ -566,14 +565,42 @@ char ** split_args(char ** args){
 
 	int cpt_token_out_tar=0;
 
-	char ** token_out_tar= calloc(2,sizeof(char *));
+	/*WE USE I TO MAKE SURE WE ALSO COPY OPTIONS IF THERE IS ONE
+	WE DON'T NEED TO SUPPORT MORE THAN ONE OPTION BECAUSE SPLIT_ARGS
+	IS ONLY CALLED IF WE NEED TO HANDLE FUNCTIONS SUPPORTED FOR TAR FILES
+	AND THOSE ONLY SUPPORT ONE OPTION AT BEST*/
+
+	int i=2;
+
+	if(args[1][0]=='-'){
+
+		i++;
+	}
+
+	char ** token_out_tar= calloc(i,sizeof(char *));
+
 	char * copy_name=malloc(strlen(args[0])+sizeof(char));
 	strcpy(copy_name,args[0]);
-
 	token_out_tar[cpt_token_out_tar]=copy_name;
 	cpt_token_out_tar++;
+
+	/*IF THERE IS AN OPTION WE COPY IT AS WELL*/
+
+	if(	i==3){
+		char * copy_op=malloc(strlen(args[1])+sizeof(char));
+		strcpy(copy_op,args[1]);
+		token_out_tar[cpt_token_out_tar]=copy_op;
+		cpt_token_out_tar++;
+	}
+
 	token_out_tar[cpt_token_out_tar]=NULL;
 	int cpt=1;
+
+	/*IF THERE IS AN OPTION WE INCREASE THE COUNTER TO IGNORE IT*/
+
+	if(i==3){
+		cpt++;
+	}
 
 	/*---- WE LOOP ON ARGS ----*/
 
@@ -678,7 +705,7 @@ void exec_split(char ** tokens){
 
 	if(tokens[1]==NULL){
 
-		/*IF THE CURRENT DIRECTORY IS A TAR*/	
+	/*IF THE CURRENT DIRECTORY IS A TAR*/	
 	if(current_dir_is_tar()){
 			exec_custom(tokens,1);
 		}
@@ -692,16 +719,58 @@ void exec_split(char ** tokens){
 		return;
 	}
 
+	/*WE HANDLE OPTIONS HERE*/
+
+	int cpt=1;
+	int i=1;
+
+	/*WE LOOP ON TOKENS*/
+
+	while(tokens[i]!=NULL){
+
+		/*IF THERE IS AN OPTION WE INCREMENT CPT*/
+
+		if(tokens[i][0]=='-'){
+			cpt++;
+
+		/*IF THERE IS NO ARGUMENT AFTER THE OPTION, WE EXEC RIGHT AWAY*/
+
+		if(tokens[i+1]==NULL){
+
+			if(current_dir_is_tar()){
+
+				exec_custom(tokens,1);
+			}
+
+			/*IF THE CURRENT DIRECTORY IS NOT A TAR*/
+
+			else{
+				exec_custom(tokens,0);
+			}
+		
+			return;
+			}
+		}
+
+		i++;
+	}
+
+	
+	
+
 	/*---- HANDELING CP AND MV ----*/
 
 	if(strcmp(tokens[0],"mv")==0|| strcmp(tokens[0],"cp")==0){
 
-		if(tokens[1]!=NULL && tokens[2]!=NULL){
+		/*IF BOTH ARGS ARE OUT OF TAR*/
 
-			if(!goes_back_in_tar(tokens[1]) && !goes_back_in_tar(tokens[2])){
+		if(tokens[cpt]!=NULL && tokens[cpt+1]!=NULL){
 
-				tokens[1]=true_path(tokens[1]);
-				tokens[2]=true_path(tokens[2]);
+			if(!goes_back_in_tar(tokens[cpt]) && !goes_back_in_tar(tokens[cpt+1])){
+
+				tokens[cpt]=true_path(tokens[cpt]);
+				cpt++;
+				tokens[cpt]=true_path(tokens[cpt]);
 				exec_custom(tokens,0);
 				return;
 			}
@@ -717,8 +786,8 @@ void exec_split(char ** tokens){
 
 	/*IF OUT_TAR HAS NO ARGUMENTS*/
 
-	if(out_tar[1]==NULL){
-
+	if(out_tar[cpt]==NULL){
+		
 		exec_custom(tokens,1);
 		return;
 
@@ -726,7 +795,7 @@ void exec_split(char ** tokens){
 
 	/*IF TOKENS HAS NO ARGUMENTS*/
 
-	if(tokens[1]==NULL){
+	if(tokens[cpt]==NULL){
 		exec_custom(out_tar,0);
 		return;
 	}
