@@ -314,7 +314,7 @@ void afficheNom(a * a, node_t * node, node_t * tar, int option, char * var_rep) 
 	struct posix_header hdr = get_header(node); 
 	char * name = hdr.name;
 	char n[strlen(hdr.name)];
-	int existe = existant(tar, hdr.linkname, NULL);
+	int existe = existant(tar, hdr.linkname, var_rep);
 	int couleur = 0;
 
 	// Si c'est un repertoire: couleur bleu

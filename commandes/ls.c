@@ -93,8 +93,6 @@ int main (int argc, char *argv[]) {
 		if(strcmp(argv[i], "-l") != 0) {
 
 			char * arg = NULL;								// nom de l'argument adapter a la variable de l'environnement
-			char *argv_orig = malloc(strlen(argv[i]) + 1);	// copie de argv[i]
-			strcpy(argv_orig, argv[i]);
 
 			// ----------------------------------------------------------------------
 			// 	 	 ADAPTATION DE L'ARGUMENT A LA VARIABLE D'ENVIONNEMENT
@@ -145,39 +143,25 @@ int main (int argc, char *argv[]) {
 					list_tar[i-start] = add(list_tar[i-start], p_hdr, NULL);
 
 					// ----------------------------------------------------------------------
-					// 	 	     REPERTOIRE/FICHIER TROUVE
+					// 	 	     REPERTOIRE ENTREE SANS '/' TROUVE
 					// ----------------------------------------------------------------------
 
 					// Variables temporaires
-					char * name = NULL;
 
 					if(arg != NULL) {
 
 						// Si l'argument entree est un repertoire sans '/' a la fin
 						if(p_hdr-> typeflag == '5' && arg[strlen(arg) - 1] != '/') {
-							name = malloc(strlen(arg) + 2);
+
+							char * name = malloc(strlen(arg) + 2);
 							strcpy(name, arg);
 							strcat(name, "/");
-						}
-						// Sinon on ne change pas le nom
-						else {
-							name = malloc(strlen(arg) + 1);
-							strcpy(name, arg);
-						}
 						
-						// Si le repertoire correspond a l'argument
-						if (strcmp(p_hdr -> name, name) == 0) {
-							if(p_hdr->typeflag == '5') {
-								// On redefinie de façon permanente arg et argv[i] comme un repertoire
-								if(arg[strlen(arg) - 1] != '/') {
-									arg = malloc(strlen(name) + 1);
-									strcpy(arg, name);
-									name = malloc(strlen(argv[i]) + 2);
-									strcpy(name, argv[i]);
-									strcat(name, "/");
-									argv[i] = malloc(strlen(name));
-									strcpy(argv[i], name);
-								}
+							// Si le repertoire correspond a l'argument
+							// On redefinie de façon permanente arg comme un repertoire
+							if (strcmp(p_hdr -> name, name) == 0) {
+								arg = malloc(strlen(name) + 1);
+								strcpy(arg, name);
 							}
 						}
 					}
@@ -192,7 +176,7 @@ int main (int argc, char *argv[]) {
 					   (arg != NULL && a[i-start] == NULL && egaux(p_hdr -> name, arg) == 1)) {
 
 						// On ajoute à la liste de arg le header
-						a[i-start] = add(a[i-start], p_hdr, argv_orig);
+						a[i-start] = add(a[i-start], p_hdr, argv[i]);
 					}
 				}
 			
