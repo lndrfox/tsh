@@ -314,15 +314,8 @@ void afficheNom(a * a, node_t * node, node_t * tar, int option, char * var_rep) 
 	struct posix_header hdr = get_header(node); 
 	char * name = hdr.name;
 	char n[strlen(hdr.name)];
-	char * rep = NULL;
-	int existe = existant(tar, hdr.linkname, rep);
+	int existe = existant(tar, hdr.linkname, NULL);
 	int couleur = 0;
-
-	// Repertoire
-	if(node -> head -> p.typeflag == '5')
-		rep = node -> head -> p.name;
-	else if(var_rep != NULL)
-		rep = var_rep;
 
 	// Si c'est un repertoire: couleur bleu
 	if(hdr.typeflag == '5'){
@@ -363,15 +356,16 @@ void afficheNom(a * a, node_t * node, node_t * tar, int option, char * var_rep) 
 	}
 
 	// Si c'est un fichier du repertoire choisi on affiche que le nom apres rep/...
-	if(rep != NULL) {
-		char * nom = malloc(strlen(name) - strlen(rep) + 1);
-		strcpy(nom, &name[strlen(rep)]);
+	if(var_rep != NULL) {
+		char * nom = malloc(strlen(name) - strlen(var_rep) + 1);
+		strcpy(nom, &name[strlen(var_rep)]);
 		ajout(a, nom);
 	}
 
 	// Sinon on affiche son nom complet
-	else
+	else{
 		ajout(a, name);
+	}
 
 	// Renitialise la couleur
 	if(couleur == 1)
