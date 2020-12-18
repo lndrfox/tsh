@@ -33,7 +33,7 @@ void create_dir(int fd ,char * path){
 
 			if(rdcount<0){
 
-				perror("reading tar file");
+				print_error(NULL,NULL,"reading tar file");
 				close(fd);
 				exit (-1);
 			}
@@ -120,7 +120,7 @@ void create_dir(int fd ,char * path){
 		//ERROR MANAGMENT
 
 		if(g==NULL){
-			perror("Reading group ID");
+			print_error(NULL,NULL,"Reading group ID");
 			exit(-1);
 		}
 		sprintf(dir.gname, "%s", g->gr_name);
@@ -142,7 +142,7 @@ void create_dir(int fd ,char * path){
 
 		if(rdd<BLOCKSIZE){
 
-			perror("Error writing in file");
+			print_error(NULL,NULL,"Error writing in file");
 			exit(-1);
 		}
 
@@ -157,46 +157,45 @@ void create_dir(int fd ,char * path){
 
 			if(rdd<BLOCKSIZE){
 
-				perror("Error writing in file");
+				print_error(NULL,NULL,"Error writing in file");
 				exit(-1);
 			}
 
 		}
+		free(cat);
 }
 
 
 
+//modified mkdir to create a single repertory
+int mkdirep(char *argv){
 
-int mkdirep(char *argv[]){
-  prints("mkdir");
 
   // WE LOOP ON EVERY DIRECTORY THAT WE NEED TO CREATE
-
-  //for (int i=1; i<argc;i++){
 
 		//we get the tar to open and the path for the file
 		//from tar_and_path
 
-	 char ** arg = tar_and_path(argv[1]);
+	 char ** arg = tar_and_path(argv);
 
 	 char * tar = malloc(strlen(arg[0])+sizeof(char));
 	 strcpy (tar,arg[0]);
 
 	 char * path = malloc(strlen(arg[1])+sizeof(char));
 	 strcpy (path,arg[1]);
-
-   prints("\n");
-   prints(tar);
-   prints("\n");
-   prints(path);
-
+	 free(arg);
     // OPENING THE TAR FILE
     int fd=open(tar,O_RDWR);
+		free(tar);
+		if(fd < 0){
+			print_error(NULL,NULL,"error oppening tar");
+			return -1;
+		}
 
     create_dir(fd,path);
-    close(fd);
 
-//	}
+		free(path);
+    close(fd);
 
 	return 0;
 }
@@ -226,7 +225,7 @@ int tar_vers_ext(char *argv[]){
   //ERROR MANAGMENT
 
   if(fd==-1){
-    perror("open tar file");
+    print_error(NULL,NULL,"open tar file");
     exit(-1);
   }
 
@@ -242,7 +241,7 @@ int tar_vers_ext(char *argv[]){
 
     if(rdcount<0){
 
-      perror("reading tar file");
+      print_error(NULL,NULL,"reading tar file");
       close(fd);
       return -1;
     }
@@ -314,6 +313,11 @@ int tar_vers_ext(char *argv[]){
     		}
 
   int fd2=open(true_path(argv[2]), O_RDWR | O_CREAT | O_TRUNC , a | b | c);
+
+	if(fd2 < 0){
+		print_error(NULL,NULL,"error argv[2]");
+		return -1;
+	}
   fchmod(fd2, a | b | c);
 
   //GETTING THE SIZE OF WHAT WE NEED TO READ
@@ -336,7 +340,7 @@ int tar_vers_ext(char *argv[]){
     }
     if(rdtmp<0){
 
-      perror("Reading tar file");
+      print_error(NULL,NULL,"Reading tar file");
       exit(-1);
     }
 
@@ -344,7 +348,7 @@ int tar_vers_ext(char *argv[]){
 
     if(write(fd2,rd, 1)<0){
 
-      perror("Writing file content");
+      print_error(NULL,NULL,"Writing file content");
       exit(-1);
 
     }
@@ -387,21 +391,15 @@ int ext_vers_tar(char *argv[]){
   char * path = malloc(strlen(arg[1])+sizeof(char));
   strcpy (path,arg[1]);
 
-  prints(tar);
-  prints("\n");
-  prints(path);
-  prints("\n");
-
   free(arg);
 
   // OPENING THE TAR FILE
-  prints(argv[1]);
 
   int fd=open(tar,O_RDWR);
-
+	free(tar);
 
   if(fd <0){
-    perror("Problem with argv 2");
+    print_error(NULL,NULL,"Problem with argv 2");
     exit(-1);
   }
 
@@ -423,7 +421,7 @@ int ext_vers_tar(char *argv[]){
     //ERROR MANAGMENT
 
     if(rdcount<0){
-      perror("reading tar file");
+      print_error(NULL,NULL,"reading tar file");
       close(fd);
       return -1;
     }
@@ -449,7 +447,7 @@ int ext_vers_tar(char *argv[]){
 
 
   }while(hd.name[1]!=0);//While the header is not at the end block of 0
-  free(tar);
+
 
   struct posix_header temporaire;//The 'entete' we will put at the end of the tar
 
@@ -467,14 +465,7 @@ int ext_vers_tar(char *argv[]){
   //FILLING MODE
   struct stat f;
   stat(true_path(argv[1]),&f);
-/*char temp [8];
-sprintf(temp,"%o",f.st_mode);*/
-char tmp2[8];
- sprintf(tmp2,"%07o",f.st_mode);
- //tmp2[4] = 0;
- sprintf(temporaire.mode,"%s", tmp2);
- //sprintf(temporaire.mode,"%d",temporaire.mode);
-
+ 	sprintf(temporaire.mode,"%7o", f.st_mode);
 
 
  //SIZE BECOME THE SIZE OF THE COPIED FILE
@@ -520,7 +511,7 @@ char tmp2[8];
  //ERROR MANAGMENT
 
  if(g==NULL){
-   perror("Reading group ID");
+   print_error(NULL,NULL,"Reading group ID");
    exit(-1);
  }
  sprintf(temporaire.gname,"%s",g->gr_name);
@@ -542,7 +533,7 @@ char tmp2[8];
 
   if(rddd<BLOCKSIZE){
 
-    perror("Error writing in file");
+    print_error(NULL,NULL,"Error writing in file");
     exit(-1);
   }
 
@@ -555,7 +546,7 @@ char tmp2[8];
     //EROR MANAGMENT
 
     if(rdtmp<0){
-      perror("Reading tar file");
+      print_error(NULL,NULL,"Reading tar file");
       exit(-1);
     }
 
@@ -563,7 +554,7 @@ char tmp2[8];
 
     if(write(fd,buff, 1)<0){
 
-      perror("Writing file content");
+      print_error(NULL,NULL,"Writing file content");
       exit(-1);
 
     }
@@ -584,7 +575,7 @@ char tmp2[8];
 
     if(rdd<BLOCKSIZE){
 
-      perror("Error writing in file2");
+      print_error(NULL,NULL,"Error writing in file2");
       exit(-1);
     }
 
@@ -632,8 +623,16 @@ int tar_vers_tar(char *argv[]){
   free(arg2);
 
   int fd = open(tar,O_RDWR);
+	if(fd < 0){
+		print_error(NULL,NULL,"error with first tar");
+		return -1;
+	}
   free(tar);
+
   int fd2= open(tar2,O_RDWR);
+	if(fd2 < 0){
+		print_error(NULL,NULL,"error with second tar");
+	}
   free(tar2);
 
 
@@ -648,7 +647,7 @@ int tar_vers_tar(char *argv[]){
     //ERROR MANAGMENT
 
     if(rdcount<0){
-      perror("reading tar file\n");
+      print_error(NULL,NULL,"reading tar file\n");
       close(fd);
       return -1;
     }
@@ -656,7 +655,7 @@ int tar_vers_tar(char *argv[]){
     //IF WE REACHED THE END OF THE TAR WITHOUT FINDING THE GOOD HEADER
 
     if((hd.name[0]=='\0')){
-      printsss("cp: impossible d'évaluer '", argv[1] ,"' : Aucun fichier ou dossier de ce type \n");
+      printsss("cp: impossible d'évaluer '", path ,"' : Aucun fichier ou dossier de ce type \n");
       return -1;
     }
 
@@ -679,7 +678,7 @@ int tar_vers_tar(char *argv[]){
 
 
   }while(strcmp(hd.name,path)!=0);
-  //free(path);
+  free(path);
 
   ////////////////////////////////////////////
   ////////////////////////////////////////////
@@ -694,7 +693,7 @@ int tar_vers_tar(char *argv[]){
     //ERROR MANAGMENT
 
     if(rdcount<0){
-      perror("reading tar file");
+      print_error(NULL,NULL,"reading tar file");
       close(fd);
       return -1;
     }
@@ -736,10 +735,7 @@ int tar_vers_tar(char *argv[]){
 
 
  strcpy(temporaire.mode,hd.mode);
- prints("\n");
-  prints(temporaire.mode);
-  prints("\n");
-  prints("\n");
+
  //SIZE IS FILE OF COPIED FILE
 
  unsigned int temp_size;
@@ -776,7 +772,7 @@ int tar_vers_tar(char *argv[]){
  //ERROR MANAGMENT
 
  if(g==NULL){
-   perror("Reading group ID");
+   print_error(NULL,NULL,"Reading group ID");
    exit(-1);
  }
  sprintf(temporaire.gname,"%s",g->gr_name);
@@ -801,7 +797,7 @@ int tar_vers_tar(char *argv[]){
 
   if(rddd<BLOCKSIZE){
 
-    perror("Error writing in file");
+    print_error(NULL,NULL,"Error writing in file");
     exit(-1);
   }
 
@@ -810,6 +806,7 @@ int tar_vers_tar(char *argv[]){
 
   memset(buff,0,BLOCKSIZE);
 
+	//writing the file
   for(unsigned int i=0; i<((size+ BLOCKSIZE - 1) >> BLOCKBITS);i++){
 
     int rdtmp = read(fd, buff, BLOCKSIZE);
@@ -820,7 +817,7 @@ int tar_vers_tar(char *argv[]){
     }
 
     if(rdtmp<0){
-      perror("Reading tar file");
+      print_error(NULL,NULL,"Reading tar file");
       exit(-1);
     }
 
@@ -828,7 +825,7 @@ int tar_vers_tar(char *argv[]){
 
     if(write(fd2,buff, BLOCKSIZE)<0){
 
-      perror("Writing file content");
+      print_error(NULL,NULL,"Writing file content");
       exit(-1);
 
     }
@@ -840,6 +837,7 @@ int tar_vers_tar(char *argv[]){
 
 
   memset(buff,0,BLOCKSIZE);
+	//writing the 2 last tar block
    for(int i=0;i<2;i++){
 
     int rdd=write(fd2,buff,BLOCKSIZE);
@@ -847,7 +845,7 @@ int tar_vers_tar(char *argv[]){
 
     if(rdd<BLOCKSIZE){
 
-      perror("Error writing in file2");
+      print_error(NULL,NULL,"Error writing in file2");
       exit(-1);
     }
 
@@ -860,127 +858,67 @@ int tar_vers_tar(char *argv[]){
   return 0;
 }
 
-//plus ou moins le même code que cp_r sauf quel a été modifié pour que l'on puisse
-//l'utiliser de façon récursive
-int cp_r_aux(char *argv[]){
-
-/*  argv[2] = true_path(argv[2]);
-  argv[1] = true_path(argv[1]);*/
-
-  DIR *dirp = opendir(true_path(argv[1]));
-  struct dirent *entry;
-  prints("deb");
-   prints("\n");
-  char temp [100];
-  char temp2[100];
-  char *arg [3];
-  arg[1] = temp;
-  arg[2] = temp2;
-  strcpy(temp2,argv[2]);
-
-  prints(temp2);
-  while((entry=readdir(dirp))){
-    if((strcmp((entry->d_name),".") != 0) && ( strcmp((entry->d_name),"..") !=0) ){
-       strcpy(temp,argv[1]);
-       strcat(temp,"/");
-       strcat(temp,entry->d_name);
-      prints(entry->d_name);
-
-       if(entry->d_type== DT_REG){
-	 //strcat(temp,"/");
-	 strcpy(temp2,argv[2]);
-	 strcat(temp2,"/");
-	 strcat(temp2,entry->d_name);
-	 prints("fic");
-	 prints("\n");
-	 prints(temp2);
-	ext_vers_tar(arg);
-	strcpy(temp2,argv[2]);
-	strcat(temp2,"/");
-      }
-      if(entry->d_type== DT_DIR){
-	//strcat(temp,"/");
-	strcpy(temp2,argv[2]);
-	strcat(temp2,"/");
-	strcat(temp2,entry->d_name);
-	prints("rep");
-	 prints("\n");
-   char * ar[2];
-   ar[1] = temp2;
-  mkdirep(ar);
-	cp_r_aux(arg);
-	strcpy(temp2,argv[2]);
-	strcat(temp2,"/");
-      }
-
-    }
-
-  }
-  return 0;
-}
 
 //ext_vers_tar
-int cp_r(char *argv[]){
+int cp_r_evt(char *argv[]){
 
-// argv[2] = true_path(argv[2]);
-//  argv[1] = true_path(argv[1]);
-
+	//We open the directory
   DIR *dirp = opendir(true_path(argv[1]));
   struct dirent *entry;
-  prints("deb");
-   prints("\n");
-  char temp [100];
-  char temp2[100];
+
+	//we make 2 charr *, temp will be the path for the copy and the paste file respectively
+  char * temp = malloc(strlen(argv[1])+sizeof(char));
+  temp = strcpy (temp,argv[1]);
+	char * temp2 = malloc(strlen(argv[2])+sizeof(char));
+  temp2 = strcpy (temp2,argv[2]);
+
+//char * of length 3 that will be use to use other function
   char *arg [3];
   arg[1] = temp;
   arg[2] = temp2;
-  strcpy(temp2,argv[2]);
 
-  prints("temp2 ");
-  prints(temp2);
-  prints("\n");
-  char * ar[2];
-  ar[1] = argv[2];
-  prints(ar[1]);
-  mkdirep(ar);
+//we read the directory and while it is not empty we browse it
   while((entry=readdir(dirp))){
-    if((strcmp((entry->d_name),".") != 0) && ( strcmp((entry->d_name),"..") !=0) ){
-       strcpy(temp,argv[1]);
-       strcat(temp,"/");
-       strcat(temp,entry->d_name);
-      prints(entry->d_name);
 
+		//we ignore the repertory ".." and "."
+    if((strcmp((entry->d_name),".") != 0) && ( strcmp((entry->d_name),"..") !=0) ){
+
+			//temp become the path to the copied file
+			temp = realloc(temp,strlen(argv[1])+sizeof(char));
+			temp = strcpy(temp,argv[1]);
+			temp = realloc(temp,strlen(temp) + strlen("/") +sizeof(char));
+			temp = strcat(temp,"/");
+			temp = realloc(temp,strlen(temp) + strlen(entry->d_name) +sizeof(char));
+			temp = strcat(temp,entry->d_name);
+
+			//temp2 become the path to the paste file
+			temp2 = realloc(temp2,strlen(argv[2])+sizeof(char));
+			temp2 = strcpy(temp2,argv[2]);
+			temp2 = realloc(temp2,strlen(temp2)+strlen("/")+sizeof(char));
+			temp2 = strcat(temp2,"/");
+			temp2 = realloc(temp2,strlen(temp2) + strlen(entry->d_name) +sizeof(char));
+			temp2 = strcat(temp2,entry->d_name);
+
+
+			//if we browse throught a file we use the ext_vers_tar function
        if(entry->d_type== DT_REG){
-    	 //strcat(temp,"/");
-    	 strcpy(temp2,argv[2]);
-    	 strcat(temp2,"/");
-    	 strcat(temp2,entry->d_name);
-    	 prints("fic");
-    	 prints("\n");
-    	 prints(temp2);
-       arg[2] = temp2;
-    	ext_vers_tar(arg);
-    	strcpy(temp2,argv[2]);
-    	strcat(temp2,"/");
-      }
-      if(entry->d_type== DT_DIR){
-	//strcat(temp,"/");
-	strcpy(temp2,argv[2]);
-	strcat(temp2,"/");
-	strcat(temp2,entry->d_name);
-	prints("rep");
-	 prints("\n");
-   char * ar[2];
-   ar[1] = temp2;
-  mkdirep(ar);
-	cp_r_aux(arg);
-	strcpy(temp2,argv[2]);
-	strcat(temp2,"/");
+	    		ext_vers_tar(arg);
+	     }
+			 //if we browse throught a directory we create the directory
+			 //and recall cp_r_evt with the new arguments
+       if(entry->d_type== DT_DIR){
+
+			  mkdirep(temp2);
+				cp_r_evt(arg);
       }
 
     }
 
   }
+
+	free(dirp);
+	free(temp);
+	free(temp2);
   return 0;
 }
 
@@ -992,7 +930,8 @@ int cp_r_tvt(char *argv[]){
   //Size of the file
   unsigned int size;
 
-
+	//we get the tar to open and the path for the file
+	//from tar_and_path
   char ** arg = tar_and_path(argv[1]);
 
   char * tar = malloc(strlen(arg[0])+sizeof(char));
@@ -1002,26 +941,17 @@ int cp_r_tvt(char *argv[]){
 
   free(arg);
 
-  char ** arg2 = tar_and_path(argv[2]);
 
-  char * tar2 = malloc(strlen(arg2[0])+sizeof(char));
-  strcpy (tar2,arg2[0]);
-  char * path2 = malloc(strlen(arg2[1])+sizeof(char));
-  strcpy (path2,arg2[1]);
-
-  free(arg2);
-
+	//we open the first tar
   int fd = open(tar,O_RDWR);
   free(tar);
 
-  //mkdirep(argv[2]);
   //ERROR MANAGMENT
 
   if(fd==-1){
-    perror("open tar file");
+    print_error(NULL,NULL,"open tar file");
     exit(-1);
   }
-
 
 
   // THIS LOOP ALLOWS US TO LOOK FOR THE HEADER CORRESPONDING TO THE FILE WE WANT TO
@@ -1036,13 +966,13 @@ int cp_r_tvt(char *argv[]){
 
     if(rdcount<0){
 
-      perror("reading tar file");
+      print_error(NULL,NULL,"reading tar file");
       close(fd);
       return -1;
     }
 
 
-    //READONG THE SIZE OF THE FILE CORRESPONDING TO THE CURRENT HEADER
+    //READING THE SIZE OF THE FILE CORRESPONDING TO THE CURRENT HEADER
 
 
     sscanf(hd.size, "%o",&size);
@@ -1052,16 +982,24 @@ int cp_r_tvt(char *argv[]){
       break;
     }
 
-    //IF WE FOUND THE RIGHT HEADER, WE GET OUT OF THE LOOP
-     //prints(hd.name);
-     //prints("\n");
-     char hdn [100];
-     strcpy(hdn,hd.name);
-     char ** hdname = decompose(hdn,"/");
-     char ** pathn = decompose(path,"/");
+    //IF WE FOUND THE RIGHT HEADER, we copy it
+
      int f = 0;
 
-     while (pathn[f] != NULL){
+		 //pathn is a copy of the decomposition of path
+		 char * tmpath = malloc (strlen(path) +sizeof(char));
+		 strcpy(tmpath,path);
+		 char ** pathn = decompose(tmpath,"/");
+
+		 //hdname is a copy of the decomposition of hd.name
+		 char * hdn = malloc(strlen(hd.name) + sizeof(char));
+		 hdn = strcpy(hdn,hd.name);
+		 char ** hdname = decompose(hdn,"/");
+
+		 //if the path is the same as the begining of hd.name
+		 //then it will go into the next if else it will go to the
+		 //next header
+     while (pathn[f] != NULL && hdname[f] != NULL){
        if (strcmp (pathn[f],hdname[f]) == 0){
 	        f++;
        }
@@ -1071,55 +1009,70 @@ int cp_r_tvt(char *argv[]){
      }
 
 
-     // if(strstr(hd.name,path)!=NULL){
+		 //temp is a copy of argv{1]
+		 char * temp = malloc(strlen(argv[1])+sizeof(char));
+		 temp = strcpy (temp,argv[1]);
+
+		 //temp2 is a copy of argv[2]
+		  char * temp2 = malloc(strlen((argv[2]))+sizeof(char));
+		  temp2 = strcpy (temp2,(argv[2]));
+
+
+		 //if the path is the same as the begining of hdname
      if(pathn[f] == NULL){
+
+			 //if the file is a regular file
 	      if(hd.typeflag == '0'){
-	         prints("1");
-	         char temp [100];
-	         strcpy(temp,hd.name);
 
-        	 char temp2 [100];
-        	 strcpy(temp2,argv[2]);
-        	 char ** tokens3 = decompose(hd.name,"/");
-        	 int t=1;
-        	 while(tokens3[t] != NULL){
-        	     strcat(temp2,"/");
-        	     strcat(temp2,tokens3[t]);
-        	     t++;
-	         }
+					 int r = f;
 
+					 //copy the rest of hdname into temp and temp2
+		 			while(hdname[r] != NULL){
+						temp = realloc(temp,strlen(temp2)+strlen("/")+sizeof(char));
+						temp = strcat(temp,"/");
+						temp = realloc(temp,strlen(temp2) + strlen(hdname[r]) +sizeof(char));
+						temp = strcat(temp,hdname[r]);
+
+		 				 temp2 = realloc(temp2,strlen(temp2)+strlen("/")+sizeof(char));
+		 				 temp2 = strcat(temp2,"/");
+		 				 temp2 = realloc(temp2,strlen(temp2) + strlen(hdname[r]) +sizeof(char));
+		 				 temp2 = strcat(temp2,hdname[r]);
+		 					r++;
+		 			}
+
+					//arg is a char * that will call tar_vers_tar
+					//with temp as argv[1] and temp2 as argv[2]
       	  char *arg [3];
       	  arg[1] = temp;
       	  arg[2] = temp2;
       	  tar_vers_tar(arg);
       	}
 
-    	char temp2[100];
+				//if the file is a repertory
     	if(hd.typeflag =='5'){
-    	  prints("2");
-    	  strcpy(temp2,path2);
-    	  char ** tokens3 = decompose(hd.name,"/");
-    	  int t=1;
-    	  while(tokens3[t] != NULL){
-    	    strcat(temp2,"/");
-    	    strcat(temp2,tokens3[t]);
-    	    t++;
-	  }
 
-	  prints(temp2);
-	  prints("\n");
-    char *arg [2];
-    arg[1] = temp2;
-    mkdirep(arg);
-	  //mkdirep(temp2);
-	  strcpy(temp2,argv[2]);
-	  strcat(temp2,"/");
+				//copy the rest of the hdname to temp2
+			int r = f;
+			while(hdname[r] != NULL){
 
-	}
-	prints("3");
-	// }
+				 temp2 = realloc(temp2,strlen(temp2)+strlen("/")+sizeof(char));
+				 temp2 = strcat(temp2,"/");
+				 temp2 = realloc(temp2,strlen(temp2) + strlen(hdname[r]) +sizeof(char));
+				 temp2 = strcat(temp2,hdname[r]);
+					r++;
+			}
+			//creating the repertory
+			mkdirep(temp2);
+
+			}
+
      }
-
+		 free(temp);
+		 free(temp2);
+		 free(hdname);
+		 free(hdn);
+		 free(tmpath);
+		 free(pathn);
 
     //OTHERWISE WE GET TO THE NEXT HEADER
 
@@ -1127,6 +1080,7 @@ int cp_r_tvt(char *argv[]){
 
 
   }while(hd.name!=0);
+	free(path);
 
   return 0;
 }
@@ -1138,7 +1092,8 @@ int cp_r_tve(char *argv[]){
  //Size of the file
  unsigned int size;
 
-
+ //we get the tar to open and the path for the file
+ //from tar_and_path
  char ** arg = tar_and_path(argv[1]);
 
  char * tar = malloc(strlen(arg[0])+sizeof(char));
@@ -1152,11 +1107,10 @@ int cp_r_tve(char *argv[]){
  int fd = open(tar,O_RDWR);
  free(tar);
 
- //mkdirep(argv[2]);
  //ERROR MANAGMENT
 
  if(fd==-1){
-   perror("open tar file");
+   print_error(NULL,NULL,"open tar file");
    exit(-1);
  }
 
@@ -1174,7 +1128,7 @@ int cp_r_tve(char *argv[]){
 
    if(rdcount<0){
 
-     perror("reading tar file");
+     print_error(NULL,NULL,"reading tar file");
      close(fd);
      return -1;
    }
@@ -1190,78 +1144,92 @@ int cp_r_tve(char *argv[]){
      break;
    }
 
-   //IF WE FOUND THE RIGHT HEADER, WE GET OUT OF THE LOOP
-    //prints(hd.name);
-    //prints("\n");
-    char hdn [100];
-    strcpy(hdn,hd.name);
-    char ** hdname = decompose(hdn,"/");
-    char ** pathn = decompose(path,"/");
-    int f = 0;
+	 //IF WE FOUND THE RIGHT HEADER, WE GET OUT OF THE LOOP
 
-    while (pathn[f] != NULL){
-      if (strcmp (pathn[f],hdname[f]) == 0){
-         f++;
-      }
-      else {
-         break;
-      }
-    }
+		int f = 0;
+	 char * tmpath = malloc (strlen(path) +sizeof(char));
+	 strcpy(tmpath,path);
+	 char ** pathn = decompose(tmpath,"/");
+
+	 char * hdn = malloc(strlen(hd.name) + sizeof(char));
+	 hdn = strcpy(hdn,hd.name);
+	 char ** hdname = decompose(hdn,"/");
+
+		while (pathn[f] != NULL && hdname[f] != NULL){
+			if (strcmp (pathn[f],hdname[f]) == 0){
+				f++;
+			}
+			else {
+				break;
+			}
+		}
+
+		//temp is a copy of argv{1]
+		char * temp = malloc(strlen(argv[1])+sizeof(char));
+		temp = strcpy (temp,argv[1]);
+
+		//temp2 is a copy of argv[2]
+		 char * temp2 = malloc(strlen((argv[2]))+sizeof(char));
+		 temp2 = strcpy (temp2,(argv[2]));
 
 
-    // if(strstr(hd.name,path)!=NULL){
-    if(pathn[f] == NULL){
-       if(hd.typeflag == '0'){
-          prints("1");
-          char temp [100];
-          strcpy(temp,hd.name);
+		//if the path is the same as the begining of hdname
+		if(pathn[f] == NULL){
 
-          char temp2 [100];
-          strcpy(temp2,argv[2]);
-          char ** tokens3 = decompose(hd.name,"/");
-          int t=1;
-          while(tokens3[t] != NULL){
-              strcat(temp2,"/");
-              strcat(temp2,tokens3[t]);
-              t++;
-          }
-          prints("\n");
-          prints("\n");
-          prints(temp);
-          prints("\n");
-          prints(temp2);
+			//if the file is a regular file
+			 if(hd.typeflag == '0'){
 
-         char *arg [3];
-         arg[1] = temp;
-         arg[2] = temp2;
-         tar_vers_ext(arg);
-       }
+					int r = f;
 
-     char temp2[100];
-     if(hd.typeflag =='5'){
-       prints("2");
+					//copy the rest of hdname into temp and temp2
+				 while(hdname[r] != NULL){
+					 temp = realloc(temp,strlen(temp2)+strlen("/")+sizeof(char));
+					 temp = strcat(temp,"/");
+					 temp = realloc(temp,strlen(temp2) + strlen(hdname[r]) +sizeof(char));
+					 temp = strcat(temp,hdname[r]);
 
-       strcpy(temp2,true_path(argv[2]));
-       char ** tokens3 = decompose(hd.name,"/");
-       int t=1;
-       while(tokens3[t] != NULL){
-         strcat(temp2,"/");
-         strcat(temp2,tokens3[t]);
-         t++;
-       }
+						temp2 = realloc(temp2,strlen(temp2)+strlen("/")+sizeof(char));
+						temp2 = strcat(temp2,"/");
+						temp2 = realloc(temp2,strlen(temp2) + strlen(hdname[r]) +sizeof(char));
+						temp2 = strcat(temp2,hdname[r]);
+						 r++;
+				 }
 
-       prints(temp2);
-       prints("\n");
+				 //arg is a char * that will call tar_vers_tar
+				 //with temp as argv[1] and temp2 as argv[2]
+				 char *arg [3];
+				 arg[1] = temp;
+				 arg[2] = temp2;
+				 tar_vers_tar(arg);
+			 }
 
-       mkdir(temp2,0700);
-       //mkdirep(temp2);
-       strcpy(temp2,argv[2]);
-       strcat(temp2,"/");
+			 //if the file is a repertory
+		 if(hd.typeflag =='5'){
 
-     }
- prints("3");
- // }
-    }
+			 //copy the rest of the hdname to temp2
+		 int r = f;
+		 while(hdname[r] != NULL){
+
+				temp2 = realloc(temp2,strlen(temp2)+strlen("/")+sizeof(char));
+				temp2 = strcat(temp2,"/");
+				temp2 = realloc(temp2,strlen(temp2) + strlen(hdname[r]) +sizeof(char));
+				temp2 = strcat(temp2,hdname[r]);
+				 r++;
+		 }
+		 //creating the repertory
+
+		mkdir(true_path(temp2),0700);
+
+		}
+
+		}
+
+		free(temp);
+		free(temp2);
+		free(tmpath);
+		free(pathn);
+		free(hdn);
+		free(hdname);
 
 
    //OTHERWISE WE GET TO THE NEXT HEADER
@@ -1270,6 +1238,7 @@ int cp_r_tve(char *argv[]){
 
 
  }while(hd.name!=0);
+ free(path);
 
  return 0;
 }
@@ -1343,16 +1312,15 @@ int main (int argc, char *argv[]){
      argv[1] = argv[2];
      argv[2] = argv[3];
 
-     prints(argv[1]);
-     prints("\n");
-     prints(argv[2]);
        //if argv1 is not inside a tar and argv2 is insiede a tar call ext_vers_tar
        if((string_contains_tar(path1) == 0) && (string_contains_tar(path2) == 1)){
-         cp_r(argv);
+				mkdirep(argv[2]);
+         cp_r_evt(argv);
        }
 
        //if argv1 is inside a tar and argv2 is not inside a tar call _tar_vers_ext
        if((string_contains_tar(path1) == 1) && (string_contains_tar(path2) == 0)){
+				 mkdir(true_path(argv[2]),0700);
          cp_r_tve(argv);
        }
 
@@ -1368,7 +1336,7 @@ int main (int argc, char *argv[]){
 
   }
   else{
-    prints("cp needs 2 argument of the format cp copied_file paste_file \n");
+    print_error("cp: ",NULL," needs 2 argument of the format cp copied_file paste_file \n");
     return -1;
   }
   return 0;
