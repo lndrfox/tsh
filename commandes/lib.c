@@ -62,6 +62,7 @@ int profondeur (struct posix_header * p_hdr) {
 // ----------------------------------------------------------------------
 
 typedef struct node {
+	int todo;
 	char * argv;
     struct posix_header p;
     int profondeur;
@@ -70,8 +71,9 @@ typedef struct node {
 } node_t;
 
 // Ajout à la fin de la liste
-node_t * add(node_t * prev, struct posix_header* p, char * argv) {
+node_t * add(node_t * prev, struct posix_header* p, char * argv, int todo) {
 	node_t * node = (node_t *) malloc(sizeof(node_t));
+	node -> todo = todo;
 	node -> argv = argv;
 	node -> p = *p;
 	node -> profondeur = profondeur(p);
@@ -86,6 +88,12 @@ node_t * add(node_t * prev, struct posix_header* p, char * argv) {
 	}
 
 	return node;
+}
+
+int get_todo(node_t * node) {
+	if(node != NULL)
+		return node -> todo;
+	return -1;
 }
 
 // Retourne l'argument associé a la liste
@@ -314,15 +322,8 @@ void afficheNom(a * a, node_t * node, node_t * tar, int option, char * var_rep) 
 	struct posix_header hdr = get_header(node); 
 	char * name = hdr.name;
 	char n[strlen(hdr.name)];
-	char * rep = NULL;
-	int existe = existant(tar, hdr.linkname, rep);
+	int existe = existant(tar, hdr.linkname, var_rep);
 	int couleur = 0;
-
-	// Repertoire
-	if(node -> head -> p.typeflag == '5')
-		rep = node -> head -> p.name;
-	else if(var_rep != NULL)
-		rep = var_rep;
 
 	// Si c'est un repertoire: couleur bleu
 	if(hdr.typeflag == '5'){
@@ -363,15 +364,16 @@ void afficheNom(a * a, node_t * node, node_t * tar, int option, char * var_rep) 
 	}
 
 	// Si c'est un fichier du repertoire choisi on affiche que le nom apres rep/...
-	if(rep != NULL) {
-		char * nom = malloc(strlen(name) - strlen(rep) + 1);
-		strcpy(nom, &name[strlen(rep)]);
+	if(var_rep != NULL) {
+		char * nom = malloc(strlen(name) - strlen(var_rep) + 1);
+		strcpy(nom, &name[strlen(var_rep)]);
 		ajout(a, nom);
 	}
 
 	// Sinon on affiche son nom complet
-	else
+	else{
 		ajout(a, name);
+	}
 
 	// Renitialise la couleur
 	if(couleur == 1)

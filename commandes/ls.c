@@ -8,6 +8,8 @@
 #include "tar.h"
 #include "print.h"
 #include "lib.h"
+#include "tar_nav.h"
+
 
 int main (int argc, char *argv[]) {
 
@@ -17,7 +19,7 @@ int main (int argc, char *argv[]) {
 
 	// Conditions des valeurs d'entrée
 	if(argc < 1) {
-		prints("\033[1;31mEntrée invalide\n\033[0m");
+		print_stderr("ls: entrée invalide\n");
 		exit(-1);
 	}
 
@@ -32,10 +34,11 @@ int main (int argc, char *argv[]) {
 	}
 	
 	// ======================================================================
-	// 			      OUVERTURE DU TAR
+	// 			      TAR ET VARIABLE D'ENVIRONEMENT
 	// ======================================================================
 
-	char * tar = getenv("tar");
+	char * tar = malloc(strlen(getenv("tar")) + 1);
+	strcpy(tar, getenv("tar"));
 	char * var_rep = NULL;
 
 	// Si la variable d'environnement est dans un repertoire du tar
@@ -45,12 +48,6 @@ int main (int argc, char *argv[]) {
 		var_rep = malloc(strlen(var_r) + 2);
 		strcpy(var_rep, var_r);
 		strcat(var_rep, "/");
-	}
-
-	int fd = open(tar, O_RDONLY);
-	if (fd<0) {
-		perror("\033[1;31mErreur lors de l'ouverture du tar\033[0m");
-		exit(-1);
 	}
 
 	// ======================================================================
@@ -79,138 +76,132 @@ int main (int argc, char *argv[]) {
 		a_length = argc - start;
 	}
 
-	node_t ** a = init_array(a_length);	// Tableau de listes de headers pour l'affichage
-	node_t * list_tar = NULL;			// Stockage des headers du tar pour d'autres recherches auxilaires
-
-	// S'il n'y a pas d'arguments et que la variable d'environnement est dans un répertoire
-	if(nbfich == 0 && var_rep != NULL){
-		// Adopte le meme comportement qu'un repertoire en argument
-		memset(tampon, '\0', 512);
-		struct posix_header * p_hdr_vide = (struct posix_header*)tampon;
-		strcpy(p_hdr_vide -> name, var_rep);
-		p_hdr_vide -> typeflag  = '5';
-		a[0] = add(a[0], p_hdr_vide, var_rep);
-	}
+	node_t ** a = init_array(a_length);			// Tableau de listes de headers pour l'affichage
+	node_t ** list_tar = init_array(a_length);	// Stockage des headers du tar pour d'autres recherches auxilaires
 
 	// ----------------------------------------------------------------------
-	//			       PARCOURS DU TAR
+	// 	 	     	PARCOURS POUR CHAQUE ARGUMENT
 	// ----------------------------------------------------------------------
 
-	while(1) {
+	for (int i = start; i < end; i++) {
 
-		// Lecture du bloc
-		n = read(fd, &tampon, BLOCKSIZE);
-		if(n<0) {
-			perror("\033[1;31mErreur lors de la lecture du tar\033[0m");
-			exit(-1);
-		}
-		if(n == 0) break;
+		// On evite "-l"
+		if(strcmp(argv[i], "-l") != 0) {
 
-		// Extraction des informations
-		p_hdr = (struct posix_header*)tampon;
-
-		// On evite les deux blocs finaux formés uniquement de zéros
-		if(strlen(p_hdr-> name) != 0) {
-
-			// On ajoute à la liste du tar le header
-			list_tar = add(list_tar, p_hdr, NULL);
+			char * arg = NULL;	// nom de l'argument adapter a la variable de l'environnement
 
 			// ----------------------------------------------------------------------
-			// 	 	     	PARCOURS POUR CHAQUE ARGUMENT
+			// 	 	 ADAPTATION DE L'ARGUMENT A LA VARIABLE D'ENVIONNEMENT
 			// ----------------------------------------------------------------------
 
-			for (int i = start; i < end; i++) {
+			// Si il n'y a pas de repertoire/fichier en argument et que
+			// la variable d'environnement se trouve dans un repertoire du tar
+			if(i == 0 && var_rep != NULL)
+				arg = var_rep;
 
-				char * arg = NULL;	// nom de l'argument adapter a la variable de l'environnement
+			// Si on veut afficher un repertoire/fichier en argument
+			if(i != 0) {
 
-				// On evite "-l"
-				if(strcmp(argv[i], "-l") != 0) {
+				char ** ar = tar_and_path(argv[i]);
 
-					// ----------------------------------------------------------------------
-					// 	 	 ADAPTATION DE L'ARGUMENT A LA VARIABLE D'ENVIONNEMENT
-					// ----------------------------------------------------------------------
+				tar = realloc(tar, strlen(ar[0]) + 1);
+				strcpy (tar,ar[0]);
 
-					// Si il n'y a pas de repertoire/fichier en argument et que
-					// la variable d'environnement se trouve dans un repertoire du tar
-					if(i == 0 && var_rep != NULL)
-						arg = var_rep;
-
-					// Si on veut afficher un repertoire/fichier en argument
-					if(i != 0) {
-										
-						arg = malloc(strlen(argv[i]) + 1);
-						strcpy(arg, argv[i]);
-
-						// Si la variable d'environnement se trouve dans un repertoire du tar
-						if (var_rep != NULL) {
-							char * nouv_arg = malloc(strlen(var_rep) + strlen(arg) + 1);
-							strcpy(nouv_arg, var_rep);
-							strcat(nouv_arg, arg);
-							arg = realloc(arg, strlen(nouv_arg) + 1);
-							strcpy(arg, nouv_arg);
-						}
-					}
-
-					// ----------------------------------------------------------------------
-					// 	 	     REPERTOIRE/FICHIER TROUVE
-					// ----------------------------------------------------------------------
-
-					// Variables temporaires
-					char * name = NULL;
-					char * argv_orig = argv[i];
-
-					if(arg != NULL) {
-
-						// Si l'argument entree est un repertoire sans '/' a la fin
-						if(p_hdr-> typeflag == '5' && arg[strlen(arg) - 1] != '/') {
-							name = malloc(strlen(arg) + 2);
-							strcpy(name, arg);
-							strcat(name, "/");
-						}
-						// Sinon on ne change pas le nom
-						else {
-							name = malloc(strlen(arg) + 1);
-							strcpy(name, arg);
-						}
-						
-						// Si le repertoire correspond a l'argument
-						if (strcmp(p_hdr -> name, name) == 0) {
-							if(p_hdr->typeflag == '5') {
-								// On redefinie de façon permanente arg et argv[i] comme un repertoire
-								if(arg[strlen(arg) - 1] != '/') {
-									argv_orig = malloc(strlen(argv[i]) + 1);
-									strcpy(argv_orig, argv[i]);
-									arg = malloc(strlen(name) + 1);
-									strcpy(arg, name);
-									name = malloc(strlen(argv[i]) + 2);
-									strcpy(name, argv[i]);
-									strcat(name, "/");
-									argv[i] = malloc(strlen(name));
-									strcpy(argv[i], name);
-								}
-							}
-						}
-					}
-
-					// ----------------------------------------------------------------------
-					// 	 		STOCKAGE DES INFORMATIONS
-					// ----------------------------------------------------------------------
-
-					// On affiche uniquement les fichiers dans le tar/repertoire de même profondeur
-					if((arg == NULL && profondeur(p_hdr) == 0) || 
-					   (arg != NULL && a[i-start] != NULL && profondeur(p_hdr) == get_profondeur(get_head(a[i-start])) + 1 && estDansRep(p_hdr -> name, arg) == 1) || 
-					   (arg != NULL && a[i-start] == NULL && egaux(p_hdr -> name, arg) == 1)) {
-
-						// On ajoute à la liste de arg le header
-						a[i-start] = add(a[i-start], p_hdr, argv_orig);
-
-					}
+				if(ar[1] != NULL) {
+					arg = malloc(strlen(ar[1]) + 1);
+					strcpy (arg, ar[1]);
 				}
 			}
 
-			// On passe a l'entete suivante
-			sscanf(p_hdr->size,"%o", &size);
-			lseek(fd,((size + BLOCKSIZE - 1) >> BLOCKBITS)*BLOCKSIZE,SEEK_CUR);
+			// ----------------------------------------------------------------------
+			//			       PARCOURS DU TAR
+			// ----------------------------------------------------------------------
+
+			int fd = open(tar, O_RDONLY);
+			int vide = 1;
+			if (fd<0) {
+				perror("ls: erreur lors de l'ouverture du tar");
+				exit(-1);
+			}
+
+			while(1) {
+
+				// Lecture du bloc
+				n = read(fd, &tampon, BLOCKSIZE);
+				if(n<0) {
+					perror("ls: erreur lors de la lecture du tar");
+					exit(-1);
+				}
+				if(n == 0) break;
+
+				// Extraction des informations
+				p_hdr = (struct posix_header*)tampon;
+
+				// On evite les deux blocs finaux formés uniquement de zéros
+				if(strlen(p_hdr-> name) == 0) {
+					
+					// Afficher un tar vide
+					if(vide && arg == NULL)
+						a[i-start] = add(a[i-start], p_hdr, argv[i], 1);
+
+					break;
+				}
+
+				// Si on peut lire jusqu'ici le tar n'est pas vide
+				vide = 0;
+
+				// On ajoute à la liste du tar le header
+				list_tar[i-start] = add(list_tar[i-start], p_hdr, NULL, -1);
+
+				// ----------------------------------------------------------------------
+				// 	 	     REPERTOIRE ENTREE SANS '/' TROUVE
+				// ----------------------------------------------------------------------
+
+				// Variables temporaires
+
+				if(arg != NULL) {
+
+					// Si l'argument entree est un repertoire sans '/' a la fin
+					if(p_hdr-> typeflag == '5' && arg[strlen(arg) - 1] != '/') {
+
+						char * name = malloc(strlen(arg) + 2);
+						strcpy(name, arg);
+						strcat(name, "/");
+					
+						// Si le repertoire correspond a l'argument
+						// On redefinie de façon permanente arg comme un repertoire
+						if (strcmp(p_hdr -> name, name) == 0) {
+							arg = malloc(strlen(name) + 1);
+							strcpy(arg, name);
+						}
+					}
+				}
+
+				// ----------------------------------------------------------------------
+				// 	 		STOCKAGE DES INFORMATIONS
+				// ----------------------------------------------------------------------
+
+				// On affiche uniquement les fichiers dans le tar/repertoire de même profondeur
+				if((arg == NULL && profondeur(p_hdr) == 0) || 
+				   (arg != NULL && a[i-start] != NULL && profondeur(p_hdr) == get_profondeur(get_head(a[i-start])) + 1 && estDansRep(p_hdr -> name, arg) == 1) || 
+				   (arg != NULL && a[i-start] == NULL && egaux(p_hdr -> name, arg) == 1)) {
+
+					// Argument qui est un tar: todo = 1
+					// Argument qui est un repertoire ou un fichier dans un tar: todo = 0
+					int todo = 1;
+					if(arg != NULL)
+						todo = 0;
+
+					// On ajoute à la liste de arg le header
+					a[i-start] = add(a[i-start], p_hdr, argv[i], todo);
+				}
+			
+				// On passe a l'entete suivante
+				sscanf(p_hdr->size,"%o", &size);
+				lseek(fd,((size + BLOCKSIZE - 1) >> BLOCKBITS)*BLOCKSIZE,SEEK_CUR);
+			}
+
+			close(fd);
 		}
 	}
 
@@ -221,159 +212,147 @@ int main (int argc, char *argv[]) {
 	affichage format = malloc(sizeof(affichage));	// affichage final
 	init(format);								// initialisation de l'affichage
 
-	// AFFICHAGE SANS ARGUMENT
-	if(nbfich == 0) {
+	// ----------------------------------------------------------------------
+	//	 	 	     		 TRI DES LISTES
+	// ----------------------------------------------------------------------
 
-		// Conversion des informations				
-		node_t * node = get_head(a[0]);					// liste de fichiers à afficher
-		int total = 0;		 	 	 			 		// total de l'epsace occupé
+	// 1er tableau: fichiers/repertoires non existants
+	// 2e  tableau: fichiers existants
+	// 3e  tableau: tars, repertoires existants
 
-		// Variable d'environnement stocké en 1ere position
-		if(var_rep != NULL)
+	int length1 = 0; 
+	int length2 = 0;
+	int length3 = 0;
+
+	// Calcul de la taille des tableaux
+	for(int i = 0; i < a_length ; i++) {
+		if(a[i] != NULL) {
+			node_t * head = get_head(a[i]);
+			if(get_header(head).typeflag == '5' || get_todo(head) == 1)
+				length3++;
+			else
+				length2++;
+		}
+		else
+			length1++;
+	}
+
+	// Initialisation du tableau a 3 dimension
+	node_t ** array[3];
+	array[0] = init_array (length1);	// fichiers/repertoires non existants
+	array[1] = init_array (length2);	// fichiers existants
+	array[2] = init_array (length3);	// repertoires existants
+	node_t ** l_tar [2];
+	l_tar[0] = init_array(length2);		// recherches auxiliaires pour fichiers
+	l_tar[1] = init_array(length3);		// recherches auxiliaires pour repertoires
+
+	// Remplissage du tableau
+	int ind1 = 0;
+	int ind2 = 0;
+	int ind3 = 0;
+	memset(tampon, '\0', 512);
+	struct posix_header * p = (struct posix_header*)tampon; // ne sera jamais utilisé
+
+	for(int i = 0; i < a_length ; i++) {
+		if(a[i] != NULL) {
+			node_t * head = get_head(a[i]);
+			node_t * head_tar = get_head(list_tar[i]);
+
+			// Si c'est un tar vide
+			if(strlen(get_header(head).name) == 0) {
+				array[0][ind1] = head;
+				ind1++;
+			}
+			// Si c'est un tar ou un repertoire
+			else if(get_header(head).typeflag == '5' || get_todo(head) == 1) {
+				array[2][ind3] = head;
+				l_tar[1][ind3] = head_tar;
+				ind3++;
+			}
+			// Sinon c'est un fichier
+			else{
+				array[1][ind2] = head;
+				l_tar[0][ind2] = head_tar;
+				ind2++;
+			}
+		}
+		// Si le fichier/repertoire n'existe pas
+		else{
+			array[0][ind1] = add(array[0][ind1], p, argv[i+start], -1);
+			ind1++;
+		}
+	}
+
+	// ----------------------------------------------------------------------
+	//	 	 	     	CONVERSION DES INFORMATIONS
+	// ----------------------------------------------------------------------
+
+	// FICHIER/REPERTOIRES NON TROUVES
+	for(int i = 0; i < length1; i++) {
+		node_t *  node = get_head(array[0][i]);
+		if(strcmp(get_argv(node), "-l") != 0 && get_todo(node) == -1) {
+			print_stderr("ls: impossible d'accéder à '");
+			print_stderr(get_argv(node));
+			print_stderr("': Aucun fichier ou dossier de ce type\n");
+		}
+	}
+	
+	// FICHIERS
+	for (int i = 0; i < length2 ; i++) {
+		node_t * node = get_head(array[1][i]);
+		afficher(format, node, l_tar[0][i], l, &size, var_rep);
+	}
+	if(length3 > 0 && length2 > 0)
+		ajout(format, "\n");
+
+	// TARS OU REPERTOIRES
+	for (int i = 0; i < length3 ; i++) {
+
+		affichage aff = malloc(sizeof(affichage));
+		init(aff);
+		node_t * node = get_head(array[2][i]);
+		int total = 0;
+		char * rep = NULL;
+
+		// Nom du repertoire
+		if(length3 > 1 || length2 > 0){
+			char repertoire[strlen(get_argv(node)) + 2];
+			sprintf(repertoire, "%s:\n", get_argv(node));
+			ajout(format, repertoire);
+		}
+
+		// Repertoire d'un tar stocké en 1ere position
+		if(get_todo(node) != 1) {
 			node = get_next(node);
-
+			rep = get_header(get_head(node)).name;
+		}
+		
+		// Ajout dans l'affichage chaque fichiers du repertoire
 		while(node != NULL) {
-			afficher(format, node, list_tar, l, &size, var_rep);
+			afficher(aff, node, l_tar[1][i], l, &size, rep);
 			total += 1 + ((size + BLOCKSIZE - 1) >> BLOCKBITS);
 			node = get_next(node);
 		}
 
-		// Ajout dans l'affichage
+		// Total
 		if(l == 1) {
-			prints("total ");
-			printd(total);
-			prints("\n");
-		}
-	}
-
-	// AFFICHAGE DE CHAQUE ARGUMENT
-	else {
-	
-		// ----------------------------------------------------------------------
-		//	 	 	     		 TRI DES LISTES
-		// ----------------------------------------------------------------------
-
-		// 1er tableau: fichiers/repertoires non existants
-		// 2e  tableau: fichiers existants
-		// 3e  tableau: repertoires existants
-
-		int length1 = 0; 
-		int length2 = 0;
-		int length3 = 0;
-
-		// Calcul de la taille des tableaux
-		for(int i = 0; i < a_length ; i++) {
-			if(a[i] != NULL) {
-				node_t * head = get_head(a[i]);
-				if(get_header(head).typeflag == '5')
-					length3++;
-				else
-					length2++;
-			}
-			else
-				length1++;
+			int n = strlen_int(total);
+			char totale[n + strlen("total \n")];
+			sprintf(totale, "total %d\n", total);
+			ajout(format, totale);
 		}
 
-		// Initialisation du tableau a 3 dimension
-		node_t ** array[3];
-		array[0] = init_array (length1); // fichiers/repertoires non existants
-		array[1] = init_array (length2); // fichiers existants
-		array[2] = init_array (length3); // repertoires existants
+		// Ajout dans l'affichage final
+		ajout(format, to_string(aff));
 
-		// Remplissage du tableau
-		int ind1 = 0;
-		int ind2 = 0;
-		int ind3 = 0;
-		memset(tampon, '\0', 512);
-		struct posix_header * p = (struct posix_header*)tampon; // ne sera jamais utilisé
-
-		for(int i = 0; i < a_length ; i++) {
-			if(a[i] != NULL) {
-				node_t * head = get_head(a[i]);
-
-				// Si c'est un repertoire
-				if(get_header(head).typeflag == '5') {
-					array[2][ind3] = head;
-					ind3++;
-				}
-				// Sinon c'est un fichier
-				else {
-					array[1][ind2] = head;
-					ind2++;
-				}
-			}
-			// Si le fichier/repertoire n'existe pas
-			else{
-				array[0][ind1] = add(array[0][ind1], p, argv[i+start]);
-				ind1++;
-			}
-		}
-
-		// ----------------------------------------------------------------------
-		//	 	 	     	CONVERSION DES INFORMATIONS
-		// ----------------------------------------------------------------------
-
-		// FICHIER/REPERTOIRES NON TROUVES
-		for(int i = 0; i < length1; i++) {
-			node_t *  node = get_head(array[0][i]);
-			if(strcmp(get_argv(node), "-l") != 0)
-				printsss("ls: impossible d'accéder à '", get_argv(node) ,"': Aucun fichier ou dossier de ce type\n");
-		}
-		
-		// FICHIERS
-		for (int i = 0; i < length2 ; i++) {
-			node_t * node = get_head(array[1][i]);
-			afficher(format, node, list_tar, l, &size, var_rep);
-		}
-		if(length3 > 0 && length2 > 0)
+		if(i < length3 - 1)
 			ajout(format, "\n");
-
-		// REPERTOIRES
-		for (int i = 0; i < length3 ; i++) {
-
-			affichage aff = malloc(sizeof(affichage));
-			init(aff);
-			node_t * node = get_head(array[2][i]);
-			int total = 0;
-
-			// Nom du repertoire
-			if(length3 > 1 || length2 > 0){
-				char repertoire[strlen(get_argv(node)) + 2];
-				sprintf(repertoire, "%s:\n", get_argv(node));
-				ajout(format, repertoire);
-			}
-
-			// Repertoire stocké en 1ere position
-			node = get_next(node);
-
-			// Ajout dans l'affichage chaque fichiers du repertoire
-			while(node != NULL) {
-				afficher(aff, node, list_tar, l, &size, var_rep);
-				total += 1 + ((size + BLOCKSIZE - 1) >> BLOCKBITS);
-				node = get_next(node);
-			}
-
-			// Total
-			if(l == 1) {
-				int n = strlen_int(total);
-				char totale[n + strlen("total \n")];
-				sprintf(totale, "total %d\n", total);
-				ajout(format, totale);
-			}
-
-			// Ajout dans l'affichage final
-			ajout(format, to_string(aff));
-
-			if(i < length3 - 1)
-				ajout(format, "\n");
-		}		
-	}
+	}		
 
 	// ----------------------------------------------------------------------
 	// 	 		AFFICHAGE DES INFORMATIONS
 	// ----------------------------------------------------------------------
 
 	prints(to_string(format));
-	close(fd);
 	exit(0);
 }

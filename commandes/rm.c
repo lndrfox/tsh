@@ -1,7 +1,7 @@
 #include <stdio.h>		// sscanf perror
-#include <sys/types.h>		// lseek ftruncate
+#include <sys/types.h>	// lseek ftruncate
 #include <fcntl.h>		// open
-#include <unistd.h>		// read close lseek write ftruncate
+#include <unistd.h>		// read close lseek write ftruncate unlink
 #include <string.h>		// strcat strcmp
 #include <stdlib.h>		// exit
 #include "tar.h"
@@ -9,80 +9,96 @@
 #include "lib.h"
 #include "tar_nav.h"
 
-// Format: ./rmdir fichiertar.tar directory otherdirectory ...
-// (Un repertoire doit avoir '/' a la fin)
-
 int main(int argc, char *argv[]){
 
 	// ======================================================================
 	// 	 			INITIALISATION
 	// ======================================================================
 
-	// Conditions des valeurs d'entrée
-	if (argc < 2){
-		prints("rmdir: opérande manquant\n");
-		exit(-1);
-	}
-
 	// S'il y a l'option "-r"
 	int r = 0;
+	int nbfich = 0;
 	for(int i = 1; i < argc; i++) {
 		if(strcmp(argv[i], "-r") == 0)
 			r = 1;
+		else 
+			nbfich++;
 	}
 
-	// ======================================================================
-	// 			      OUVERTURE DU TAR
-	// ======================================================================
+	// Conditions des valeurs d'entrée
+	if (nbfich == 0){
+		print_stderr("rm: opérande manquant\n");
+		exit(-1);
+	}
 
-	struct posix_header * p_hdr;
-	char tampon[512];
-	int fd;
 	// ======================================================================
 	// 	 	    PARCOURS DU TAR POUR CHAQUE ARGUMENT
 	// ======================================================================
 
 	for (int i=1; i<argc;i++){
 
+		// ----------------------------------------------------------------------
+		// 	 	     		TAR/FICHIER/REPERTOIRE A SUPPRIMER
+		// ----------------------------------------------------------------------
+
 		//we get the tar to open and the path for the file
 		//from tar_and_path
 		char ** ar = tar_and_path(argv[i]);
 
- 	 char * tar = malloc(strlen(ar[0])+sizeof(char));
- 	 strcpy (tar,ar[0]);
- 	 char * path = malloc(strlen(ar[1])+sizeof(char));
- 	 strcpy (path,ar[1]);
+		char * tar = malloc(strlen(ar[0])+sizeof(char));
+		strcpy (tar,ar[0]);
 
-	  // OPENING THE TAR FILE
-	  fd=open(tar,O_RDWR);
+		char * arg = NULL;
+		if(ar[1] != NULL) {
+			arg = malloc(strlen(ar[1])+sizeof(char));
+			strcpy (arg,ar[1]);
+		}
 
+		// ======================================================================
+		// 	 				SUPPRESSION
+		// ======================================================================
 
-	  if(fd < 0){
-	    perror("\033[1;31mErreur lors de l'ouverture du tar\033[0m");
-	    exit(-1);
-	  }
+		// ----------------------------------------------------------------------
+		// 	 			SUPPRESION D'UN TAR
+		// ----------------------------------------------------------------------
 
-		int valide = 0;			// 0: fichier ne peut pas etre supprime
-						// 1: le fichier peut etre supprime
+		// Suppresion d'un tar
+		if(arg == NULL) {
+			if(r)
+				unlink(tar);
+			else {
+				print_stderr("rm: impossible de supprimer '"); 
+				print_stderr(argv[i]);
+				print_stderr("': est un tar\n");
+			}
+		}
 
-		char * fich = NULL;		// Nom du fichier
-		int rep = 0;			// c'est un repertoire
-		unsigned int size;		// Taille du fichier
-		off_t longueur = 0;		// Somme de la taille des fichiers avant le repertoire
-		off_t supp = 0;			// Somme de la taille du repertoire et de ses fichiers
-		off_t dep = 0;			// Somme de la taille des fichiers apres le repertoire
-		char * arg;				// argv[i] adapte au tar et la variable d'environnement
+		// ----------------------------------------------------------------------
+		// 	 		  SUPPRESION D'UN FICHIER/REPERTOIRE
+		// ----------------------------------------------------------------------
 
 		// On evite "-r"
-		if(strcmp(argv[i], "-r") != 0) {
+		else if(strcmp(argv[i], "-r") != 0) {
 
-			// ----------------------------------------------------------------------
-			// 	 	     		FICHIER A SUPPRIMER
-			// ----------------------------------------------------------------------
+			// OPENING THE TAR FILE
+			int fd = open(tar,O_RDWR);
 
-			// Si un repertoire est entre sans '/'
-			arg = malloc(strlen(path) + 1);
-			strcpy(arg,path);
+			if(fd < 0){
+				perror("rm: erreur lors de l'ouverture du tar");
+				exit(-1);
+			}
+
+			struct posix_header * p_hdr;
+			char tampon[512];
+			int valide = 0;			// 0: fichier ne peut pas etre supprime
+							// 1: le fichier peut etre supprime
+
+			char * fich = NULL;		// Nom du fichier
+			int rep = 0;			// c'est un repertoire
+			unsigned int size;		// Taille du fichier
+			off_t longueur = 0;		// Somme de la taille des fichiers avant le repertoire
+			off_t supp = 0;			// Somme de la taille du repertoire et de ses fichiers
+			off_t dep = 0;			// Somme de la taille des fichiers apres le repertoire
 
 			// ----------------------------------------------------------------------
 			// 	 		       PARCOURS DU TAR
@@ -94,7 +110,7 @@ int main(int argc, char *argv[]){
 
 				int rdcount = read(fd,&tampon, BLOCKSIZE);
 				if(rdcount<0){
-					perror("\033[1;31mErreur lors de la lecture du tar\033[0m");
+					perror("rm: erreur lors de la lecture du tar");
 					close(fd);
 					exit(-1);
 				}
@@ -108,12 +124,16 @@ int main(int argc, char *argv[]){
 
 				if(strlen(p_hdr-> name) == 0) {
 					if (fich == NULL) {
-						printsss("rm: impossible de supprimer '", argv[i], "': Aucun fichier ou dossier de ce type\n");
+						print_stderr("rm: impossible de supprimer '");
+						print_stderr(argv[i]);
+						print_stderr("': Aucun fichier ou dossier de ce type\n");
 						break;
 					}
 					else {
 						if(rep == 1 && r == 0) {
-							printsss("rm: impossible de supprimer '", argv[i], "': est un dossier\n");
+							print_stderr("rm: impossible de supprimer '"); 
+							print_stderr(argv[i]);
+							print_stderr("': est un dossier\n");
 							break;
 						}
 						else {
@@ -174,7 +194,7 @@ int main(int argc, char *argv[]){
 			}
 
 			// ----------------------------------------------------------------------
-			// 	 		  TRAITEMENT DU REPERTOIRE
+			// 	 		  TRAITEMENT DU FICHIER/REPERTOIRE
 			// ----------------------------------------------------------------------
 
 			if (valide == 1) {
@@ -188,17 +208,17 @@ int main(int argc, char *argv[]){
 
 				int rd = read(fd, &mem, dep);
 				if(rd<0){
-					perror("\033[1;31mErreur lors de la lecture du tar\033[0m");
+					perror("rm: erreur lors de la lecture du tar");
 					close(fd);
 					exit(-1);
 				}
 
-				// On supprime le repertoire
+				// On supprime le fichier/repertoire
 
 				lseek(fd, longueur, SEEK_SET);
 				int wr = write(fd, &mem, dep);
 				if(wr<0){
-					perror("\033[1;31mErreur lors de l'écriture du tar\033[0m");
+					perror("rm: erreur lors de l'écriture du tar");
 					close(fd);
 					exit(-1);
 				}
@@ -206,14 +226,10 @@ int main(int argc, char *argv[]){
 				ftruncate(fd, longueur+dep);
 			}
 
-			// Retour au depart
-
-			lseek(fd,0,SEEK_SET);
 			close(fd);
 
 		}
 
 	}
-	close(fd);
 	exit(0);
 }

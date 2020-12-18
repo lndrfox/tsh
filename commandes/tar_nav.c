@@ -468,8 +468,10 @@ char ** tar_and_path(char *p){
 	strcat(tar,tokens[i2]);
 	i2++;
 
+	char * path = NULL;
+	if(tokens[i2] != 0)
+		path = flatten(&(tokens[i2]),"/");
 
-	char * path= flatten(&(tokens[i2]),"/");
 	free(path_1_copy);
 	free(tokens);
 	//We make a " char ** tokens3" where we stock "tar" in tokens3[0]

@@ -19,7 +19,7 @@ void print_stderr(char * buf){
 	int n=write(STDERR_FILENO,buf,strlen(buf));
 	if(n<0){
 
-		perror("\033[1;31mErreur d'impression");
+		perror("\033[1;31mErreur d'impression\033[0m");
 		exit(-1);
 	}
 }
@@ -50,7 +50,7 @@ void prints(char* s) {
 	int n;
 	n = write(STDOUT_FILENO , &buf, strlen(s));
 	if(n<0) {
-		perror("\033[1;31mErreur d'impression");
+		perror("\033[1;31mErreur d'impression\033[0m");
 		exit(-1);
 	}
 }
@@ -89,7 +89,7 @@ void printd(int s) {
 	int n = strlen_int(s);
 	char str[n];
 	if(sprintf(str, "%d", s) <0) {
-		perror("\033[1;31mMauvais format ('d') de print ");
+		perror("\033[1;31mMauvais format ('d') de print\033[0m");
 		exit(-1);
 	}
 	prints(str);
@@ -99,7 +99,7 @@ void printd(int s) {
 void printc(char s) {
 	char str[2];
 		if(sprintf(str, "%c", s) < 0) {
-		perror("\033[1;31mMauvais format ('c') de print");
+		perror("\033[1;31mMauvais format ('c') de print\033[0m");
 		exit(-1);
 	}
 	prints(str);
@@ -109,7 +109,7 @@ void printc(char s) {
 void printo(int s) {
 	char str[12];
 		if(sprintf(str, "%o", s) < 0) {
-		perror("\033[1;31mMauvais format ('o') de print");
+		perror("\033[1;31mMauvais format ('o') de print\033[0m");
 		exit(-1);
 }
 	prints(str);
