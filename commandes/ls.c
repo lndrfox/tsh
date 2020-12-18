@@ -88,7 +88,7 @@ int main (int argc, char *argv[]) {
 		// On evite "-l"
 		if(strcmp(argv[i], "-l") != 0) {
 
-			char * arg = NULL;								// nom de l'argument adapter a la variable de l'environnement
+			char * arg = NULL;	// nom de l'argument adapter a la variable de l'environnement
 
 			// ----------------------------------------------------------------------
 			// 	 	 ADAPTATION DE L'ARGUMENT A LA VARIABLE D'ENVIONNEMENT
@@ -278,7 +278,7 @@ int main (int argc, char *argv[]) {
 		if(strcmp(get_argv(node), "-l") != 0) {
 			print_stderr("ls: impossible d'accéder à '");
 			print_stderr(get_argv(node));
-			print_stderr("': Aucun fichier ou dossier de ce type\n");
+			print_stderr("': Aucun fichier ou dossier de ce typeee\n");
 		}
 	}
 	
