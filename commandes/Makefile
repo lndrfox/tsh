@@ -45,11 +45,6 @@ mv: mv.o tar.o print.o tar_nav.o lib.o
 mv.o: mv.c 
 	$(CC) -o $@ -c $< $(CFLAGS)
 
-cp_r: cp_r.o tar.o print.o tar_nav.o
-	$(CC) -o $@ $^ $(LDFLAGS)
-
-cp_r.o: cp_r.c 
-	$(CC) -o $@ -c $< $(CFLAGS)
 
 cat: cat.o tar_nav.o tar.o print.o 
 	$(CC) -o $@ $^ $(LDFLAGS)

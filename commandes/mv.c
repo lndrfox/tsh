@@ -44,10 +44,10 @@ int rmtar(char *argv){
  	 strcpy (tar,ar[0]);
  	 char * path = malloc(strlen(ar[1])+sizeof(char));
  	 strcpy (path,ar[1]);
-
+	 free(ar);
 	  // OPENING THE TAR FILE
 	  fd=open(tar,O_RDWR);
-
+		free(tar);
 
 	  if(fd < 0){
 	    perror("\033[1;31mErreur lors de l'ouverture du tar\033[0m");
@@ -74,7 +74,10 @@ int rmtar(char *argv){
 
 			// Si un repertoire est entre sans '/'
 			arg = malloc(strlen(path) + 1);
+
 			strcpy(arg,path);
+
+			free(path);
 
 			// ----------------------------------------------------------------------
 			// 	 		       PARCOURS DU TAR
@@ -205,6 +208,7 @@ int rmtar(char *argv){
 
 		}
 
+	free(arg);
 	close(fd);
 	exit(0);
 }
@@ -227,7 +231,6 @@ int tar_vers_ext(char *argv[]){
 
   free(arg);
 
-  argv[2] = true_path(argv[2]);
   // OPENING THE TAR FILE
 
   int fd=open(tar,O_RDWR);
@@ -235,7 +238,7 @@ int tar_vers_ext(char *argv[]){
   //ERROR MANAGMENT
 
   if(fd==-1){
-    perror("open tar file");
+    print_error(NULL,NULL,"open tar file");
     exit(-1);
   }
 
@@ -251,7 +254,7 @@ int tar_vers_ext(char *argv[]){
 
     if(rdcount<0){
 
-      perror("reading tar file");
+      print_error(NULL,NULL,"reading tar file");
       close(fd);
       return -1;
     }
@@ -322,7 +325,12 @@ int tar_vers_ext(char *argv[]){
       			case '7': c = S_IRWXO; break;
     		}
 
-  int fd2=open(argv[2], O_RDWR | O_CREAT | O_TRUNC , a | b | c);
+  int fd2=open(true_path(argv[2]), O_RDWR | O_CREAT | O_TRUNC , a | b | c);
+
+	if(fd2 < 0){
+		print_error(NULL,NULL,"error argv[2]");
+		return -1;
+	}
   fchmod(fd2, a | b | c);
 
   //GETTING THE SIZE OF WHAT WE NEED TO READ
@@ -345,16 +353,15 @@ int tar_vers_ext(char *argv[]){
     }
     if(rdtmp<0){
 
-      perror("Reading tar file");
+      print_error(NULL,NULL,"Reading tar file");
       exit(-1);
     }
-
 
     //WRITING THE BLOCK AND ERROR MANGEMENT
 
     if(write(fd2,rd, 1)<0){
 
-      perror("Writing file content");
+      print_error(NULL,NULL,"Writing file content");
       exit(-1);
 
     }
@@ -362,16 +369,15 @@ int tar_vers_ext(char *argv[]){
     memset(rd, 0, BLOCKSIZE);
 
     }
-		rmtar(path);
-		free(path);
 
   //MOVING READING HEAD BACK TO THE BEGINING OF THE TAR FILE IN CASE ARGUMENTS ARE NOT
   //IN THE SAME ORDER AS THE HEADERS IN THE TAR FILE
+	rmtar(path);
+	free(path);
 
   lseek(fd,0,SEEK_SET);
 
   //CLOSING WRITING FILE
-
 
   close(fd);
 
@@ -400,21 +406,21 @@ int ext_vers_tar(char *argv[]){
   strcpy (path,arg[1]);
 
   free(arg);
-  argv[1] = true_path(argv[1]);
+
   // OPENING THE TAR FILE
 
   int fd=open(tar,O_RDWR);
-
+	free(tar);
 
   if(fd <0){
-    perror("Problem with argv 2");
+    print_error(NULL,NULL,"Problem with argv 2");
     exit(-1);
   }
 
-  int fd2 = open(argv[1], O_RDONLY);
+  int fd2 = open(true_path(argv[1]), O_RDONLY);
 
   if(fd2<0){
-    printsss("cp: impossible d'évaluer '", path ,"' : Aucun fichier ou dossier de ce type\n");
+    printsss("cp: impossible d'évaluer '", argv[1] ,"' : Aucun fichier ou dossier de ce type\n");
     exit(-1);
   }
 
@@ -429,7 +435,7 @@ int ext_vers_tar(char *argv[]){
     //ERROR MANAGMENT
 
     if(rdcount<0){
-      perror("reading tar file");
+      print_error(NULL,NULL,"reading tar file");
       close(fd);
       return -1;
     }
@@ -455,7 +461,7 @@ int ext_vers_tar(char *argv[]){
 
 
   }while(hd.name[1]!=0);//While the header is not at the end block of 0
-  free(tar);
+
 
   struct posix_header temporaire;//The 'entete' we will put at the end of the tar
 
@@ -472,8 +478,9 @@ int ext_vers_tar(char *argv[]){
 
   //FILLING MODE
   struct stat f;
-  stat(argv[1],&f);
- sprintf(temporaire.mode,"%o",f.st_mode);
+  stat(true_path(argv[1]),&f);
+ 	sprintf(temporaire.mode,"%7o", f.st_mode);
+
 
  //SIZE BECOME THE SIZE OF THE COPIED FILE
 
@@ -518,7 +525,7 @@ int ext_vers_tar(char *argv[]){
  //ERROR MANAGMENT
 
  if(g==NULL){
-   perror("Reading group ID");
+   print_error(NULL,NULL,"Reading group ID");
    exit(-1);
  }
  sprintf(temporaire.gname,"%s",g->gr_name);
@@ -540,7 +547,7 @@ int ext_vers_tar(char *argv[]){
 
   if(rddd<BLOCKSIZE){
 
-    perror("Error writing in file");
+    print_error(NULL,NULL,"Error writing in file");
     exit(-1);
   }
 
@@ -553,7 +560,7 @@ int ext_vers_tar(char *argv[]){
     //EROR MANAGMENT
 
     if(rdtmp<0){
-      perror("Reading tar file");
+      print_error(NULL,NULL,"Reading tar file");
       exit(-1);
     }
 
@@ -561,7 +568,7 @@ int ext_vers_tar(char *argv[]){
 
     if(write(fd,buff, 1)<0){
 
-      perror("Writing file content");
+      print_error(NULL,NULL,"Writing file content");
       exit(-1);
 
     }
@@ -570,7 +577,7 @@ int ext_vers_tar(char *argv[]){
 
     memset(buff, 0, BLOCKSIZE);
   }
-	remove(argv[1]);
+
 
 
   memset(buf,0,BLOCKSIZE);
@@ -582,7 +589,7 @@ int ext_vers_tar(char *argv[]){
 
     if(rdd<BLOCKSIZE){
 
-      perror("Error writing in file2");
+      print_error(NULL,NULL,"Error writing in file2");
       exit(-1);
     }
 
@@ -630,8 +637,16 @@ int tar_vers_tar(char *argv[]){
   free(arg2);
 
   int fd = open(tar,O_RDWR);
+	if(fd < 0){
+		print_error(NULL,NULL,"error with first tar");
+		return -1;
+	}
   free(tar);
+
   int fd2= open(tar2,O_RDWR);
+	if(fd2 < 0){
+		print_error(NULL,NULL,"error with second tar");
+	}
   free(tar2);
 
 
@@ -646,7 +661,7 @@ int tar_vers_tar(char *argv[]){
     //ERROR MANAGMENT
 
     if(rdcount<0){
-      perror("reading tar file\n");
+      print_error(NULL,NULL,"reading tar file\n");
       close(fd);
       return -1;
     }
@@ -654,7 +669,7 @@ int tar_vers_tar(char *argv[]){
     //IF WE REACHED THE END OF THE TAR WITHOUT FINDING THE GOOD HEADER
 
     if((hd.name[0]=='\0')){
-      printsss("cp: impossible d'évaluer '", argv[1] ,"' : Aucun fichier ou dossier de ce type \n");
+      printsss("cp: impossible d'évaluer '", path ,"' : Aucun fichier ou dossier de ce type \n");
       return -1;
     }
 
@@ -677,7 +692,8 @@ int tar_vers_tar(char *argv[]){
 
 
   }while(strcmp(hd.name,path)!=0);
-
+	rmtar(path);
+  free(path);
 
   ////////////////////////////////////////////
   ////////////////////////////////////////////
@@ -692,7 +708,7 @@ int tar_vers_tar(char *argv[]){
     //ERROR MANAGMENT
 
     if(rdcount<0){
-      perror("reading tar file");
+      print_error(NULL,NULL,"reading tar file");
       close(fd);
       return -1;
     }
@@ -732,7 +748,8 @@ int tar_vers_tar(char *argv[]){
  free(path2);
   //FILLING MODE
 
- sprintf(temporaire.mode,"%s",hd.mode);
+
+ strcpy(temporaire.mode,hd.mode);
 
  //SIZE IS FILE OF COPIED FILE
 
@@ -770,7 +787,7 @@ int tar_vers_tar(char *argv[]){
  //ERROR MANAGMENT
 
  if(g==NULL){
-   perror("Reading group ID");
+   print_error(NULL,NULL,"Reading group ID");
    exit(-1);
  }
  sprintf(temporaire.gname,"%s",g->gr_name);
@@ -795,7 +812,7 @@ int tar_vers_tar(char *argv[]){
 
   if(rddd<BLOCKSIZE){
 
-    perror("Error writing in file");
+    print_error(NULL,NULL,"Error writing in file");
     exit(-1);
   }
 
@@ -804,6 +821,7 @@ int tar_vers_tar(char *argv[]){
 
   memset(buff,0,BLOCKSIZE);
 
+	//writing the file
   for(unsigned int i=0; i<((size+ BLOCKSIZE - 1) >> BLOCKBITS);i++){
 
     int rdtmp = read(fd, buff, BLOCKSIZE);
@@ -814,16 +832,15 @@ int tar_vers_tar(char *argv[]){
     }
 
     if(rdtmp<0){
-      perror("Reading tar file");
+      print_error(NULL,NULL,"Reading tar file");
       exit(-1);
     }
-
 
     //WRITING THE BLOCK AND ERROR MANGEMENT
 
     if(write(fd2,buff, BLOCKSIZE)<0){
 
-      perror("Writing file content");
+      print_error(NULL,NULL,"Writing file content");
       exit(-1);
 
     }
@@ -833,10 +850,9 @@ int tar_vers_tar(char *argv[]){
 
   }
 
-	rmtar(path);
-	free(path);
 
   memset(buff,0,BLOCKSIZE);
+	//writing the 2 last tar block
    for(int i=0;i<2;i++){
 
     int rdd=write(fd2,buff,BLOCKSIZE);
@@ -844,7 +860,7 @@ int tar_vers_tar(char *argv[]){
 
     if(rdd<BLOCKSIZE){
 
-      perror("Error writing in file2");
+      print_error(NULL,NULL,"Error writing in file2");
       exit(-1);
     }
 
