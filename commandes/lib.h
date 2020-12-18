@@ -12,7 +12,8 @@ extern int profondeur (struct posix_header * p_hdr);
 
 typedef struct node node_t;
 extern node_t * head(struct posix_header* p, char * argv);
-extern node_t * add(node_t * prev, struct posix_header* p, char * argv);
+extern node_t * add(node_t * prev, struct posix_header* p, char * argv, int todo);
+extern int get_todo(node_t * node);
 extern char * get_argv(node_t * node);
 extern struct posix_header get_header(node_t * node);
 extern int get_profondeur(node_t * node);

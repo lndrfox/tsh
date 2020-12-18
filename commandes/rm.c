@@ -47,20 +47,21 @@ int main(int argc, char *argv[]){
 		//we get the tar to open and the path for the file
 		//from tar_and_path
 		char ** ar = tar_and_path(argv[i]);
+		prints(ar[1]);
 
- 	 char * tar = malloc(strlen(ar[0])+sizeof(char));
- 	 strcpy (tar,ar[0]);
- 	 char * path = malloc(strlen(ar[1])+sizeof(char));
- 	 strcpy (path,ar[1]);
+		char * tar = malloc(strlen(ar[0])+sizeof(char));
+		strcpy (tar,ar[0]);
+		char * path = malloc(strlen(ar[1])+sizeof(char));
+		strcpy (path,ar[1]);
 
-	  // OPENING THE TAR FILE
-	  fd=open(tar,O_RDWR);
+		// OPENING THE TAR FILE
+		fd=open(tar,O_RDWR);
 
 
-	  if(fd < 0){
-	    perror("\033[1;31mErreur lors de l'ouverture du tar\033[0m");
-	    exit(-1);
-	  }
+		if(fd < 0){
+			perror("\033[1;31mErreur lors de l'ouverture du tar\033[0m");
+			exit(-1);
+		}
 
 		int valide = 0;			// 0: fichier ne peut pas etre supprime
 						// 1: le fichier peut etre supprime

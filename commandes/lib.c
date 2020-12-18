@@ -62,6 +62,7 @@ int profondeur (struct posix_header * p_hdr) {
 // ----------------------------------------------------------------------
 
 typedef struct node {
+	int todo;
 	char * argv;
     struct posix_header p;
     int profondeur;
@@ -70,8 +71,9 @@ typedef struct node {
 } node_t;
 
 // Ajout à la fin de la liste
-node_t * add(node_t * prev, struct posix_header* p, char * argv) {
+node_t * add(node_t * prev, struct posix_header* p, char * argv, int todo) {
 	node_t * node = (node_t *) malloc(sizeof(node_t));
+	node -> todo = todo;
 	node -> argv = argv;
 	node -> p = *p;
 	node -> profondeur = profondeur(p);
@@ -86,6 +88,12 @@ node_t * add(node_t * prev, struct posix_header* p, char * argv) {
 	}
 
 	return node;
+}
+
+int get_todo(node_t * node) {
+	if(node != NULL)
+		return node -> todo;
+	return -1;
 }
 
 // Retourne l'argument associé a la liste

@@ -27,10 +27,10 @@ int main(int argc, char *argv[]){
 		//from tar_and_path
 		char ** ar = tar_and_path(argv[i]);
 
- 	 char * tar = malloc(strlen(ar[0])+sizeof(char));
- 	 strcpy (tar,ar[0]);
- 	 char * path = malloc(strlen(ar[1])+sizeof(char));
- 	 strcpy (path,ar[1]);
+		char * tar = malloc(strlen(ar[0])+sizeof(char));
+		strcpy (tar,ar[0]);
+		char * path = malloc(strlen(ar[1])+sizeof(char));
+		strcpy (path,ar[1]);
 
 		// ======================================================================
 		// 			      OUVERTURE DU TAR
