@@ -118,6 +118,7 @@ int main (int argc, char *argv[]) {
 			// ----------------------------------------------------------------------
 
 			int fd = open(tar, O_RDONLY);
+			int vide = 1;
 			if (fd<0) {
 				perror("ls: erreur lors de l'ouverture du tar");
 				exit(-1);
@@ -137,53 +138,62 @@ int main (int argc, char *argv[]) {
 				p_hdr = (struct posix_header*)tampon;
 
 				// On evite les deux blocs finaux formés uniquement de zéros
-				if(strlen(p_hdr-> name) != 0) {
+				if(strlen(p_hdr-> name) == 0) {
+					
+					// Afficher un tar vide
+					if(vide && arg == NULL)
+						a[i-start] = add(a[i-start], p_hdr, argv[i], 1);
 
-					// On ajoute à la liste du tar le header
-					list_tar[i-start] = add(list_tar[i-start], p_hdr, NULL, -1);
+					break;
+				}
 
-					// ----------------------------------------------------------------------
-					// 	 	     REPERTOIRE ENTREE SANS '/' TROUVE
-					// ----------------------------------------------------------------------
+				// Si on peut lire jusqu'ici le tar n'est pas vide
+				vide = 0;
 
-					// Variables temporaires
+				// On ajoute à la liste du tar le header
+				list_tar[i-start] = add(list_tar[i-start], p_hdr, NULL, -1);
 
-					if(arg != NULL) {
+				// ----------------------------------------------------------------------
+				// 	 	     REPERTOIRE ENTREE SANS '/' TROUVE
+				// ----------------------------------------------------------------------
 
-						// Si l'argument entree est un repertoire sans '/' a la fin
-						if(p_hdr-> typeflag == '5' && arg[strlen(arg) - 1] != '/') {
+				// Variables temporaires
 
-							char * name = malloc(strlen(arg) + 2);
-							strcpy(name, arg);
-							strcat(name, "/");
-						
-							// Si le repertoire correspond a l'argument
-							// On redefinie de façon permanente arg comme un repertoire
-							if (strcmp(p_hdr -> name, name) == 0) {
-								arg = malloc(strlen(name) + 1);
-								strcpy(arg, name);
-							}
+				if(arg != NULL) {
+
+					// Si l'argument entree est un repertoire sans '/' a la fin
+					if(p_hdr-> typeflag == '5' && arg[strlen(arg) - 1] != '/') {
+
+						char * name = malloc(strlen(arg) + 2);
+						strcpy(name, arg);
+						strcat(name, "/");
+					
+						// Si le repertoire correspond a l'argument
+						// On redefinie de façon permanente arg comme un repertoire
+						if (strcmp(p_hdr -> name, name) == 0) {
+							arg = malloc(strlen(name) + 1);
+							strcpy(arg, name);
 						}
 					}
+				}
 
-					// ----------------------------------------------------------------------
-					// 	 		STOCKAGE DES INFORMATIONS
-					// ----------------------------------------------------------------------
+				// ----------------------------------------------------------------------
+				// 	 		STOCKAGE DES INFORMATIONS
+				// ----------------------------------------------------------------------
 
-					// On affiche uniquement les fichiers dans le tar/repertoire de même profondeur
-					if((arg == NULL && profondeur(p_hdr) == 0) || 
-					   (arg != NULL && a[i-start] != NULL && profondeur(p_hdr) == get_profondeur(get_head(a[i-start])) + 1 && estDansRep(p_hdr -> name, arg) == 1) || 
-					   (arg != NULL && a[i-start] == NULL && egaux(p_hdr -> name, arg) == 1)) {
+				// On affiche uniquement les fichiers dans le tar/repertoire de même profondeur
+				if((arg == NULL && profondeur(p_hdr) == 0) || 
+				   (arg != NULL && a[i-start] != NULL && profondeur(p_hdr) == get_profondeur(get_head(a[i-start])) + 1 && estDansRep(p_hdr -> name, arg) == 1) || 
+				   (arg != NULL && a[i-start] == NULL && egaux(p_hdr -> name, arg) == 1)) {
 
-						// Argument qui est un tar: todo = 1
-						// Argument qui est un repertoire ou un fichier dans un tar: todo = 0
-						int todo = 1;
-						if(arg != NULL)
-							todo = 0;
+					// Argument qui est un tar: todo = 1
+					// Argument qui est un repertoire ou un fichier dans un tar: todo = 0
+					int todo = 1;
+					if(arg != NULL)
+						todo = 0;
 
-						// On ajoute à la liste de arg le header
-						a[i-start] = add(a[i-start], p_hdr, argv[i], todo);
-					}
+					// On ajoute à la liste de arg le header
+					a[i-start] = add(a[i-start], p_hdr, argv[i], todo);
 				}
 			
 				// On passe a l'entete suivante
@@ -248,14 +258,19 @@ int main (int argc, char *argv[]) {
 			node_t * head = get_head(a[i]);
 			node_t * head_tar = get_head(list_tar[i]);
 
+			// Si c'est un tar vide
+			if(strlen(get_header(head).name) == 0) {
+				array[0][ind1] = head;
+				ind1++;
+			}
 			// Si c'est un tar ou un repertoire
-			if(get_header(head).typeflag == '5' || get_todo(head) == 1) {
+			else if(get_header(head).typeflag == '5' || get_todo(head) == 1) {
 				array[2][ind3] = head;
 				l_tar[1][ind3] = head_tar;
 				ind3++;
 			}
 			// Sinon c'est un fichier
-			else {
+			else{
 				array[1][ind2] = head;
 				l_tar[0][ind2] = head_tar;
 				ind2++;
@@ -275,10 +290,10 @@ int main (int argc, char *argv[]) {
 	// FICHIER/REPERTOIRES NON TROUVES
 	for(int i = 0; i < length1; i++) {
 		node_t *  node = get_head(array[0][i]);
-		if(strcmp(get_argv(node), "-l") != 0) {
+		if(strcmp(get_argv(node), "-l") != 0 && get_todo(node) == -1) {
 			print_stderr("ls: impossible d'accéder à '");
 			print_stderr(get_argv(node));
-			print_stderr("': Aucun fichier ou dossier de ce typeee\n");
+			print_stderr("': Aucun fichier ou dossier de ce type\n");
 		}
 	}
 	
