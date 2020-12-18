@@ -62,7 +62,7 @@ int main(int argc, char *argv[]){
 		int fd = open(tar,O_RDWR);
 
 		if(fd < 0){
-			perror("\033[1;31mErreur lors de l'ouverture du tar\033[0m");
+			perror("rmdir: erreur lors de l'ouverture du tar");
 			exit(-1);
 		}
 
@@ -88,7 +88,7 @@ int main(int argc, char *argv[]){
 
 			int rdcount = read(fd,&tampon, BLOCKSIZE);
 			if(rdcount<0){
-				perror("\033[1;31mErreur lors de la lecture du tar\033[0m");
+				perror("rmdir: erreur lors de la lecture du tar");
 				close(fd);
 				exit(-1);
 			}
@@ -186,7 +186,7 @@ int main(int argc, char *argv[]){
 
 			int rd = read(fd, &mem, dep);
 			if(rd<0){
-				perror("\033[1;31mErreur lors de la lecture du tar\033[0m");
+				perror("rmdir: erreur lors de la lecture du tar");
 				close(fd);
 				exit(-1);
 			}
@@ -196,7 +196,7 @@ int main(int argc, char *argv[]){
 			lseek(fd, longueur, SEEK_SET);
 			int wr = write(fd, &mem, dep);
 			if(wr<0){
-				perror("\033[1;31mErreur lors de l'écriture du tar\033[0m");
+				perror("rmdir: erreur lors de l'écriture du tar");
 				close(fd);
 				exit(-1);
 			}
