@@ -756,12 +756,17 @@ void exec_split(char ** tokens){
 			}
 		}
 
-		if(strcmp(tokens[i],"..")==0){
+		if(strcmp(true_path(tokens[i]),"")==0){
 
 			flag=1;
 		}
 
 		i++;
+	}
+
+	if(tokens[cpt+1]==NULL){
+
+		flag=0;
 	}
 
 	/*---- HANDELING CP AND MV ----*/
@@ -795,6 +800,7 @@ void exec_split(char ** tokens){
 	/*IF TOKENS HAS NO ARGUMENTS*/
 
 	if(tokens[cpt]==NULL && !flag){
+
 		exec_custom(out_tar,0);
 		return;
 	}
