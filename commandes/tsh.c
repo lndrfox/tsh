@@ -640,6 +640,9 @@ char ** split_args(char ** args){
 			*/
 			
 			char * tmp =true_path(save);
+			if(strcmp(tmp,"")==0){
+				continue;
+			}
 			token_out_tar[cpt_token_out_tar]=malloc(strlen(tmp)+sizeof(char));
 			strcpy(token_out_tar[cpt_token_out_tar],tmp);			
 			cpt_token_out_tar++;
@@ -654,7 +657,7 @@ char ** split_args(char ** args){
 	/*WE MAKE SURE THAT TOKEN_OUT_TAR ENDS WITH NULL*/
 
 	token_out_tar[cpt_token_out_tar]=NULL;
-	
+
 	return token_out_tar;
 
 }
@@ -755,9 +758,6 @@ void exec_split(char ** tokens){
 		i++;
 	}
 
-	
-	
-
 	/*---- HANDELING CP AND MV ----*/
 
 	if(strcmp(tokens[0],"mv")==0|| strcmp(tokens[0],"cp")==0){
@@ -766,7 +766,9 @@ void exec_split(char ** tokens){
 
 		if(tokens[cpt]!=NULL && tokens[cpt+1]!=NULL){
 
-			if(!goes_back_in_tar(tokens[cpt]) && !goes_back_in_tar(tokens[cpt+1])){
+			if((!goes_back_in_tar(tokens[cpt]) && !goes_back_in_tar(tokens[cpt+1])) || 
+				((goes_back_in_tar(tokens[cpt]) && goes_back_in_tar(tokens[cpt+1])) &&
+					string_contains_tar(tokens[cpt]) && string_contains_tar(tokens[cpt+1]))){
 
 				tokens[cpt]=true_path(tokens[cpt]);
 				cpt++;
@@ -784,19 +786,18 @@ void exec_split(char ** tokens){
 
 	char ** out_tar=split_args(tokens);
 
+	/*IF TOKENS HAS NO ARGUMENTS*/
+
+	if(tokens[cpt]==NULL){
+		exec_custom(out_tar,0);
+		return;
+	}
+
 	/*IF OUT_TAR HAS NO ARGUMENTS*/
 
 	if(out_tar[cpt]==NULL){
 		
 		exec_custom(tokens,1);
-		return;
-
-	}
-
-	/*IF TOKENS HAS NO ARGUMENTS*/
-
-	if(tokens[cpt]==NULL){
-		exec_custom(out_tar,0);
 		return;
 	}
 
