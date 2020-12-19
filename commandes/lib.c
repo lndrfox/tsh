@@ -224,7 +224,6 @@ void ptemps(a * a, long temps) {
 		case 9: ajout(a, "oct. "); break;
 		case 10:ajout(a, "nov. "); break;
 		case 11:ajout(a, "dec. "); break;
-
 	}
 
 	// Jour
@@ -291,7 +290,7 @@ void pdroit(a * a, char *d) {
 void plink(a * a, node_t * tar, struct posix_header hdr) {
 
 	node_t * node = get_head(tar);
-	char *file =   hdr.name;
+	char *file = hdr.name;
 	char *file_l = hdr.linkname;;
 	char *f =  "";
 	char *fl = "";
@@ -321,18 +320,17 @@ void afficheNom(a * a, node_t * node, node_t * tar, int option, char * var_rep) 
 
 	struct posix_header hdr = get_header(node); 
 	char * name = hdr.name;
-	char n[strlen(hdr.name)];
 	int existe = existant(tar, hdr.linkname, var_rep);
 	int couleur = 0;
+
+	// COULEUR
 
 	// Si c'est un repertoire: couleur bleu
 	if(hdr.typeflag == '5'){
 		ajout(a, "\033[1;34m");
 		couleur = 1;
 		// Supprimer '/' du nom
-		strcpy(n, hdr.name);
-		n[strlen(n) - 1] = '\0';
-		name = n;
+		name[strlen(name) - 1] = '\0';
 	}
 
 	// Si c'est un lien symbolique couleur cyan/rouge
@@ -363,17 +361,15 @@ void afficheNom(a * a, node_t * node, node_t * tar, int option, char * var_rep) 
 		couleur = 1;
 	}
 
-	// Si c'est un fichier du repertoire choisi on affiche que le nom apres rep/...
-	if(var_rep != NULL) {
-		char * nom = malloc(strlen(name) - strlen(var_rep) + 1);
-		strcpy(nom, &name[strlen(var_rep)]);
-		ajout(a, nom);
-	}
+	// NOM
 
-	// Sinon on affiche son nom complet
-	else{
-		ajout(a, name);
-	}
+	// Si c'est un fichier du repertoire choisi on affiche que le nom apres rep/...
+	char * token = strtok(name, "/");
+	while((token =strtok(NULL, "/")) !=NULL)
+		name = token;
+
+	// On affiche son nom
+	ajout(a, name);
 
 	// Renitialise la couleur
 	if(couleur == 1)
