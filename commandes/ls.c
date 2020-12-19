@@ -55,7 +55,7 @@ int main (int argc, char *argv[]) {
 	// ======================================================================
 
 	char tampon[512];					// lecture du bloc stocke ici
-	int n;								// nombre de caractres lus dans un tampon
+	int n = 1;							// nombre de caractres lus dans un tampon
 	unsigned int size;					// taille du fichier lu
 	struct posix_header * p_hdr;		// header du fichier
 	int start;							// debut de la boucle
@@ -124,7 +124,7 @@ int main (int argc, char *argv[]) {
 				exit(-1);
 			}
 
-			while(1) {
+			while(n > 0) {
 
 				// Lecture du bloc
 				n = read(fd, &tampon, BLOCKSIZE);
@@ -132,7 +132,6 @@ int main (int argc, char *argv[]) {
 					perror("ls: erreur lors de la lecture du tar");
 					exit(-1);
 				}
-				if(n == 0) break;
 
 				// Extraction des informations
 				p_hdr = (struct posix_header*)tampon;
@@ -210,13 +209,13 @@ int main (int argc, char *argv[]) {
 	// ======================================================================
 
 	affichage format = malloc(sizeof(affichage));	// affichage final
-	init(format);								// initialisation de l'affichage
+	init(format);									// initialisation de l'affichage
 
 	// ----------------------------------------------------------------------
 	//	 	 	     		 TRI DES LISTES
 	// ----------------------------------------------------------------------
 
-	// 1er tableau: fichiers/repertoires non existants
+	// 1er tableau: tars vides et fichiers/repertoires non existants
 	// 2e  tableau: fichiers existants
 	// 3e  tableau: tars, repertoires existants
 

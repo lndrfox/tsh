@@ -2,7 +2,7 @@
 CC=gcc
 CFLAGS=-W -Wall
 LDFLAGS=
-EXEC=cat ls mkdir rmdir rm cp tsh mv cp_r
+EXEC=cat ls mkdir rmdir rm cp tsh mv
 
 all: $(EXEC)
 
