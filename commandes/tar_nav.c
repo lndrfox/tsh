@@ -296,7 +296,7 @@ char * path_is_valid(char * path){
 
 	/*B - IF WE HAVE EXIT THEN WE SIMPLY EXIT THE TAR*/
 
-	if(strcmp(pathf,"exit")==0){
+	if(strcmp(pathf,"")==0){
 
 		return "";
 	}
@@ -426,7 +426,7 @@ char * true_path(char * path){
   tokens[i] = NULL;
 
   if(i==0){
-  	return "exit";
+  	return "";
   }
 
 //we flatten tokens to get the and return the path
