@@ -641,7 +641,7 @@ char ** split_args(char ** args){
 			
 			char * tmp =true_path(save);
 			if(strcmp(tmp,"")==0){
-				continue;
+				tmp=".";
 			}
 			token_out_tar[cpt_token_out_tar]=malloc(strlen(tmp)+sizeof(char));
 			strcpy(token_out_tar[cpt_token_out_tar],tmp);			
@@ -789,6 +789,7 @@ void exec_split(char ** tokens){
 	/*IF TOKENS HAS NO ARGUMENTS*/
 
 	if(tokens[cpt]==NULL){
+
 		exec_custom(out_tar,0);
 		return;
 	}
