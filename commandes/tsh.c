@@ -726,6 +726,7 @@ void exec_split(char ** tokens){
 
 	int cpt=1;
 	int i=1;
+	int flag=0;
 
 	/*WE LOOP ON TOKENS*/
 
@@ -753,6 +754,11 @@ void exec_split(char ** tokens){
 		
 			return;
 			}
+		}
+
+		if(strcmp(tokens[i],"..")==0){
+
+			flag=1;
 		}
 
 		i++;
@@ -788,14 +794,14 @@ void exec_split(char ** tokens){
 
 	/*IF TOKENS HAS NO ARGUMENTS*/
 
-	if(tokens[cpt]==NULL){
+	if(tokens[cpt]==NULL && !flag){
 		exec_custom(out_tar,0);
 		return;
 	}
 
 	/*IF OUT_TAR HAS NO ARGUMENTS*/
 
-	if(out_tar[cpt]==NULL){
+	if(out_tar[cpt]==NULL && !flag){
 		
 		exec_custom(tokens,1);
 		return;
