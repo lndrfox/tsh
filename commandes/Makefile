@@ -6,7 +6,7 @@ EXEC=cat ls mkdir rmdir rm cp tsh mv
 
 all: $(EXEC)
 
-tar_nav.o: tar_nav.c tar_nav.h tar.h
+tar_nav.o: tar_nav.c tar_nav.h tar.h print.h
 	$(CC) -o $@ -c $< $(CFLAGS)
 
 tar.o: tar.c tar.h
