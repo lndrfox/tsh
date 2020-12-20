@@ -37,6 +37,8 @@ int d_stdin=0;
 int d_stderr=2;
 char path_home [PATH_MAX + 1];
 char ** delete;
+char * mv_out;
+char * mv_err;
 
 /*READS A LINE ENTERED IN THE TERMINAL AND RETURNS IT*/
 
@@ -272,6 +274,7 @@ char * redir_out(char * prompt){
 
 		int flag_err=0; //THIS FLAG IS RAISED IF WE NEED TO REDIRECT STDERR_FILENO
 
+
 		/*------IF FLAG IS RAISED THEN WE HAVE EITHER >> OR 2>> SO THE
 		DESCRIPTOR MUST BE OPENED IN APPEND MODE ------*/
 
@@ -443,6 +446,9 @@ char * redir_in(char * prompt){
 		/*IF IT IS INSIDE A TAR*/
 
 		else{
+
+			/*WE COPY THE FILE OUTSIDE OF THE TAR AND USE THE COPY
+			FOR OUR OPEN THEN WE ADD IT TO THE DELETE ARRAY SO IT CAN BE DELETED LATER*/
 
 			char *copy[4];
 			copy[0]="cp";
