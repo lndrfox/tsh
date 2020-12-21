@@ -8,6 +8,7 @@
 #include <unistd.h>
 #include <limits.h>
 #include "tar.h"
+#include "print.h"
 #include "tar_nav.h"
 
 
@@ -153,6 +154,17 @@ char * get_tar_name(){
 
 }
 
+/*RETURNS THE NAME OF THE TAR FILE IN PATH*/
+
+char * get_tar_name_file(char * path){
+
+	char * copy=malloc(strlen(path)+sizeof(char));
+	strcpy(copy,path);
+	char ** tokens = decompose(copy,"/");
+	return tokens[0];
+
+}
+
 /*	CAT THE STRINGS IN TOKENS WITH DELIMITER BETWEEN THEM INTO AN ONLY STRIN
 EG IF TOKEN IS "a" "b" AND "c" AND DELIMITERS "/" IT RETURNS "a/b/c"*/
 
@@ -189,6 +201,16 @@ char * get_path_without_tar(){
 	}
 
 	char ** tokens = decompose(getenv("tar"),"/");
+	return flatten(&tokens[1],"/");
+}
+
+/*RETURN  PATH BUT WITHOUT THE NAME OF THE TAR FILE AT THE BEGGINIGN*/
+
+char * get_path_without_tar_file(char * path){
+
+	char *copy=malloc(strlen(path)+sizeof(char));
+	strcpy(copy,path);
+	char ** tokens = decompose(copy,"/");
 	return flatten(&tokens[1],"/");
 }
 
@@ -486,3 +508,177 @@ char ** tar_and_path(char *p){
 
 	return tokens3;
 }
+
+//COPY A FILE FROM A TAR TO A REP OUTSIDE THE TAR, MODIFIED VERSION FOR REDIRECTIONS
+
+int tar_vers_ext_cp(char *argv[]){
+
+  struct posix_header hd; //Header for the tar
+
+  unsigned int size; //Size of the file that will be initialized later
+
+  //we get the tar to open and the path for the file
+  //from tar_and_path
+  char ** arg = tar_and_path(argv[1]);
+
+  char * tar = malloc(strlen(arg[0])+sizeof(char));
+  strcpy (tar,arg[0]);
+  char * path = malloc(strlen(arg[1])+sizeof(char));
+  strcpy (path,arg[1]);
+
+  free(arg);
+
+  // OPENING THE TAR FILE
+
+  int fd=open(tar,O_RDWR);
+  free(tar);
+  //ERROR MANAGMENT
+
+  if(fd==-1){
+    print_error(NULL,NULL,"open tar file");
+    exit(-1);
+  }
+
+  // THIS LOOP ALLOWS US TO LOOK FOR THE HEADER CORRESPONDING TO THE FILE WE WANT TO
+  // FIND IN THE TAR
+
+  do{
+    // READING AN HEADER
+
+    int rdcount=read(fd,&hd,BLOCKSIZE);
+
+    //ERROR MANAGMENT
+
+    if(rdcount<0){
+
+      print_error(NULL,NULL,"reading tar file");
+      close(fd);
+      return -1;
+    }
+
+    //IF WE REACHED THE END OF THE TAR WITHOUT FINDING THE GOOD HEADER
+
+    if((hd.name[0]=='\0')){
+      printsss("cp: impossible d'évaluer '", path ,"' : Aucun fichier ou dossier de ce type\n");
+      return -1;
+    }
+
+    //READONG THE SIZE OF THE FILE CORRESPONDING TO THE CURRENT HEADER
+
+
+    sscanf(hd.size, "%o",&size);
+
+    //IF WE FOUND THE RIGHT HEADER, WE GET OUT OF THE LOOP
+
+    if(strcmp(hd.name,path)==0){
+      break;
+    }
+
+
+
+    //OTHERWISE WE GET TO THE NEXT HEADER
+
+    lseek(fd,((size+ BLOCKSIZE - 1) >> BLOCKBITS)*BLOCKSIZE,SEEK_CUR);
+
+
+  }while(strcmp(hd.name,path)!=0);
+  free(path);
+  //CREATING THE FILE TO COPY
+
+  //Finding the right permission
+  int a = 0;
+		switch(hd.mode[4]) {
+  			case '0': ; break;
+  			case '1': a =S_IXUSR; break;
+  			case '2': a =S_IWUSR; break;
+  			case '3': a =S_IXUSR | S_IWUSR; break;
+  			case '4': a =S_IRUSR; break;
+  			case '5': a = S_IRUSR | S_IXUSR; break;
+  			case '6': a = S_IRUSR | S_IWUSR;break;
+  			case '7': a = S_IRWXU; break;
+		}
+
+    int b = 0;
+  		switch(hd.mode[5]) {
+    			case '0': ; break;
+    			case '1': b =S_IXGRP; break;
+    			case '2': b =S_IWGRP; break;
+    			case '3': b =S_IXGRP | S_IWGRP; break;
+    			case '4': b =S_IRGRP; break;
+    			case '5': b = S_IRGRP | S_IXGRP; break;
+    			case '6': b = S_IRGRP | S_IWGRP; break;
+    			case '7': b = S_IRWXG; break;
+  		}
+
+      int c = 0;
+    		switch(hd.mode[6]) {
+      			case '0': ; break;
+      			case '1': c =S_IXOTH; break;
+      			case '2': c =S_IWOTH; break;
+      			case '3': c =S_IXOTH | S_IWOTH; break;
+      			case '4': c =S_IROTH; break;
+      			case '5': c = S_IROTH | S_IXOTH; break;
+      			case '6': c = S_IROTH | S_IWOTH;break;
+      			case '7': c = S_IRWXO; break;
+    		}
+
+  int fd2=open(argv[2], O_RDWR | O_CREAT | O_TRUNC , a | b | c);
+
+	if(fd2 < 0){
+		print_error("cp",NULL,"error argv[2]");
+		return -1;
+	}
+  fchmod(fd2, a | b | c);
+
+  //GETTING THE SIZE OF WHAT WE NEED TO READ
+
+  char rd [BLOCKSIZE] ;
+
+  //LOOP TO READ AND WRITE THE BLOCKS OF THE FILE CONTENT
+
+    for(unsigned int i=0; i<(size);i++){
+
+
+    int rdtmp = read(fd, rd, 1);
+
+    //EROR MANAGMENT
+
+
+    if((strcmp(rd,"\0"))==0){
+
+      break;
+    }
+    if(rdtmp<0){
+
+      print_error(NULL,NULL,"Reading tar file");
+      exit(-1);
+    }
+
+    //WRITING THE BLOCK AND ERROR MANGEMENT
+
+    if(write(fd2,rd, 1)<0){
+
+      print_error(NULL,NULL,"Writing file content");
+      exit(-1);
+
+    }
+
+    memset(rd, 0, BLOCKSIZE);
+
+    }
+
+  //MOVING READING HEAD BACK TO THE BEGINING OF THE TAR FILE IN CASE ARGUMENTS ARE NOT
+  //IN THE SAME ORDER AS THE HEADERS IN THE TAR FILE
+
+  lseek(fd,0,SEEK_SET);
+
+  //CLOSING WRITING FILE
+
+
+  close(fd);
+
+  close(fd2);
+
+return 0;
+}
+

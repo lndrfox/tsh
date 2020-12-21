@@ -12,5 +12,8 @@ char * path_is_valid(char * path);
 int file_exists_in_tar(char * path, char *  tar);
 char * true_path(char *path);
 char ** tar_and_path(char *p);
+char * get_tar_name_file(char * path);
+char * get_path_without_tar_file(char * path);
+int tar_vers_ext_cp(char *argv[]);
 
 #endif

@@ -14,6 +14,7 @@
 #include "cd.h"
 #include "print.h"
 
+
 char * get_line();
 char * get_last_dir();
 void exec_custom(char ** tokens,int boolean);
@@ -34,7 +35,10 @@ int run=1;
 int d_stdout=1;
 int d_stdin=0;
 int d_stderr=2;
-char path_home [PATH_MAX + 1];;
+char path_home [PATH_MAX + 1];
+char ** delete;
+char * mv_out;
+char * mv_err;
 
 /*READS A LINE ENTERED IN THE TERMINAL AND RETURNS IT*/
 
@@ -270,6 +274,8 @@ char * redir_out(char * prompt){
 
 		int flag_err=0; //THIS FLAG IS RAISED IF WE NEED TO REDIRECT STDERR_FILENO
 
+
+
 		/*------IF FLAG IS RAISED THEN WE HAVE EITHER >> OR 2>> SO THE
 		DESCRIPTOR MUST BE OPENED IN APPEND MODE ------*/
 
@@ -430,13 +436,51 @@ char * redir_in(char * prompt){
 		path[cpt_path]='\0';
 		len_cut+=strlen(path);
 
-		int fd=open(path,O_RDWR|O_CREAT,S_IRUSR|S_IWUSR|S_IRGRP|S_IROTH);
+		/*IF THE GIVEN PATH DOESNT GOES BACK IN TAR
+		WE SIMPLY APPLY TRUE PATH TO IT*/
+
+		if(!goes_back_in_tar(path)){
+
+			path=true_path(path);
+		}
+
+		/*IF IT IS INSIDE A TAR*/
+
+		else{
+
+			/*WE COPY THE FILE OUTSIDE OF THE TAR AND USE THE COPY
+			FOR OUR OPEN THEN WE ADD IT TO THE DELETE ARRAY SO IT CAN BE DELETED LATER*/
+
+			char *copy[4];
+			copy[0]="cp";
+			copy[1]=path;
+			copy[2]="redir_in";
+			copy[3]=NULL;
+
+			tar_vers_ext_cp(copy);
+	
+			path="redir_in";
+			delete[1]="redir_in";
+
+		}
+
+			
+		int fd=open(path,O_RDWR);
+
+		if(fd<0){
+
+			print_error(NULL,path,"No such file or directory");
+			str_cut(anchor,len_cut);
+			//free(path);
+			break;
+		}
+
 		dup2(fd,STDIN_FILENO);
 
 		/* WE CUT OUT THE < SYMBOLE + THE PATH*/
-		
+
 		str_cut(anchor,len_cut);
-		free(path);
+		//free(path);
 
 	}while(anchor!=NULL);
 
@@ -458,10 +502,22 @@ void reinit_descriptors(){
 SPECIFIED IN PROMPT*/
 
 char * redir(char * prompt){
-	
+
+	delete=calloc(3,sizeof(char *));
+	delete[0]="rm";
+	delete[1]=NULL;
+	delete[2]=NULL;
+
 	char * out =redir_out(prompt);
 	char *ret =redir_in(out);
 	free(out);
+
+	if(delete[1]!=NULL){
+
+		exec_custom(delete,0);
+	}	
+
+	free(delete);
 	return ret;
 	
 }
@@ -709,7 +765,7 @@ void exec_split(char ** tokens){
 	if(tokens[1]==NULL){
 
 	/*IF THE CURRENT DIRECTORY IS A TAR*/	
-	if(current_dir_is_tar()){
+	if(current_dir_is_tar() && (!strcmp(tokens[0],"cat")==0)){
 			exec_custom(tokens,1);
 		}
 
