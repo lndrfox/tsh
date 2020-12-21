@@ -275,6 +275,7 @@ char * redir_out(char * prompt){
 		int flag_err=0; //THIS FLAG IS RAISED IF WE NEED TO REDIRECT STDERR_FILENO
 
 
+
 		/*------IF FLAG IS RAISED THEN WE HAVE EITHER >> OR 2>> SO THE
 		DESCRIPTOR MUST BE OPENED IN APPEND MODE ------*/
 
@@ -457,9 +458,8 @@ char * redir_in(char * prompt){
 			copy[3]=NULL;
 
 			tar_vers_ext_cp(copy);
-
+	
 			path="redir_in";
-
 			delete[1]="redir_in";
 
 		}

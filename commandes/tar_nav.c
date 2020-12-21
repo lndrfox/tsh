@@ -509,7 +509,8 @@ char ** tar_and_path(char *p){
 	return tokens3;
 }
 
-//COPY A FILE FROM A TAR TO A REP OUTSIDE THE TAR
+//COPY A FILE FROM A TAR TO A REP OUTSIDE THE TAR, MODIFIED VERSION FOR REDIRECTIONS
+
 int tar_vers_ext_cp(char *argv[]){
 
   struct posix_header hd; //Header for the tar
@@ -621,10 +622,10 @@ int tar_vers_ext_cp(char *argv[]){
       			case '7': c = S_IRWXO; break;
     		}
 
-  int fd2=open(true_path(argv[2]), O_RDWR | O_CREAT | O_TRUNC , a | b | c);
+  int fd2=open(argv[2], O_RDWR | O_CREAT | O_TRUNC , a | b | c);
 
 	if(fd2 < 0){
-		print_error(NULL,NULL,"error argv[2]");
+		print_error("cp",NULL,"error argv[2]");
 		return -1;
 	}
   fchmod(fd2, a | b | c);
@@ -680,3 +681,4 @@ int tar_vers_ext_cp(char *argv[]){
 
 return 0;
 }
+
