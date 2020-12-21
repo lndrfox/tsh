@@ -312,48 +312,42 @@ int tar_vers_ext(char *argv[]){
       			case '7': c = S_IRWXO; break;
     		}
 
-  int fd2=open(true_path(argv[2]), O_RDWR | O_CREAT | O_TRUNC , a | b | c);
+  int fd2=open(true_path(argv[2]), O_RDWR | O_CREAT , hd.mode);
 
 	if(fd2 < 0){
 		print_error(NULL,NULL,"error argv[2]");
 		return -1;
 	}
-  fchmod(fd2, a | b | c);
+ fchmod(fd2, a | b | c);
 
   //GETTING THE SIZE OF WHAT WE NEED TO READ
 
   char rd [BLOCKSIZE] ;
-
+	sscanf(hd.size, "%o",&size);
   //LOOP TO READ AND WRITE THE BLOCKS OF THE FILE CONTENT
 
-    for(unsigned int i=0; i<(size);i++){
+    for(unsigned int i=0; i<(size+ BLOCKSIZE -1) >> BLOCKBITS;i++){
 
 
-    int rdtmp = read(fd, rd, 1);
+	    int rdtmp = read(fd, rd, BLOCKSIZE);
 
-    //EROR MANAGMENT
+	    //EROR MANAGMENT
 
+	    if(rdtmp<0){
 
-    if((strcmp(rd,"\0"))==0){
+	      print_error(NULL,NULL,"Reading tar file");
+	      exit(-1);
+	    }
 
-      break;
-    }
-    if(rdtmp<0){
+	    //WRITING THE BLOCK AND ERROR MANGEMENT
 
-      print_error(NULL,NULL,"Reading tar file");
-      exit(-1);
-    }
+	    if(write(fd2,rd, BLOCKSIZE)<0){
 
-    //WRITING THE BLOCK AND ERROR MANGEMENT
+	      print_error(NULL,NULL,"Writing file content");
+	      exit(-1);
 
-    if(write(fd2,rd, 1)<0){
+	    }
 
-      print_error(NULL,NULL,"Writing file content");
-      exit(-1);
-
-    }
-
-    memset(rd, 0, BLOCKSIZE);
 
     }
 
@@ -446,7 +440,7 @@ int ext_vers_tar(char *argv[]){
     lseek(fd,((size+ BLOCKSIZE - 1) >> BLOCKBITS)*BLOCKSIZE,SEEK_CUR);
 
 
-  }while(hd.name[1]!=0);//While the header is not at the end block of 0
+  }while(hd.name!=0);//While the header is not at the end block of 0
 
 
   struct posix_header temporaire;//The 'entete' we will put at the end of the tar
@@ -468,16 +462,9 @@ int ext_vers_tar(char *argv[]){
  	sprintf(temporaire.mode,"%7o", f.st_mode);
 
 
- //SIZE BECOME THE SIZE OF THE COPIED FILE
-
-  unsigned int fsize;//Size of the file that will be initialized later
-  fsize = lseek(fd2,0,SEEK_END);//GET FILE SIZE
-
-
   //SETTING THE ENTETE SIZE AS THE SAME OF THE COPIED FILE
 
-  sprintf(temporaire.size,"%011o",fsize);
-  lseek(fd2,0,SEEK_SET);//RESETING fd2 OFFSET
+  sprintf(temporaire.size,"%011lo",f.st_size);
 
   // LAST MODIFICATION DATE
 
@@ -492,12 +479,26 @@ int ext_vers_tar(char *argv[]){
 
 
  //FILE SO TYPE IS 0
+ 	if(S_ISREG(f.st_mode) == 0){
+  		temporaire.typeflag='0';
+ 		}
+ 	if(S_ISLNK(f.st_mode) == 0){
+ 		temporaire.typeflag='1';
+ 	}
+	if(S_ISCHR(f.st_mode) == 0){
+		temporaire.typeflag='3';
+	}
+	if(S_ISBLK(f.st_mode) == 0){
+		temporaire.typeflag='4';
+	}
+ 	if(S_ISFIFO(f.st_mode) == 0){
+ 		temporaire.typeflag='6';
+ 	}
 
- temporaire.typeflag='0';
-
- // VERSION
+ // VERSION*/
 
  sprintf(temporaire.version,TVERSION);
+
 
  //USER NAME
 
@@ -537,12 +538,11 @@ int ext_vers_tar(char *argv[]){
     exit(-1);
   }
 
+	char buff [BLOCKSIZE];
 
-  char buff [BLOCKSIZE];
+  for(unsigned int i=0; i<((f.st_size + BLOCKSIZE - 1) >> BLOCKBITS);i++){
 
-  for(unsigned int i=0; i<(fsize); i++){
-
-    int rdtmp = read(fd2,buff, 1);
+    int rdtmp = read(fd2,buff, BLOCKSIZE);
     //EROR MANAGMENT
 
     if(rdtmp<0){
@@ -552,22 +552,18 @@ int ext_vers_tar(char *argv[]){
 
     //WRITING THE BLOCK AND ERROR MANGEMENT
 
-    if(write(fd,buff, 1)<0){
+    if(write(fd,buff, BLOCKSIZE)<0){
 
       print_error(NULL,NULL,"Writing file content");
       exit(-1);
 
     }
-
-    //RESETING THE BUFFER
+		//RESETING THE BUFFER
 
     memset(buff, 0, BLOCKSIZE);
-  }
-
-
+	}
 
   memset(buf,0,BLOCKSIZE);
-
   for(int i=0;i<2;i++){
 
     int rdd=write(fd,buf,BLOCKSIZE);
@@ -611,7 +607,7 @@ int tar_vers_tar(char *argv[]){
   char * path = malloc(strlen(arg[1])+sizeof(char));
   strcpy (path,arg[1]);
 
-  free(arg);
+//  free(arg);
 
   char ** arg2 = tar_and_path(argv[2]);
 
@@ -620,14 +616,14 @@ int tar_vers_tar(char *argv[]){
   char * path2 = malloc(strlen(arg2[1])+sizeof(char));
   strcpy (path2,arg2[1]);
 
-  free(arg2);
+//  free(arg2);
 
   int fd = open(tar,O_RDWR);
 	if(fd < 0){
 		print_error(NULL,NULL,"error with first tar");
 		return -1;
 	}
-  free(tar);
+ 	free(tar);
 
   int fd2= open(tar2,O_RDWR);
 	if(fd2 < 0){
@@ -678,6 +674,7 @@ int tar_vers_tar(char *argv[]){
 
 
   }while(strcmp(hd.name,path)!=0);
+	prints(hd.name);
   free(path);
 
   ////////////////////////////////////////////
@@ -689,7 +686,7 @@ int tar_vers_tar(char *argv[]){
     // READING AN HEADER
 
     int rdcount=read(fd2,&hd2,BLOCKSIZE);
-
+		//prints(hd2.name);
     //ERROR MANAGMENT
 
     if(rdcount<0){
@@ -718,7 +715,9 @@ int tar_vers_tar(char *argv[]){
     lseek(fd2,((size2+ BLOCKSIZE - 1) >> BLOCKBITS)*BLOCKSIZE,SEEK_CUR);
 
 
-  }while(hd2.name[1]!=0);
+  }while(hd2.name!=0);
+	sscanf(hd.size, "%o",&size);
+
 
    //Header we will put at the end of the second tar
   struct posix_header temporaire;
@@ -738,9 +737,8 @@ int tar_vers_tar(char *argv[]){
 
  //SIZE IS FILE OF COPIED FILE
 
- unsigned int temp_size;
- sscanf(hd.size,"%o",&temp_size);
- sprintf(temporaire.size,"%011o",temp_size);
+
+ sprintf(temporaire.size,"%s",hd.size);
 
   //FILLING MAGIC FIELD
 
@@ -754,7 +752,8 @@ int tar_vers_tar(char *argv[]){
 
  //FILE SO TYPE IS 0
 
- temporaire.typeflag='0';
+ temporaire.typeflag=hd.typeflag;
+ printd(temporaire.typeflag);
 
  // VERSION
 
@@ -804,17 +803,12 @@ int tar_vers_tar(char *argv[]){
 
   char buff [BLOCKSIZE];
 
-  memset(buff,0,BLOCKSIZE);
 
 	//writing the file
   for(unsigned int i=0; i<((size+ BLOCKSIZE - 1) >> BLOCKBITS);i++){
 
     int rdtmp = read(fd, buff, BLOCKSIZE);
 
-    //EROR MANAGMENT
-    if((strcmp(buff,"\0"))==0){
-      break;
-    }
 
     if(rdtmp<0){
       print_error(NULL,NULL,"Reading tar file");
@@ -831,7 +825,7 @@ int tar_vers_tar(char *argv[]){
     }
 
 
-    memset(rd, 0, BLOCKSIZE);
+   memset(rd, 0, BLOCKSIZE);
 
   }
 
@@ -939,12 +933,12 @@ int cp_r_tvt(char *argv[]){
   char * path = malloc(strlen(arg[1])+sizeof(char));
   strcpy (path,arg[1]);
 
-  free(arg);
+  //free(arg);
 
 
 	//we open the first tar
   int fd = open(tar,O_RDWR);
-  free(tar);
+  //free(tar);
 
   //ERROR MANAGMENT
 
@@ -975,7 +969,6 @@ int cp_r_tvt(char *argv[]){
     //READING THE SIZE OF THE FILE CORRESPONDING TO THE CURRENT HEADER
 
 
-    sscanf(hd.size, "%o",&size);
 
     if((hd.name[1]=='\0')){
 
@@ -1022,7 +1015,7 @@ int cp_r_tvt(char *argv[]){
      if(pathn[f] == NULL){
 
 			 //if the file is a regular file
-	      if(hd.typeflag == '0'){
+	      if(hd.typeflag != '5'){
 
 					 int r = f;
 
@@ -1067,13 +1060,14 @@ int cp_r_tvt(char *argv[]){
 			}
 
      }
-		 free(temp);
+		/* free(temp);
 		 free(temp2);
 		 free(hdname);
 		 free(hdn);
 		 free(tmpath);
-		 free(pathn);
+		 free(pathn);*/
 
+		     sscanf(hd.size, "%o",&size);
     //OTHERWISE WE GET TO THE NEXT HEADER
 
     lseek(fd,((size+ BLOCKSIZE - 1) >> BLOCKBITS)*BLOCKSIZE,SEEK_CUR);
@@ -1177,7 +1171,7 @@ int cp_r_tve(char *argv[]){
 		if(pathn[f] == NULL){
 
 			//if the file is a regular file
-			 if(hd.typeflag == '0'){
+			 if(hd.typeflag != '5'){
 
 					int r = f;
 
