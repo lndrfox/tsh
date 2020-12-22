@@ -14,6 +14,7 @@
 #include <libgen.h>
 #include <limits.h>
 
+
 void create_dir(int fd ,char * path){
 
 	struct posix_header hd;
@@ -33,7 +34,7 @@ void create_dir(int fd ,char * path){
 
 			if(rdcount<0){
 
-				print_error(NULL,NULL,"reading tar file");
+				print_error("mkdir : ",NULL," reading tar file");
 				close(fd);
 				exit (-1);
 			}
@@ -120,7 +121,7 @@ void create_dir(int fd ,char * path){
 		//ERROR MANAGMENT
 
 		if(g==NULL){
-			print_error(NULL,NULL,"Reading group ID");
+			print_error("mkdir :",NULL,"Reading group ID");
 			exit(-1);
 		}
 		sprintf(dir.gname, "%s", g->gr_name);
@@ -142,7 +143,7 @@ void create_dir(int fd ,char * path){
 
 		if(rdd<BLOCKSIZE){
 
-			print_error(NULL,NULL,"Error writing in file");
+			print_error("mkdir : ",NULL," Error writing in tar");
 			exit(-1);
 		}
 
@@ -157,7 +158,7 @@ void create_dir(int fd ,char * path){
 
 			if(rdd<BLOCKSIZE){
 
-				print_error(NULL,NULL,"Error writing in file");
+				print_error("mkdir : ",NULL," Error writing in tar");
 				exit(-1);
 			}
 
@@ -184,11 +185,12 @@ int mkdirep(char *argv){
 	 char * path = malloc(strlen(arg[1])+sizeof(char));
 	 strcpy (path,arg[1]);
 	 free(arg);
+
     // OPENING THE TAR FILE
     int fd=open(tar,O_RDWR);
 		free(tar);
 		if(fd < 0){
-			print_error(NULL,NULL,"error oppening tar");
+			print_error("mkdir : ",tar," error oppening tar");
 			return -1;
 		}
 
@@ -225,7 +227,7 @@ int tar_vers_ext(char *argv[]){
   //ERROR MANAGMENT
 
   if(fd==-1){
-    print_error(NULL,NULL,"open tar file");
+    print_error("cp : '",tar,"' open tar file");
     exit(-1);
   }
 
@@ -241,7 +243,7 @@ int tar_vers_ext(char *argv[]){
 
     if(rdcount<0){
 
-      print_error(NULL,NULL,"reading tar file");
+      print_error("cp : '",tar,"' reading tar file");
       close(fd);
       return -1;
     }
@@ -249,7 +251,7 @@ int tar_vers_ext(char *argv[]){
     //IF WE REACHED THE END OF THE TAR WITHOUT FINDING THE GOOD HEADER
 
     if((hd.name[0]=='\0')){
-      printsss("cp: impossible d'évaluer '", path ,"' : Aucun fichier ou dossier de ce type\n");
+      print_error("cp: impossible d'évaluer '", path ,"' : Aucun fichier ou dossier de ce type\n");
       return -1;
     }
 
@@ -312,55 +314,65 @@ int tar_vers_ext(char *argv[]){
       			case '7': c = S_IRWXO; break;
     		}
 
-  int fd2=open(true_path(argv[2]), O_RDWR | O_CREAT | O_TRUNC , a | b | c);
+	  int fd2;
+
+	//if the file is a FIFO
+	if(hd.typeflag == 54){
+		fd2 = mkfifo(true_path(argv[2]), a | b |c );
+		fd2 = open(true_path(argv[2]), O_RDWR | O_CREAT , a | b | c);
+	}
+
+	//if the file is a LINK
+	else if(hd.typeflag == 50){
+		char * e = malloc(strlen(hd.linkname) + sizeof(char));
+		strcpy(e,hd.linkname);
+		char * f = malloc(strlen(true_path(argv[2])) + sizeof(char));
+		strcpy(f,true_path(argv[2]));
+		symlink(e, f);
+
+			fd2=open(f, O_RDWR | O_CREAT , a | b | c);
+			free (e);
+			free (f);
+
+	}
+	else {
+		fd2=open(true_path(argv[2]), O_RDWR | O_CREAT , a | b | c);
+
+	}
+	fchmod(fd2, a | b | c);
+
 
 	if(fd2 < 0){
-		print_error(NULL,NULL,"error argv[2]");
+		print_error("cp : ",argv[2],"error argv[2]");
 		return -1;
 	}
-  fchmod(fd2, a | b | c);
+
 
   //GETTING THE SIZE OF WHAT WE NEED TO READ
 
-  char rd [BLOCKSIZE] ;
-
-  //LOOP TO READ AND WRITE THE BLOCKS OF THE FILE CONTENT
-
-    for(unsigned int i=0; i<(size);i++){
+	sscanf(hd.size, "%o",&size);
+	char rd [size];
 
 
-    int rdtmp = read(fd, rd, 1);
-
-    //EROR MANAGMENT
+	    int rdtmp = read(fd, rd, size );
 
 
-    if((strcmp(rd,"\0"))==0){
+	    //EROR MANAGMENT
 
-      break;
-    }
-    if(rdtmp<0){
+	    if(rdtmp<0){
 
-      print_error(NULL,NULL,"Reading tar file");
-      exit(-1);
-    }
+	      print_error("cp  '",tar,"' Reading tar file");
+	      exit(-1);
+	    }
 
-    //WRITING THE BLOCK AND ERROR MANGEMENT
+	    //WRITING THE BLOCK AND ERROR MANGEMENT
 
-    if(write(fd2,rd, 1)<0){
+	    if(write(fd2,rd, size)<0){
 
-      print_error(NULL,NULL,"Writing file content");
-      exit(-1);
+	      print_error("cp ", argv[2] ," Writing file content");
+	      exit(-1);
 
-    }
-
-    memset(rd, 0, BLOCKSIZE);
-
-    }
-
-  //MOVING READING HEAD BACK TO THE BEGINING OF THE TAR FILE IN CASE ARGUMENTS ARE NOT
-  //IN THE SAME ORDER AS THE HEADERS IN THE TAR FILE
-
-  lseek(fd,0,SEEK_SET);
+	    }
 
   //CLOSING WRITING FILE
 
@@ -371,7 +383,6 @@ int tar_vers_ext(char *argv[]){
 
 return 0;
 }
-
 
 //COPY A FILE FROM OUTSIDE OF THE TAR  INTO A TAR
 int ext_vers_tar(char *argv[]){
@@ -399,14 +410,14 @@ int ext_vers_tar(char *argv[]){
 	free(tar);
 
   if(fd <0){
-    print_error(NULL,NULL,"Problem with argv 2");
+    print_error("cp : '",argv[2],"' Problem with argv 2");
     exit(-1);
   }
 
-  int fd2 = open(true_path(argv[1]), O_RDONLY);
+  int fd2 = open(true_path(argv[1]), O_RDWR);
 
   if(fd2<0){
-    printsss("cp: impossible d'évaluer '", argv[1] ,"' : Aucun fichier ou dossier de ce type\n");
+    print_error("cp: impossible d'évaluer ", argv[1] ," : Aucun fichier ou dossier de ce type\n");
     exit(-1);
   }
 
@@ -421,7 +432,7 @@ int ext_vers_tar(char *argv[]){
     //ERROR MANAGMENT
 
     if(rdcount<0){
-      print_error(NULL,NULL,"reading tar file");
+      print_error("cp : ",tar," reading tar file");
       close(fd);
       return -1;
     }
@@ -490,10 +501,23 @@ int ext_vers_tar(char *argv[]){
 
  sprintf(temporaire.magic,TMAGIC);
 
-
- //FILE SO TYPE IS 0
-
- temporaire.typeflag='0';
+//Typeflag
+ if(S_ISREG(f.st_mode)){
+	 temporaire.typeflag = '0';
+	 }
+//LINKNAME
+ if(S_ISLNK(f.st_mode)){
+	 temporaire.typeflag = '2';
+ }
+ if(S_ISCHR(f.st_mode) != 0){
+	 temporaire.typeflag = '3';
+ }
+ if(S_ISBLK(f.st_mode) != 0){
+	 temporaire.typeflag = '4';
+ }
+ if(S_ISFIFO(f.st_mode) != 0){
+	 temporaire.typeflag = 54 ;
+ }
 
  // VERSION
 
@@ -538,11 +562,9 @@ int ext_vers_tar(char *argv[]){
   }
 
 
-  char buff [BLOCKSIZE];
+  char buff [fsize];
 
-  for(unsigned int i=0; i<(fsize); i++){
-
-    int rdtmp = read(fd2,buff, 1);
+    int rdtmp = read(fd2,buff, fsize);
     //EROR MANAGMENT
 
     if(rdtmp<0){
@@ -552,7 +574,7 @@ int ext_vers_tar(char *argv[]){
 
     //WRITING THE BLOCK AND ERROR MANGEMENT
 
-    if(write(fd,buff, 1)<0){
+    if(write(fd,buff, fsize)<0){
 
       print_error(NULL,NULL,"Writing file content");
       exit(-1);
@@ -560,10 +582,6 @@ int ext_vers_tar(char *argv[]){
     }
 
     //RESETING THE BUFFER
-
-    memset(buff, 0, BLOCKSIZE);
-  }
-
 
 
   memset(buf,0,BLOCKSIZE);
@@ -586,6 +604,7 @@ int ext_vers_tar(char *argv[]){
   close (fd2);
   return 0;
 }
+
 
 //COPY A FILE FROM A TAR INTO ANOTHER TAR
 int tar_vers_tar(char *argv[]){
@@ -624,14 +643,14 @@ int tar_vers_tar(char *argv[]){
 
   int fd = open(tar,O_RDWR);
 	if(fd < 0){
-		print_error(NULL,NULL,"error with first tar");
+		print_error("cp : '",tar,"' error opening with first tar");
 		return -1;
 	}
-  free(tar);
+ 	free(tar);
 
   int fd2= open(tar2,O_RDWR);
 	if(fd2 < 0){
-		print_error(NULL,NULL,"error with second tar");
+		print_error("cp : '",tar2,"' error opening with second tar");
 	}
   free(tar2);
 
@@ -647,7 +666,7 @@ int tar_vers_tar(char *argv[]){
     //ERROR MANAGMENT
 
     if(rdcount<0){
-      print_error(NULL,NULL,"reading tar file\n");
+      print_error("cp :",NULL,"reading tar file\n");
       close(fd);
       return -1;
     }
@@ -655,7 +674,7 @@ int tar_vers_tar(char *argv[]){
     //IF WE REACHED THE END OF THE TAR WITHOUT FINDING THE GOOD HEADER
 
     if((hd.name[0]=='\0')){
-      printsss("cp: impossible d'évaluer '", path ,"' : Aucun fichier ou dossier de ce type \n");
+      print_error("cp: impossible d'évaluer '", path ,"' : Aucun fichier ou dossier de ce type \n");
       return -1;
     }
 
@@ -678,6 +697,7 @@ int tar_vers_tar(char *argv[]){
 
 
   }while(strcmp(hd.name,path)!=0);
+
   free(path);
 
   ////////////////////////////////////////////
@@ -693,7 +713,7 @@ int tar_vers_tar(char *argv[]){
     //ERROR MANAGMENT
 
     if(rdcount<0){
-      print_error(NULL,NULL,"reading tar file");
+      print_error("cp :",NULL,"reading tar file");
       close(fd);
       return -1;
     }
@@ -718,7 +738,9 @@ int tar_vers_tar(char *argv[]){
     lseek(fd2,((size2+ BLOCKSIZE - 1) >> BLOCKBITS)*BLOCKSIZE,SEEK_CUR);
 
 
-  }while(hd2.name[1]!=0);
+  }while(hd2.name!=0);
+	sscanf(hd.size, "%o",&size);
+
 
    //Header we will put at the end of the second tar
   struct posix_header temporaire;
@@ -736,11 +758,13 @@ int tar_vers_tar(char *argv[]){
 
  strcpy(temporaire.mode,hd.mode);
 
+	//LINKNAME OF THE FILE IS COPY
+
+  strcpy(temporaire.linkname,hd.linkname);
+
  //SIZE IS FILE OF COPIED FILE
 
- unsigned int temp_size;
- sscanf(hd.size,"%o",&temp_size);
- sprintf(temporaire.size,"%011o",temp_size);
+ sprintf(temporaire.size,"%s",hd.size);
 
   //FILLING MAGIC FIELD
 
@@ -754,7 +778,8 @@ int tar_vers_tar(char *argv[]){
 
  //FILE SO TYPE IS 0
 
- temporaire.typeflag='0';
+ temporaire.typeflag=hd.typeflag;
+
 
  // VERSION
 
@@ -772,7 +797,7 @@ int tar_vers_tar(char *argv[]){
  //ERROR MANAGMENT
 
  if(g==NULL){
-   print_error(NULL,NULL,"Reading group ID");
+   print_error("cp :",NULL,"Reading group ID");
    exit(-1);
  }
  sprintf(temporaire.gname,"%s",g->gr_name);
@@ -797,27 +822,22 @@ int tar_vers_tar(char *argv[]){
 
   if(rddd<BLOCKSIZE){
 
-    print_error(NULL,NULL,"Error writing in file");
+    print_error("cp :",NULL,"Error writing in file");
     exit(-1);
   }
 
 
   char buff [BLOCKSIZE];
 
-  memset(buff,0,BLOCKSIZE);
 
 	//writing the file
   for(unsigned int i=0; i<((size+ BLOCKSIZE - 1) >> BLOCKBITS);i++){
 
     int rdtmp = read(fd, buff, BLOCKSIZE);
 
-    //EROR MANAGMENT
-    if((strcmp(buff,"\0"))==0){
-      break;
-    }
 
     if(rdtmp<0){
-      print_error(NULL,NULL,"Reading tar file");
+      print_error("cp : '",tar,"' Reading tar file");
       exit(-1);
     }
 
@@ -825,13 +845,13 @@ int tar_vers_tar(char *argv[]){
 
     if(write(fd2,buff, BLOCKSIZE)<0){
 
-      print_error(NULL,NULL,"Writing file content");
+      print_error("cp :",NULL,"Writing file content");
       exit(-1);
 
     }
 
 
-    memset(rd, 0, BLOCKSIZE);
+   memset(rd, 0, BLOCKSIZE);
 
   }
 
@@ -845,7 +865,7 @@ int tar_vers_tar(char *argv[]){
 
     if(rdd<BLOCKSIZE){
 
-      print_error(NULL,NULL,"Error writing in file2");
+      print_error("cp :",NULL,"Error writing in file");
       exit(-1);
     }
 
@@ -872,10 +892,7 @@ int cp_r_evt(char *argv[]){
 	char * temp2 = malloc(strlen(argv[2])+sizeof(char));
   temp2 = strcpy (temp2,argv[2]);
 
-//char * of length 3 that will be use to use other function
-  char *arg [3];
-  arg[1] = temp;
-  arg[2] = temp2;
+
 
 //we read the directory and while it is not empty we browse it
   while((entry=readdir(dirp))){
@@ -900,17 +917,32 @@ int cp_r_evt(char *argv[]){
 			temp2 = strcat(temp2,entry->d_name);
 
 
-			//if we browse throught a file we use the ext_vers_tar function
-       if(entry->d_type== DT_REG){
-	    		ext_vers_tar(arg);
-	     }
+
+
+			// if(entry->d_type== DT_REG){
+			if(entry->d_type == DT_REG || entry->d_type == 10){
+				//char * of length 3 that will be use to use other function
+				char *arg [3];
+  			arg[1] = temp;
+  			arg[2] = temp2;
+				 ext_vers_tar(arg);
+			}
+
 			 //if we browse throught a directory we create the directory
 			 //and recall cp_r_evt with the new arguments
-       if(entry->d_type== DT_DIR){
+			 if(entry->d_type== DT_DIR){
+				 char *arg [3];
+  		 		arg[1] = temp;
+  				arg[2] = temp2;
+				 mkdirep(temp2);
+				 cp_r_evt(arg);
 
-			  mkdirep(temp2);
-				cp_r_evt(arg);
-      }
+			}
+
+
+					 //if we browse throught a file we use the ext_vers_tar function
+
+
 
     }
 
@@ -949,13 +981,15 @@ int cp_r_tvt(char *argv[]){
   //ERROR MANAGMENT
 
   if(fd==-1){
-    print_error(NULL,NULL,"open tar file");
+    print_error("cp :",NULL,"open tar file");
     exit(-1);
   }
 
 
   // THIS LOOP ALLOWS US TO LOOK FOR THE HEADER CORRESPONDING TO THE FILE WE WANT TO
   // FIND IN THE TAR
+
+
 
   do{
     // READING AN HEADER
@@ -966,7 +1000,7 @@ int cp_r_tvt(char *argv[]){
 
     if(rdcount<0){
 
-      print_error(NULL,NULL,"reading tar file");
+      print_error("cp :",NULL,"reading tar file");
       close(fd);
       return -1;
     }
@@ -975,7 +1009,6 @@ int cp_r_tvt(char *argv[]){
     //READING THE SIZE OF THE FILE CORRESPONDING TO THE CURRENT HEADER
 
 
-    sscanf(hd.size, "%o",&size);
 
     if((hd.name[1]=='\0')){
 
@@ -991,10 +1024,13 @@ int cp_r_tvt(char *argv[]){
 		 strcpy(tmpath,path);
 		 char ** pathn = decompose(tmpath,"/");
 
+
+
 		 //hdname is a copy of the decomposition of hd.name
 		 char * hdn = malloc(strlen(hd.name) + sizeof(char));
 		 hdn = strcpy(hdn,hd.name);
 		 char ** hdname = decompose(hdn,"/");
+
 
 		 //if the path is the same as the begining of hd.name
 		 //then it will go into the next if else it will go to the
@@ -1022,7 +1058,7 @@ int cp_r_tvt(char *argv[]){
      if(pathn[f] == NULL){
 
 			 //if the file is a regular file
-	      if(hd.typeflag == '0'){
+	      if(hd.typeflag != '5'){
 
 					 int r = f;
 
@@ -1067,19 +1103,20 @@ int cp_r_tvt(char *argv[]){
 			}
 
      }
-		 free(temp);
-		 free(temp2);
-		 free(hdname);
-		 free(hdn);
-		 free(tmpath);
-		 free(pathn);
 
+		 free(temp);
+ 		 free(temp2);
+
+
+
+		     sscanf(hd.size, "%o",&size);
     //OTHERWISE WE GET TO THE NEXT HEADER
 
     lseek(fd,((size+ BLOCKSIZE - 1) >> BLOCKBITS)*BLOCKSIZE,SEEK_CUR);
 
 
   }while(hd.name!=0);
+
 	free(path);
 
   return 0;
@@ -1110,7 +1147,7 @@ int cp_r_tve(char *argv[]){
  //ERROR MANAGMENT
 
  if(fd==-1){
-   print_error(NULL,NULL,"open tar file");
+   print_error("cp :",NULL,"open tar file");
    exit(-1);
  }
 
@@ -1128,7 +1165,7 @@ int cp_r_tve(char *argv[]){
 
    if(rdcount<0){
 
-     print_error(NULL,NULL,"reading tar file");
+     print_error("cp :",NULL,"reading tar file");
      close(fd);
      return -1;
    }
@@ -1177,15 +1214,15 @@ int cp_r_tve(char *argv[]){
 		if(pathn[f] == NULL){
 
 			//if the file is a regular file
-			 if(hd.typeflag == '0'){
+			 if(hd.typeflag != '5'){
 
 					int r = f;
 
 					//copy the rest of hdname into temp and temp2
 				 while(hdname[r] != NULL){
-					 temp = realloc(temp,strlen(temp2)+strlen("/")+sizeof(char));
+					 temp = realloc(temp,strlen(temp)+strlen("/")+sizeof(char));
 					 temp = strcat(temp,"/");
-					 temp = realloc(temp,strlen(temp2) + strlen(hdname[r]) +sizeof(char));
+					 temp = realloc(temp,strlen(temp) + strlen(hdname[r]) +sizeof(char));
 					 temp = strcat(temp,hdname[r]);
 
 						temp2 = realloc(temp2,strlen(temp2)+strlen("/")+sizeof(char));
@@ -1200,7 +1237,7 @@ int cp_r_tve(char *argv[]){
 				 char *arg [3];
 				 arg[1] = temp;
 				 arg[2] = temp2;
-				 tar_vers_tar(arg);
+				 tar_vers_ext(arg);
 			 }
 
 			 //if the file is a repertory
@@ -1226,10 +1263,6 @@ int cp_r_tve(char *argv[]){
 
 		free(temp);
 		free(temp2);
-		free(tmpath);
-		free(pathn);
-		free(hdn);
-		free(hdname);
 
 
    //OTHERWISE WE GET TO THE NEXT HEADER
@@ -1335,8 +1368,8 @@ int main (int argc, char *argv[]){
 
 
   }
-  else{
-    print_error("cp: ",NULL," needs 2 argument of the format cp copied_file paste_file \n");
+  else if (argc < 3){
+    print_error("cp: ",NULL," opérande de fichier manquant \n");
     return -1;
   }
   return 0;
