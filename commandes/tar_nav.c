@@ -535,8 +535,8 @@ int tar_vers_ext_cp(char *argv[]){
   //ERROR MANAGMENT
 
   if(fd==-1){
-    print_error(NULL,NULL,"open tar file");
-    exit(-1);
+    print_error(NULL,tar,"No such file or directory");
+    return -1;
   }
 
   // THIS LOOP ALLOWS US TO LOOK FOR THE HEADER CORRESPONDING TO THE FILE WE WANT TO
@@ -559,7 +559,7 @@ int tar_vers_ext_cp(char *argv[]){
     //IF WE REACHED THE END OF THE TAR WITHOUT FINDING THE GOOD HEADER
 
     if((hd.name[0]=='\0')){
-      printsss("cp: impossible d'évaluer '", path ,"' : Aucun fichier ou dossier de ce type\n");
+      print_error(NULL,path,"No such file or directory");
       return -1;
     }
 
@@ -625,7 +625,7 @@ int tar_vers_ext_cp(char *argv[]){
   int fd2=open(argv[2], O_RDWR | O_CREAT | O_TRUNC , a | b | c);
 
 	if(fd2 < 0){
-		print_error("cp",NULL,"error argv[2]");
+		print_error(NULL,argv[2],"can't be opened");
 		return -1;
 	}
   fchmod(fd2, a | b | c);

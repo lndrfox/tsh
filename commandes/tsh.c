@@ -457,7 +457,11 @@ char * redir_in(char * prompt){
 			copy[2]="redir_in";
 			copy[3]=NULL;
 
-			tar_vers_ext_cp(copy);
+			if(tar_vers_ext_cp(copy)<0){
+
+				return "error";
+
+			}
 	
 			path="redir_in";
 			delete[1]="redir_in";
@@ -759,6 +763,11 @@ THE OTHER STARTS THE SAME BUT CONTAIN THE ARGUMENTS TAR ARE A PATH OUTSIDE OF A 
 THEN EXECUTE BOTH OF THEM*/
 
 void exec_split(char ** tokens){
+
+	if(strcmp(tokens[0],"error")){
+
+		return;
+	}
 
 	/*---- IF THERE IS NO ARGUMENT ----*/
 
