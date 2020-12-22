@@ -321,6 +321,7 @@ int tar_vers_ext(char *argv[]){
 		fd2 = mkfifo(true_path(argv[2]), a | b |c );
 		fd2 = open(true_path(argv[2]), O_RDWR | O_CREAT , a | b | c);
 	}
+
 	//if the file is a LINK
 	else if(hd.typeflag == 50){
 		char * e = malloc(strlen(hd.linkname) + sizeof(char));
@@ -330,6 +331,8 @@ int tar_vers_ext(char *argv[]){
 		symlink(e, f);
 
 			fd2=open(f, O_RDWR | O_CREAT , a | b | c);
+			free (e);
+			free (f);
 
 	}
 	else {
@@ -411,7 +414,7 @@ int ext_vers_tar(char *argv[]){
     exit(-1);
   }
 
-  int fd2 = open(true_path(argv[1]), O_RDONLY);
+  int fd2 = open(true_path(argv[1]), O_RDWR);
 
   if(fd2<0){
     print_error("cp: impossible d'évaluer ", argv[1] ," : Aucun fichier ou dossier de ce type\n");
@@ -475,12 +478,6 @@ int ext_vers_tar(char *argv[]){
   stat(true_path(argv[1]),&f);
  	sprintf(temporaire.mode,"%7o", f.st_mode);
 
-	//LINKNAME OF THE FILE IS COPY
-
-	//struct stat g;
-
-  //strcpy(temporaire.linkname,lstat(true_path(argv[1]),&g));
-
 
  //SIZE BECOME THE SIZE OF THE COPIED FILE
 
@@ -504,20 +501,20 @@ int ext_vers_tar(char *argv[]){
 
  sprintf(temporaire.magic,TMAGIC);
 
-
 //Typeflag
- if(S_ISREG(f.st_mode) != 0){
-	 temporaire.typeflag = 48;
+ if(S_ISREG(f.st_mode)){
+	 temporaire.typeflag = '0';
 	 }
- if(S_ISLNK(f.st_mode) != 0){
-	 temporaire.typeflag = 50;
+//LINKNAME
+ if(S_ISLNK(f.st_mode)){
+	 temporaire.typeflag = '2';
  }
- /*if(S_ISCHR(f.st_mode) != 0){
+ if(S_ISCHR(f.st_mode) != 0){
 	 temporaire.typeflag = '3';
  }
  if(S_ISBLK(f.st_mode) != 0){
 	 temporaire.typeflag = '4';
- }*/
+ }
  if(S_ISFIFO(f.st_mode) != 0){
 	 temporaire.typeflag = 54 ;
  }
@@ -633,7 +630,7 @@ int tar_vers_tar(char *argv[]){
   char * path = malloc(strlen(arg[1])+sizeof(char));
   strcpy (path,arg[1]);
 
-  //free(arg);
+  free(arg);
 
   char ** arg2 = tar_and_path(argv[2]);
 
@@ -642,20 +639,20 @@ int tar_vers_tar(char *argv[]){
   char * path2 = malloc(strlen(arg2[1])+sizeof(char));
   strcpy (path2,arg2[1]);
 
-  //free(arg2);
+  free(arg2);
 
   int fd = open(tar,O_RDWR);
 	if(fd < 0){
 		print_error("cp : '",tar,"' error opening with first tar");
 		return -1;
 	}
- 	//free(tar);
+ 	free(tar);
 
   int fd2= open(tar2,O_RDWR);
 	if(fd2 < 0){
 		print_error("cp : '",tar2,"' error opening with second tar");
 	}
-  //free(tar2);
+  free(tar2);
 
 
   char rd [BLOCKSIZE] ;
@@ -701,7 +698,7 @@ int tar_vers_tar(char *argv[]){
 
   }while(strcmp(hd.name,path)!=0);
 
-  //free(path);
+  free(path);
 
   ////////////////////////////////////////////
   ////////////////////////////////////////////
@@ -755,7 +752,7 @@ int tar_vers_tar(char *argv[]){
 
  // CHOOSE NAME FILE
  sprintf(temporaire.name,"%s",path2);
- //free(path2);
+ free(path2);
   //FILLING MODE
 
 
@@ -782,7 +779,7 @@ int tar_vers_tar(char *argv[]){
  //FILE SO TYPE IS 0
 
  temporaire.typeflag=hd.typeflag;
-printd(hd.typeflag);
+
 
  // VERSION
 
@@ -896,6 +893,7 @@ int cp_r_evt(char *argv[]){
   temp2 = strcpy (temp2,argv[2]);
 
 
+
 //we read the directory and while it is not empty we browse it
   while((entry=readdir(dirp))){
 
@@ -919,27 +917,32 @@ int cp_r_evt(char *argv[]){
 			temp2 = strcat(temp2,entry->d_name);
 
 
-			//if we browse throught a file we use the ext_vers_tar function
-       if(entry->d_type== DT_REG){
-				 //char * of length 3 that will be use to use other function
-				   char *arg [3];
-				   arg[1] = temp;
-				   arg[2] = temp2;
 
-	    		ext_vers_tar(arg);
-	     }
+
+			// if(entry->d_type== DT_REG){
+			if(entry->d_type == DT_REG || entry->d_type == 10){
+				//char * of length 3 that will be use to use other function
+				char *arg [3];
+  			arg[1] = temp;
+  			arg[2] = temp2;
+				 ext_vers_tar(arg);
+			}
+
 			 //if we browse throught a directory we create the directory
 			 //and recall cp_r_evt with the new arguments
-       if(entry->d_type== DT_DIR){
-				 //char * of length 3 that will be use to use other function
-				   char *arg [3];
-				   arg[1] = temp;
-				   arg[2] = temp2;
+			 if(entry->d_type== DT_DIR){
+				 char *arg [3];
+  		 		arg[1] = temp;
+  				arg[2] = temp2;
+				 mkdirep(temp2);
+				 cp_r_evt(arg);
+
+			}
 
 
-			  mkdirep(temp2);
-				cp_r_evt(arg);
-      }
+					 //if we browse throught a file we use the ext_vers_tar function
+
+
 
     }
 
@@ -1258,12 +1261,8 @@ int cp_r_tve(char *argv[]){
 
 		}
 
-	/*	free(temp);
+		free(temp);
 		free(temp2);
-		free(tmpath);
-		free(pathn);
-		free(hdn);
-		free(hdname);*/
 
 
    //OTHERWISE WE GET TO THE NEXT HEADER

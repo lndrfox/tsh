@@ -488,12 +488,6 @@ int ext_vers_tar(char *argv[]){
   stat(true_path(argv[1]),&f);
  	sprintf(temporaire.mode,"%7o", f.st_mode);
 
-	//LINKNAME OF THE FILE IS COPY
-
-	//struct stat g;
-
-  //strcpy(temporaire.linkname,lstat(true_path(argv[1]),&g));
-
 
  //SIZE BECOME THE SIZE OF THE COPIED FILE
 
@@ -518,22 +512,23 @@ int ext_vers_tar(char *argv[]){
  sprintf(temporaire.magic,TMAGIC);
 
 
-//Typeflag
- if(S_ISREG(f.st_mode) != 0){
-	 temporaire.typeflag = 48;
-	 }
- if(S_ISLNK(f.st_mode) != 0){
-	 temporaire.typeflag = 50;
- }
- /*if(S_ISCHR(f.st_mode) != 0){
-	 temporaire.typeflag = '3';
- }
- if(S_ISBLK(f.st_mode) != 0){
-	 temporaire.typeflag = '4';
- }*/
- if(S_ISFIFO(f.st_mode) != 0){
-	 temporaire.typeflag = 54 ;
- }
+ //Typeflag
+  if(S_ISREG(f.st_mode)){
+ 	 temporaire.typeflag = '0';
+ 	 }
+ //LINKNAME
+  if(S_ISLNK(f.st_mode)){
+ 	 temporaire.typeflag = '2';
+  }
+  if(S_ISCHR(f.st_mode) != 0){
+ 	 temporaire.typeflag = '3';
+  }
+  if(S_ISBLK(f.st_mode) != 0){
+ 	 temporaire.typeflag = '4';
+  }
+  if(S_ISFIFO(f.st_mode) != 0){
+ 	 temporaire.typeflag = 54 ;
+  }
 
  // VERSION
 
