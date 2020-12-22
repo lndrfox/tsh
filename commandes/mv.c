@@ -285,7 +285,7 @@ int tar_vers_ext(char *argv[]){
 
 
   }while(strcmp(hd.name,path)!=0);
-  free(path);
+
   //CREATING THE FILE TO COPY
 
   //Finding the right permission
@@ -381,6 +381,8 @@ int tar_vers_ext(char *argv[]){
 	      exit(-1);
 
 	    }
+			rmtar(path);
+			free(path);
 
   //CLOSING WRITING FILE
 
