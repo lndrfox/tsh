@@ -103,12 +103,12 @@ int rmtar(char *argv){
 
 				if(strlen(p_hdr-> name) == 0) {
 					if (fich == NULL) {
-						printsss("rm: impossible de supprimer '", argv, "': Aucun fichier ou dossier de ce type\n");
+						print_error("rm: impossible de supprimer '", argv, "': Aucun fichier ou dossier de ce type\n");
 						break;
 					}
 					else {
 						if(rep == 1 && r == 0) {
-							printsss("rm: impossible de supprimer '", argv, "': est un dossier\n");
+							print_error("rm: impossible de supprimer '", argv, "': est un dossier\n");
 							break;
 						}
 						else {
@@ -285,7 +285,7 @@ int tar_vers_ext(char *argv[]){
 
 
   }while(strcmp(hd.name,path)!=0);
-
+  free(path);
   //CREATING THE FILE TO COPY
 
   //Finding the right permission
@@ -325,13 +325,36 @@ int tar_vers_ext(char *argv[]){
       			case '7': c = S_IRWXO; break;
     		}
 
-  int fd2=open(true_path(argv[2]), O_RDWR | O_CREAT , a | b | c);
+	  int fd2;
+
+	//if the file is a FIFO
+	if(hd.typeflag == 54){
+		fd2 = mkfifo(true_path(argv[2]), a | b |c );
+		fd2 = open(true_path(argv[2]), O_RDWR | O_CREAT , a | b | c);
+	}
+	//if the file is a LINK
+	else if(hd.typeflag == 50){
+		char * e = malloc(strlen(hd.linkname) + sizeof(char));
+		strcpy(e,hd.linkname);
+		char * f = malloc(strlen(true_path(argv[2])) + sizeof(char));
+		strcpy(f,true_path(argv[2]));
+		symlink(e, f);
+
+			fd2=open(f, O_RDWR | O_CREAT , a | b | c);
+
+	}
+	else {
+		fd2=open(true_path(argv[2]), O_RDWR | O_CREAT , a | b | c);
+
+	}
+	fchmod(fd2, a | b | c);
+
 
 	if(fd2 < 0){
 		print_error("cp : ",argv[2],"error argv[2]");
 		return -1;
 	}
- fchmod(fd2, a | b | c);
+
 
   //GETTING THE SIZE OF WHAT WE NEED TO READ
 
@@ -346,7 +369,7 @@ int tar_vers_ext(char *argv[]){
 
 	    if(rdtmp<0){
 
-	      print_error("cp : '",tar,"' Reading tar file");
+	      print_error("cp  '",tar,"' Reading tar file");
 	      exit(-1);
 	    }
 
@@ -354,12 +377,10 @@ int tar_vers_ext(char *argv[]){
 
 	    if(write(fd2,rd, size)<0){
 
-	      print_error("cp :",NULL,"Writing file content");
+	      print_error("cp ", argv[2] ," Writing file content");
 	      exit(-1);
 
 	    }
-				rmtar(path);
-			  free(path);
 
   //CLOSING WRITING FILE
 
@@ -465,6 +486,12 @@ int ext_vers_tar(char *argv[]){
   stat(true_path(argv[1]),&f);
  	sprintf(temporaire.mode,"%7o", f.st_mode);
 
+	//LINKNAME OF THE FILE IS COPY
+
+	//struct stat g;
+
+  //strcpy(temporaire.linkname,lstat(true_path(argv[1]),&g));
+
 
  //SIZE BECOME THE SIZE OF THE COPIED FILE
 
@@ -490,20 +517,20 @@ int ext_vers_tar(char *argv[]){
 
 
 //Typeflag
- if(S_ISREG(f.st_mode) == 0){
-	 temporaire.typeflag = 0;
+ if(S_ISREG(f.st_mode) != 0){
+	 temporaire.typeflag = 48;
 	 }
- if(S_ISLNK(f.st_mode) == 0){
-	 temporaire.typeflag = 1;
+ if(S_ISLNK(f.st_mode) != 0){
+	 temporaire.typeflag = 50;
  }
- if(S_ISCHR(f.st_mode) == 0){
-	 temporaire.typeflag = 3;
+ /*if(S_ISCHR(f.st_mode) != 0){
+	 temporaire.typeflag = '3';
  }
- if(S_ISBLK(f.st_mode) == 0){
-	 temporaire.typeflag = 4;
- }
- if(S_ISFIFO(f.st_mode) == 0){
-	 temporaire.typeflag = 6;
+ if(S_ISBLK(f.st_mode) != 0){
+	 temporaire.typeflag = '4';
+ }*/
+ if(S_ISFIFO(f.st_mode) != 0){
+	 temporaire.typeflag = 54 ;
  }
 
  // VERSION

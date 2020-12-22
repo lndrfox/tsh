@@ -14,6 +14,7 @@
 #include <libgen.h>
 #include <limits.h>
 
+
 void create_dir(int fd ,char * path){
 
 	struct posix_header hd;
@@ -313,13 +314,36 @@ int tar_vers_ext(char *argv[]){
       			case '7': c = S_IRWXO; break;
     		}
 
-  int fd2=open(true_path(argv[2]), O_RDWR | O_CREAT , a | b | c);
+	  int fd2;
+
+	//if the file is a FIFO
+	if(hd.typeflag == 54){
+		fd2 = mkfifo(true_path(argv[2]), a | b |c );
+		fd2 = open(true_path(argv[2]), O_RDWR | O_CREAT , a | b | c);
+	}
+	//if the file is a LINK
+	else if(hd.typeflag == 50){
+		char * e = malloc(strlen(hd.linkname) + sizeof(char));
+		strcpy(e,hd.linkname);
+		char * f = malloc(strlen(true_path(argv[2])) + sizeof(char));
+		strcpy(f,true_path(argv[2]));
+		symlink(e, f);
+
+			fd2=open(f, O_RDWR | O_CREAT , a | b | c);
+
+	}
+	else {
+		fd2=open(true_path(argv[2]), O_RDWR | O_CREAT , a | b | c);
+
+	}
+	fchmod(fd2, a | b | c);
+
 
 	if(fd2 < 0){
 		print_error("cp : ",argv[2],"error argv[2]");
 		return -1;
 	}
- fchmod(fd2, a | b | c);
+
 
   //GETTING THE SIZE OF WHAT WE NEED TO READ
 
@@ -334,7 +358,7 @@ int tar_vers_ext(char *argv[]){
 
 	    if(rdtmp<0){
 
-	      print_error("cp : '",tar,"' Reading tar file");
+	      print_error("cp  '",tar,"' Reading tar file");
 	      exit(-1);
 	    }
 
@@ -342,7 +366,7 @@ int tar_vers_ext(char *argv[]){
 
 	    if(write(fd2,rd, size)<0){
 
-	      print_error("cp :",NULL,"Writing file content");
+	      print_error("cp ", argv[2] ," Writing file content");
 	      exit(-1);
 
 	    }
@@ -451,6 +475,12 @@ int ext_vers_tar(char *argv[]){
   stat(true_path(argv[1]),&f);
  	sprintf(temporaire.mode,"%7o", f.st_mode);
 
+	//LINKNAME OF THE FILE IS COPY
+
+	//struct stat g;
+
+  //strcpy(temporaire.linkname,lstat(true_path(argv[1]),&g));
+
 
  //SIZE BECOME THE SIZE OF THE COPIED FILE
 
@@ -476,20 +506,20 @@ int ext_vers_tar(char *argv[]){
 
 
 //Typeflag
- if(S_ISREG(f.st_mode) == 0){
-	 temporaire.typeflag = 0;
+ if(S_ISREG(f.st_mode) != 0){
+	 temporaire.typeflag = 48;
 	 }
- if(S_ISLNK(f.st_mode) == 0){
-	 temporaire.typeflag = 1;
+ if(S_ISLNK(f.st_mode) != 0){
+	 temporaire.typeflag = 50;
  }
- if(S_ISCHR(f.st_mode) == 0){
-	 temporaire.typeflag = 3;
+ /*if(S_ISCHR(f.st_mode) != 0){
+	 temporaire.typeflag = '3';
  }
- if(S_ISBLK(f.st_mode) == 0){
-	 temporaire.typeflag = 4;
- }
- if(S_ISFIFO(f.st_mode) == 0){
-	 temporaire.typeflag = 6;
+ if(S_ISBLK(f.st_mode) != 0){
+	 temporaire.typeflag = '4';
+ }*/
+ if(S_ISFIFO(f.st_mode) != 0){
+	 temporaire.typeflag = 54 ;
  }
 
  // VERSION
@@ -603,7 +633,7 @@ int tar_vers_tar(char *argv[]){
   char * path = malloc(strlen(arg[1])+sizeof(char));
   strcpy (path,arg[1]);
 
-  free(arg);
+  //free(arg);
 
   char ** arg2 = tar_and_path(argv[2]);
 
@@ -612,20 +642,20 @@ int tar_vers_tar(char *argv[]){
   char * path2 = malloc(strlen(arg2[1])+sizeof(char));
   strcpy (path2,arg2[1]);
 
-  free(arg2);
+  //free(arg2);
 
   int fd = open(tar,O_RDWR);
 	if(fd < 0){
 		print_error("cp : '",tar,"' error opening with first tar");
 		return -1;
 	}
- 	free(tar);
+ 	//free(tar);
 
   int fd2= open(tar2,O_RDWR);
 	if(fd2 < 0){
 		print_error("cp : '",tar2,"' error opening with second tar");
 	}
-  free(tar2);
+  //free(tar2);
 
 
   char rd [BLOCKSIZE] ;
@@ -671,7 +701,7 @@ int tar_vers_tar(char *argv[]){
 
   }while(strcmp(hd.name,path)!=0);
 
-  free(path);
+  //free(path);
 
   ////////////////////////////////////////////
   ////////////////////////////////////////////
@@ -725,7 +755,7 @@ int tar_vers_tar(char *argv[]){
 
  // CHOOSE NAME FILE
  sprintf(temporaire.name,"%s",path2);
- free(path2);
+ //free(path2);
   //FILLING MODE
 
 
@@ -752,7 +782,7 @@ int tar_vers_tar(char *argv[]){
  //FILE SO TYPE IS 0
 
  temporaire.typeflag=hd.typeflag;
-
+printd(hd.typeflag);
 
  // VERSION
 
@@ -956,6 +986,8 @@ int cp_r_tvt(char *argv[]){
   // THIS LOOP ALLOWS US TO LOOK FOR THE HEADER CORRESPONDING TO THE FILE WE WANT TO
   // FIND IN THE TAR
 
+
+
   do{
     // READING AN HEADER
 
@@ -989,10 +1021,13 @@ int cp_r_tvt(char *argv[]){
 		 strcpy(tmpath,path);
 		 char ** pathn = decompose(tmpath,"/");
 
+
+
 		 //hdname is a copy of the decomposition of hd.name
 		 char * hdn = malloc(strlen(hd.name) + sizeof(char));
 		 hdn = strcpy(hdn,hd.name);
 		 char ** hdname = decompose(hdn,"/");
+
 
 		 //if the path is the same as the begining of hd.name
 		 //then it will go into the next if else it will go to the
@@ -1065,12 +1100,11 @@ int cp_r_tvt(char *argv[]){
 			}
 
      }
+
 		 free(temp);
-		 free(temp2);
-		 free(hdname);
-		 free(hdn);
-		 free(tmpath);
-		 free(pathn);
+ 		 free(temp2);
+
+
 
 		     sscanf(hd.size, "%o",&size);
     //OTHERWISE WE GET TO THE NEXT HEADER
@@ -1079,6 +1113,7 @@ int cp_r_tvt(char *argv[]){
 
 
   }while(hd.name!=0);
+
 	free(path);
 
   return 0;
@@ -1223,12 +1258,12 @@ int cp_r_tve(char *argv[]){
 
 		}
 
-		free(temp);
+	/*	free(temp);
 		free(temp2);
 		free(tmpath);
 		free(pathn);
 		free(hdn);
-		free(hdname);
+		free(hdname);*/
 
 
    //OTHERWISE WE GET TO THE NEXT HEADER
