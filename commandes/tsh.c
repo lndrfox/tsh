@@ -459,11 +459,19 @@ char * redir_in(char * prompt){
 
 			if(tar_vers_ext_cp(copy)<0){
 
-				return "error";
+				char * err=malloc(strlen("error")+sizeof(char));
+				if(err==NULL){
+
+					perror("malloc");
+					exit(-1);
+				}
+				strcpy(err,"error");
+				return err;
 
 			}
 	
-			path="redir_in";
+			path=realloc(path,strlen("redir_in")+sizeof(char));
+			strcpy(path,"redir_in");
 			delete[1]="redir_in";
 
 		}
@@ -475,8 +483,16 @@ char * redir_in(char * prompt){
 
 			print_error(NULL,path,"No such file or directory");
 			str_cut(anchor,len_cut);
-			//free(path);
-			break;
+			free(path);
+
+			char * err=malloc(strlen("error")+sizeof(char));
+				if(err==NULL){
+
+					perror("malloc");
+					exit(-1);
+				}
+				strcpy(err,"error");
+				return err;
 		}
 
 		dup2(fd,STDIN_FILENO);
@@ -484,7 +500,7 @@ char * redir_in(char * prompt){
 		/* WE CUT OUT THE < SYMBOLE + THE PATH*/
 
 		str_cut(anchor,len_cut);
-		//free(path);
+		free(path);
 
 	}while(anchor!=NULL);
 
@@ -533,6 +549,13 @@ int goes_back_in_tar(char * path){
 	/*WE COPY THE PATH SO WE CAN DECOMPOSE IT*/
 
 	char * path_copy=malloc(strlen(path)+sizeof(char));
+
+	if(path_copy==NULL){
+
+		perror("malloc");
+		exit(-1);
+	}
+
 	strcpy(path_copy,path);
 
 	char ** tokens=decompose(path_copy,"/");
@@ -540,6 +563,13 @@ int goes_back_in_tar(char * path){
 	/*WE COPY GETENV("TAR") SO WE CAN DECOMPOSE IT*/
 
 	char * get_env_copy=malloc(strlen(getenv("tar"))+sizeof(char));
+
+	if(get_env_copy==NULL){
+
+		perror("malloc");
+		exit(-1);
+	}
+
 	strcpy(get_env_copy,getenv("tar"));
 
 	char ** tokens_env =decompose(get_env_copy,"/");
@@ -611,6 +641,10 @@ int goes_back_in_tar(char * path){
 		cpt++;
 	}
 
+	free(tokens);
+	free(path_copy);
+	free(tokens_env);
+	free(get_env_copy);
 	return flag;
 }
 
@@ -639,16 +673,39 @@ char ** split_args(char ** args){
 
 	char ** token_out_tar= calloc(i,sizeof(char *));
 
+	if(token_out_tar==NULL){
+
+		perror("calloc");
+		exit(-1);
+	}
+
 	char * copy_name=malloc(strlen(args[0])+sizeof(char));
+
+	if(copy_name==NULL){
+
+		perror("malloc");
+		exit(-1);
+	}
+
 	strcpy(copy_name,args[0]);
+
 	token_out_tar[cpt_token_out_tar]=copy_name;
 	cpt_token_out_tar++;
 
 	/*IF THERE IS AN OPTION WE COPY IT AS WELL*/
 
 	if(	i==3){
+
 		char * copy_op=malloc(strlen(args[1])+sizeof(char));
+
+		if(copy_op == NULL){
+
+			perror("malloc");
+			exit(-1);
+		}
+
 		strcpy(copy_op,args[1]);
+
 		token_out_tar[cpt_token_out_tar]=copy_op;
 		cpt_token_out_tar++;
 	}
@@ -674,6 +731,13 @@ char ** split_args(char ** args){
 			/*WE SAVE WHAT WE WANT TO COPY IN TOKEN_OUT_TAR*/
 
 			char * save = malloc(strlen(args[cpt])+sizeof(char));
+
+			if(save==NULL){
+
+				perror("malloc");
+				exit(-1);
+			}
+
 			strcpy(save,args[cpt]);
 
 			/*WE PUT THE ARG WE WANT TO REMOVE AT NULL*/
@@ -700,11 +764,21 @@ char ** split_args(char ** args){
 			*/
 			
 			char * tmp =true_path(save);
+			free(save);
+
+			/*IF TRUE PATH RETURNS "" IT MEANS WE JUST NEED TO WORK
+			WITH THE CURRENT DIRECTORY ( OUTSIDE OF A TAR ) SO WE REPLACE IT
+			BY A "."*/
+
 			if(strcmp(tmp,"")==0){
 				tmp=".";
 			}
+
 			token_out_tar[cpt_token_out_tar]=malloc(strlen(tmp)+sizeof(char));
-			strcpy(token_out_tar[cpt_token_out_tar],tmp);			
+			strcpy(token_out_tar[cpt_token_out_tar],tmp);
+
+			free(tmp);
+
 			cpt_token_out_tar++;
 
 			token_out_tar=realloc(token_out_tar,(cpt_token_out_tar+1)*(sizeof(char *)));
@@ -764,7 +838,7 @@ THEN EXECUTE BOTH OF THEM*/
 
 void exec_split(char ** tokens){
 
-	if(strcmp(tokens[0],"error")){
+	if(strcmp(tokens[0],"error")==0){
 
 		return;
 	}
@@ -815,7 +889,7 @@ void exec_split(char ** tokens){
 			else{
 				exec_custom(tokens,0);
 			}
-		
+
 			return;
 			}
 		}
@@ -839,10 +913,12 @@ void exec_split(char ** tokens){
 				cpt++;
 				tokens[cpt]=true_path(tokens[cpt]);
 				exec_custom(tokens,0);
+
 				return;
 			}
 
 			exec_custom(tokens,1);
+
 			return;
 		}
 	}
@@ -856,15 +932,13 @@ void exec_split(char ** tokens){
 	if(tokens[cpt]==NULL){
 
 		exec_custom(out_tar,0);
-		return;
 	}
 
 	/*IF OUT_TAR HAS NO ARGUMENTS*/
 
-	if(out_tar[cpt]==NULL){
+	else if(out_tar[cpt]==NULL){
 		
 		exec_custom(tokens,1);
-		return;
 	}
 
 	/*IF THEY BOTH HAVE ARGUMENTS*/
@@ -874,6 +948,15 @@ void exec_split(char ** tokens){
 		exec_custom(tokens,1);
 		exec_custom(out_tar,0);
 	}
+
+	int j=0;
+	while(out_tar[j]!=NULL){
+
+		free(out_tar[j]);
+		j++;
+	}
+
+	free(out_tar);
 
 }
 
@@ -978,6 +1061,13 @@ void exec_pipe( char ** token_1, char ** token_2, char ** next){
 					else{
 
 						char * token_cpy= malloc(strlen(next[1])+sizeof(char));
+
+						if(token_cpy==NULL){
+
+							perror("malloc");
+							exit(-1);
+						}
+
 						strcpy(token_cpy,next[1]);
 
 						char ** tokens_next=decompose(token_cpy," ");
@@ -1005,15 +1095,14 @@ void parse (char * prompt){
 	/*WE COPY THE PROMPT BECAUSE DECOMPOSE WILL BREAK THE STRING*/
 
 	char * prompt_cpy=malloc(strlen(prompt)+sizeof(char));
-	strcpy(prompt_cpy,prompt);
-
-	/*ERROR MANAGMENT*/
 
 	if(prompt_cpy==NULL){
 
 		perror("malloc");
 		exit(-1);
 	}
+
+	strcpy(prompt_cpy,prompt);
 
 	/*WE DECOMPOSE THE PORMPT ACCORDING TO  | SO WE CAN CHECK IF 
 	PIPES SHOULD BE USED*/

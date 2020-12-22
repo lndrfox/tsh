@@ -386,6 +386,13 @@ char * true_path(char * path){
 
 	//copy the getenv into "tar"
   char * tar= malloc(strlen(getenv("tar"))+sizeof(char));
+
+  if(tar==NULL){
+
+  	perror("malloc");
+  	exit(-1);
+  }
+
   strcpy(tar,getenv("tar"));
 
 	//decompose tar to browse throught it in "tokens"
@@ -393,6 +400,13 @@ char * true_path(char * path){
 
 	//copy the path into "ar"
   char * ar =malloc(strlen(path)+sizeof(char));
+
+  if(ar==NULL){
+
+  	perror("malloc");
+  	exit(-1);
+  }
+
   strcpy(ar, path);
 
 	//decompose ar to browe throught it in "tokens2"
@@ -453,6 +467,12 @@ char * true_path(char * path){
 
 //we flatten tokens to get the and return the path
   char *ret = flatten(tokens,"/");
+
+  free(tokens);
+  free(tokens2);
+  free(tar);
+  free(ar);
+
   return ret;
 }
 
