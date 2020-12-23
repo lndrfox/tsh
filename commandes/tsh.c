@@ -380,7 +380,6 @@ char * redir_out(char * prompt){
 			
 			/*WE ADD REDIR_OUT/REDIR_ERR TO THE DELETE ARRAY SO THAT IT'S DELETED
 			ONCE IT HAS BEEN COPIED IN THE TAR IN THE REDIR FUNCTION*/
-			
 			if(flag_err){
 
 				if(delete[1]==NULL){
@@ -709,7 +708,7 @@ char * redir(char * prompt){
 	TO THE MV_OUT SAVED PATH*/
 
 	if(mv_out!=NULL){
-		printf("\n oui c moi\n");
+
 		char *copy[4];
 		copy[0]="cp";
 		copy[1]="redir_out";
@@ -739,7 +738,7 @@ char * redir(char * prompt){
 
 	if(delete[1]!=NULL){
 
-		//exec_custom(delete,0);
+		exec_custom(delete,0);
 	}	
 
 	/*WE FREE AND RETURN*/

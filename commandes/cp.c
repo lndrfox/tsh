@@ -605,7 +605,7 @@ int ext_vers_tar(char *argv[]){
         exit(-1);
 
       }
-    memset(buf,0,BLOCKSIZE);
+    memset(buff,0,BLOCKSIZE);
   }while(rdtmp>0);
     //RESETING THE BUFFER
 
