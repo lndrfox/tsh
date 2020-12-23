@@ -274,7 +274,49 @@ char * redir_out(char * prompt){
 
 		int flag_err=0; //THIS FLAG IS RAISED IF WE NEED TO REDIRECT STDERR_FILENO
 
+		/*IF THE GIVEN PATH DOESNT GOES BACK IN TAR
+		WE SIMPLY APPLY TRUE PATH TO IT*/
 
+		if(!goes_back_in_tar(path)){
+
+			path=true_path(path);
+		}
+
+		/*IF IT IS INSIDE A TAR*/
+
+		else{
+
+			/*WE COPY THE FILE OUTSIDE OF THE TAR AND USE THE COPY
+			FOR OUR OPEN THEN WE ADD IT TO THE DELETE ARRAY SO IT CAN BE DELETED LATER*/
+
+			char *copy[4];
+			copy[0]="cp";
+			copy[1]=path;
+			copy[2]="redir_out";
+			copy[3]=NULL;
+
+			int err_code=tar_vers_ext_cp(copy);
+
+			if(err_code==-1){
+
+				char * err=malloc(strlen("error")+sizeof(char));
+				if(err==NULL){
+
+					perror("malloc");
+					exit(-1);
+				}
+				strcpy(err,"error");
+				return err;
+
+			}
+
+			mv_out=malloc(strlen(path)+sizeof(char));
+			strcpy(mv_out,path);
+			
+			path=realloc(path,strlen("redir_out")+sizeof(char));
+			strcpy(path,"redir_out");
+			
+		}
 
 		/*------IF FLAG IS RAISED THEN WE HAVE EITHER >> OR 2>> SO THE
 		DESCRIPTOR MUST BE OPENED IN APPEND MODE ------*/
@@ -527,10 +569,22 @@ char * redir(char * prompt){
 	delete[0]="rm";
 	delete[1]=NULL;
 	delete[2]=NULL;
+	mv_out=NULL;
 
 	char * out =redir_out(prompt);
 	char *ret =redir_in(out);
 	free(out);
+
+	if(mv_out!=NULL){
+
+		char *copy[4];
+		copy[0]="cp";
+		copy[1]="redir_out";
+		copy[2]=mv_out;
+		copy[3]=NULL;
+
+		ext_vers_tar_cp(copy);
+	}
 
 	if(delete[1]!=NULL){
 
