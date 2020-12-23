@@ -942,6 +942,10 @@ int main (int argc, char *argv[]){
 
 
   if (argc == 3){
+		if (strcmp(true_path(argv[2]),true_path(argv[3])) == 0){
+			print_error("cp ", "argv[2] et  argv[3] ", "identifient le même fichier  ");
+			exit (-1);
+		}
 
     //if argv1 is not inside a tar and argv2 is insiede a tar call ext_vers_tar
     if((string_contains_tar(path1) == 0) && (string_contains_tar(path2) == 1)){

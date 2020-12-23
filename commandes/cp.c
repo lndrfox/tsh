@@ -1511,6 +1511,11 @@ int main (int argc, char *argv[]){
 
 
   if (argc == 3){
+
+		if (strcmp(true_path(argv[1]),true_path(argv[2])) == 0){
+			print_error("cp ", "argv[1] et  argv[2] ", "identifient le même fichier  ");
+			exit (-1);
+		}
     //Get a variable containing argv[1]
      char *test = malloc(strlen(argv[1])+sizeof(char));
      strcpy (test,argv[1]);
@@ -1558,6 +1563,10 @@ int main (int argc, char *argv[]){
 
   if (argc == 4 && (strcmp(argv[1],"-r") == 0)){
 
+				if (strcmp(true_path(argv[2]),true_path(argv[3])) == 0){
+					print_error("cp ", "argv[2] et  argv[3] ", "identifient le même fichier  ");
+					exit (-1);
+				}
     //Get a variable containing argv[1]
      char *test = malloc(strlen(argv[2])+sizeof(char));
      strcpy (test,argv[2]);
