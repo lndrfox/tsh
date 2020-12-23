@@ -224,6 +224,16 @@ int tar_vers_ext(char *argv[]){
   //from tar_and_path
   char ** arg = tar_and_path(argv[1]);
 
+	if (arg[0] == NULL){
+		print_error("cp : '",argv[1],"' Problem with argv 1");
+		exit(-1);
+	}
+
+	if (arg[1] == NULL){
+		print_error("cp : '",argv[1],"' Problem with argv 1");
+		exit(-1);
+	}
+
   char * tar = malloc(strlen(arg[0])+sizeof(char));
   strcpy (tar,arg[0]);
   char * path = malloc(strlen(arg[1])+sizeof(char));
@@ -238,7 +248,7 @@ int tar_vers_ext(char *argv[]){
   //ERROR MANAGMENT
 
   if(fd==-1){
-    print_error("cp : '",tar,"' open tar file");
+    print_error("mv : '",tar,"' open tar file");
     exit(-1);
   }
 
@@ -254,7 +264,7 @@ int tar_vers_ext(char *argv[]){
 
     if(rdcount<0){
 
-      print_error("cp : '",tar,"' reading tar file");
+      print_error("mv : '",tar,"' reading tar file");
       close(fd);
       return -1;
     }
@@ -262,7 +272,7 @@ int tar_vers_ext(char *argv[]){
     //IF WE REACHED THE END OF THE TAR WITHOUT FINDING THE GOOD HEADER
 
     if((hd.name[0]=='\0')){
-      print_error("cp: impossible d'évaluer '", path ,"' : Aucun fichier ou dossier de ce type\n");
+      print_error("mv: impossible d'évaluer '", path ,"' : Aucun fichier ou dossier de ce type\n");
       return -1;
     }
 
@@ -351,7 +361,7 @@ int tar_vers_ext(char *argv[]){
 
 
 	if(fd2 < 0){
-		print_error("cp : ",argv[2],"error argv[2]");
+		print_error("mv : ",argv[2],"error argv[2]");
 		return -1;
 	}
 
@@ -369,7 +379,7 @@ int tar_vers_ext(char *argv[]){
 
 	    if(rdtmp<0){
 
-	      print_error("cp  '",tar,"' Reading tar file");
+	      print_error("mv  '",tar,"' Reading tar file");
 	      exit(-1);
 	    }
 
@@ -377,7 +387,7 @@ int tar_vers_ext(char *argv[]){
 
 	    if(write(fd2,rd, size)<0){
 
-	      print_error("cp ", argv[2] ," Writing file content");
+	      print_error("mv ", argv[2] ," Writing file content");
 	      exit(-1);
 
 	    }
@@ -406,6 +416,15 @@ int ext_vers_tar(char *argv[]){
   //we get the tar to open and the path for the file
   //from tar_and_path
   char ** arg = tar_and_path(argv[2]);
+	if (arg[0] == NULL){
+		print_error("cp : '",argv[2],"' Problem with argv 1");
+		exit(-1);
+	}
+
+	if (arg[1] == NULL){
+		print_error("cp : '",argv[2],"' Problem with argv 1");
+		exit(-1);
+	}
 
   char * tar = malloc(strlen(arg[0])+sizeof(char));
   strcpy (tar,arg[0]);
@@ -420,14 +439,14 @@ int ext_vers_tar(char *argv[]){
 	free(tar);
 
   if(fd <0){
-    print_error("cp : '",argv[2],"' Problem with argv 2");
+    print_error("mv : '",argv[2],"' Problem with argv 2");
     exit(-1);
   }
 
   int fd2 = open(true_path(argv[1]), O_RDONLY);
 
   if(fd2<0){
-    print_error("cp: impossible d'évaluer ", argv[1] ," : Aucun fichier ou dossier de ce type\n");
+    print_error("mv: impossible d'évaluer ", argv[1] ," : Aucun fichier ou dossier de ce type\n");
     exit(-1);
   }
 
@@ -442,7 +461,7 @@ int ext_vers_tar(char *argv[]){
     //ERROR MANAGMENT
 
     if(rdcount<0){
-      print_error("cp : ",tar," reading tar file");
+      print_error("mv : ",tar," reading tar file");
       close(fd);
       return -1;
     }
@@ -573,26 +592,25 @@ int ext_vers_tar(char *argv[]){
   }
 
 
-  char buff [fsize];
+	char buff [BLOCKSIZE];
+for(unsigned int i=0; i<((fsize+ BLOCKSIZE - 1) >> BLOCKBITS);i++){
+		int rdtmp = read(fd2,buff, BLOCKSIZE);
+		//EROR MANAGMENT
 
-    int rdtmp = read(fd2,buff, fsize);
-    //EROR MANAGMENT
+		if(rdtmp<0){
+			print_error(NULL,NULL,"Reading tar file");
+			exit(-1);
+		}
 
-    if(rdtmp<0){
-      print_error(NULL,NULL,"Reading tar file");
-      exit(-1);
-    }
+		//WRITING THE BLOCK AND ERROR MANGEMENT
 
-    //WRITING THE BLOCK AND ERROR MANGEMENT
+		if(write(fd,buff, BLOCKSIZE)<0){
 
-    if(write(fd,buff, fsize)<0){
+			print_error(NULL,NULL,"Writing file content");
+			exit(-1);
 
-      print_error(NULL,NULL,"Writing file content");
-      exit(-1);
-
-    }
-
-    //RESETING THE BUFFER
+		}
+	}
 
 
   memset(buf,0,BLOCKSIZE);
@@ -635,6 +653,15 @@ int tar_vers_tar(char *argv[]){
   unsigned int size2;
 
   char ** arg = tar_and_path(argv[1]);
+	if (arg[0] == NULL){
+		print_error("cp : '",argv[1],"' Problem with argv 1");
+		exit(-1);
+	}
+
+	if (arg[1] == NULL){
+		print_error("cp : '",argv[1],"' Problem with argv 1");
+		exit(-1);
+	}
 
   char * tar = malloc(strlen(arg[0])+sizeof(char));
   strcpy (tar,arg[0]);
@@ -644,6 +671,15 @@ int tar_vers_tar(char *argv[]){
   free(arg);
 
   char ** arg2 = tar_and_path(argv[2]);
+	if (arg[0] == NULL){
+		print_error("cp : '",argv[2],"' Problem with argv 1");
+		exit(-1);
+	}
+
+	if (arg[1] == NULL){
+		print_error("cp : '",argv[2],"' Problem with argv 1");
+		exit(-1);
+	}
 
   char * tar2 = malloc(strlen(arg2[0])+sizeof(char));
   strcpy (tar2,arg2[0]);
@@ -654,14 +690,14 @@ int tar_vers_tar(char *argv[]){
 
   int fd = open(tar,O_RDWR);
 	if(fd < 0){
-		print_error("cp : '",tar,"' error opening with first tar");
+		print_error("mv : '",tar,"' error opening with first tar");
 		return -1;
 	}
  	free(tar);
 
   int fd2= open(tar2,O_RDWR);
 	if(fd2 < 0){
-		print_error("cp : '",tar2,"' error opening with second tar");
+		print_error("mv : '",tar2,"' error opening with second tar");
 	}
   free(tar2);
 
@@ -677,7 +713,7 @@ int tar_vers_tar(char *argv[]){
     //ERROR MANAGMENT
 
     if(rdcount<0){
-      print_error("cp :",NULL,"reading tar file\n");
+      print_error("mv :",NULL,"reading tar file\n");
       close(fd);
       return -1;
     }
@@ -685,7 +721,7 @@ int tar_vers_tar(char *argv[]){
     //IF WE REACHED THE END OF THE TAR WITHOUT FINDING THE GOOD HEADER
 
     if((hd.name[0]=='\0')){
-      print_error("cp: impossible d'évaluer '", path ,"' : Aucun fichier ou dossier de ce type \n");
+      print_error("mv: impossible d'évaluer '", path ,"' : Aucun fichier ou dossier de ce type \n");
       return -1;
     }
 
@@ -724,7 +760,7 @@ int tar_vers_tar(char *argv[]){
     //ERROR MANAGMENT
 
     if(rdcount<0){
-      print_error("cp :",NULL,"reading tar file");
+      print_error("mv :",NULL,"reading tar file");
       close(fd);
       return -1;
     }
@@ -808,7 +844,7 @@ int tar_vers_tar(char *argv[]){
  //ERROR MANAGMENT
 
  if(g==NULL){
-   print_error("cp :",NULL,"Reading group ID");
+   print_error("mv :",NULL,"Reading group ID");
    exit(-1);
  }
  sprintf(temporaire.gname,"%s",g->gr_name);
@@ -833,7 +869,7 @@ int tar_vers_tar(char *argv[]){
 
   if(rddd<BLOCKSIZE){
 
-    print_error("cp :",NULL,"Error writing in file");
+    print_error("mv :",NULL,"Error writing in file");
     exit(-1);
   }
 
@@ -848,7 +884,7 @@ int tar_vers_tar(char *argv[]){
 
 
     if(rdtmp<0){
-      print_error("cp : '",tar,"' Reading tar file");
+      print_error("mv : '",tar,"' Reading tar file");
       exit(-1);
     }
 
@@ -856,7 +892,7 @@ int tar_vers_tar(char *argv[]){
 
     if(write(fd2,buff, BLOCKSIZE)<0){
 
-      print_error("cp :",NULL,"Writing file content");
+      print_error("mv :",NULL,"Writing file content");
       exit(-1);
 
     }
@@ -878,7 +914,7 @@ int tar_vers_tar(char *argv[]){
 
     if(rdd<BLOCKSIZE){
 
-      print_error("cp :",NULL,"Error writing in file");
+      print_error("mv :",NULL,"Error writing in file");
       exit(-1);
     }
 
@@ -937,10 +973,10 @@ int main (int argc, char *argv[]){
     free(path2);
     return 0;
   }
-	else if (argc < 3){
+	else if (argc < 3 || argc > 3){
 		free(path1);
     free(path2);
-		print_error("cp: ",NULL," opérande de fichier manquant \n");
+		print_error("mv: ",NULL," invalid number of argument \n");
 		return -1;
 	}
 	free(path1);
