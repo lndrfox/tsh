@@ -593,6 +593,7 @@ int ext_vers_tar(char *argv[]){
 
 
 	char buff [BLOCKSIZE];
+	memset(buff,0,BLOCKSIZE);
 for(unsigned int i=0; i<((fsize+ BLOCKSIZE - 1) >> BLOCKBITS);i++){
 		int rdtmp = read(fd2,buff, BLOCKSIZE);
 		//EROR MANAGMENT
