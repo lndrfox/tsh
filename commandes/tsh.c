@@ -380,14 +380,32 @@ char * redir_out(char * prompt){
 			
 			/*WE ADD REDIR_OUT/REDIR_ERR TO THE DELETE ARRAY SO THAT IT'S DELETED
 			ONCE IT HAS BEEN COPIED IN THE TAR IN THE REDIR FUNCTION*/
+			
 			if(flag_err){
 
-				delete[3]="redir_err";
+				if(delete[1]==NULL){
+
+					delete[1]="redir_err";
+				}
+
+				else if(delete[2]==NULL){
+
+					delete[2]="redir_err";
+				}
+				
 			}
 
 			else{
 
-				delete[2]="redir_out";
+				if(delete[1]==NULL){
+
+					delete[1]="redir_out";
+				}
+
+				else if(delete[2]==NULL){
+
+					delete[2]="redir_out";
+				}
 
 			}		
 		}
@@ -598,7 +616,20 @@ char * redir_in(char * prompt){
 	
 			path=realloc(path,strlen("redir_in")+sizeof(char));
 			strcpy(path,"redir_in");
-			delete[1]="redir_in";
+
+			if(delete[1]==NULL){
+
+				delete[1]="redir_in";
+			}
+			
+			else if(delete[2]==NULL){
+				delete[2]="redir_in";
+			}
+
+			else if(delete[3]==NULL){
+
+				delete[3]="redir_in";
+			}
 
 		}
 
@@ -678,7 +709,7 @@ char * redir(char * prompt){
 	TO THE MV_OUT SAVED PATH*/
 
 	if(mv_out!=NULL){
-
+		printf("\n oui c moi\n");
 		char *copy[4];
 		copy[0]="cp";
 		copy[1]="redir_out";
@@ -708,7 +739,7 @@ char * redir(char * prompt){
 
 	if(delete[1]!=NULL){
 
-		exec_custom(delete,0);
+		//exec_custom(delete,0);
 	}	
 
 	/*WE FREE AND RETURN*/

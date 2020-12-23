@@ -586,25 +586,27 @@ int ext_vers_tar(char *argv[]){
 
   char buff [BLOCKSIZE];
 	memset(buff,0,BLOCKSIZE);
-for(unsigned int i=0; i<((fsize+ BLOCKSIZE - 1) >> BLOCKBITS);i++){
-    int rdtmp = read(fd2,buff, BLOCKSIZE);
-    //EROR MANAGMENT
+  int rdtmp=0;
 
-    if(rdtmp<0){
-      print_error(NULL,NULL,"Reading tar file");
-      exit(-1);
-    }
+  do{
+      rdtmp = read(fd2,buff, BLOCKSIZE);
+      //EROR MANAGMENT
 
-    //WRITING THE BLOCK AND ERROR MANGEMENT
+      if(rdtmp<0){
+        print_error(NULL,NULL,"Reading tar file");
+        exit(-1);
+      }
 
-    if(write(fd,buff, BLOCKSIZE)<0){
+      //WRITING THE BLOCK AND ERROR MANGEMENT
 
-      print_error(NULL,NULL,"Writing file content");
-      exit(-1);
+      if(write(fd,buff, BLOCKSIZE)<0){
 
-    }
-		  memset(buf,0,BLOCKSIZE);
-}
+        print_error(NULL,NULL,"Writing file content");
+        exit(-1);
+
+      }
+    memset(buf,0,BLOCKSIZE);
+  }while(rdtmp>0);
     //RESETING THE BUFFER
 
 

@@ -911,29 +911,31 @@ int ext_vers_tar_cp(char *argv[]){
   }
 
 
-char buff [BLOCKSIZE];
-memset(buff,0,BLOCKSIZE);
+	char buff [BLOCKSIZE];
+	memset(buff,0,BLOCKSIZE);
+	int rdtmp=0;
 
-for(unsigned int i=0; i<((fsize+ BLOCKSIZE - 1) >> BLOCKBITS);i++){
-    int rdtmp = read(fd2,buff, BLOCKSIZE);
-    //EROR MANAGMENT
+	do{
+	    rdtmp = read(fd2,buff, BLOCKSIZE);
+	    //EROR MANAGMENT
 
-    if(rdtmp<0){
-      print_error(NULL,NULL,"Reading tar file");
-      exit(-1);
-    }
+	    if(rdtmp<0){
+	      print_error(NULL,NULL,"Reading tar file");
+	      exit(-1);
+	    }
 
-    //WRITING THE BLOCK AND ERROR MANGEMENT
+	    //WRITING THE BLOCK AND ERROR MANGEMENT
 
-    if(write(fd,buff, BLOCKSIZE)<0){
+	    if(write(fd,buff, BLOCKSIZE)<0){
 
-      print_error(NULL,NULL,"Writing file content");
-      exit(-1);
+	      print_error(NULL,NULL,"Writing file content");
+	      exit(-1);
 
-    }
-    
-	memset(buf,0,BLOCKSIZE);
-}
+	    }
+		memset(buf,0,BLOCKSIZE);
+		
+	}while(rdtmp>0);
+
     //RESETING THE BUFFER
 
 
