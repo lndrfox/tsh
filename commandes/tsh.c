@@ -272,7 +272,7 @@ char * redir_out(char * prompt){
 		path[cpt_path]='\0';
 		len_cut+=strlen(path);
 
-		int flag_err=0; //THIS FLAG IS RAISED IF WE NEED TO REDIRECT STDERR_FILENO
+		int flag_err=(anchor[-1]=='2'); //THIS FLAG IS RAISED IF WE NEED TO REDIRECT STDERR_FILENO
 
 		/*IF THE GIVEN PATH DOESNT GOES BACK IN TAR
 		WE SIMPLY APPLY TRUE PATH TO IT*/
@@ -292,12 +292,26 @@ char * redir_out(char * prompt){
 			char *copy[4];
 			copy[0]="cp";
 			copy[1]=path;
-			copy[2]="redir_out";
+
+			if(flag_err){
+				copy[2]="redir_err";
+			}
+
+			else{
+				copy[2]="redir_out";
+			}
+
 			copy[3]=NULL;
 
-			int err_code=tar_vers_ext_cp(copy);
+			/*IF WHEN WE COPY WE GET -1 THEN THEN THERE WAS AN ERROR
+			BUT IF IT'S -2 THEN IT JUST DOESNT EXIST YET IN THE TAR
 
-			if(err_code==-1){
+			-1 WE RETURN ERROR
+
+			-2 WE SIMPLY CONTINUE AS OPEN WILL CREATE THE FILE TO COPY ANYWAY
+			SINCE IT HAS THE O_CREAT OPTION*/
+
+			if(tar_vers_ext_cp(copy)==-1){
 
 				char * err=malloc(strlen("error")+sizeof(char));
 				if(err==NULL){
@@ -310,12 +324,72 @@ char * redir_out(char * prompt){
 
 			}
 
-			mv_out=malloc(strlen(path)+sizeof(char));
-			strcpy(mv_out,path);
+			/*WE CHECK IF THE FILE DID EXIST IN THE TAR BEFORE OR NOT
+			IF YES WE REMOVE IT FROM THE TAR SO THAT IT'S CONTENT CAN BE REPLACED
+			LATER ON BY WHAT IS IN REDIR_OUT/REDIR_ERR*/
+
+			char ** tp=tar_and_path(path);
+
+			if(file_exists_in_tar(tp[1],tp[0])){
+
+				char * rm[3];
+				rm[0]="rm";
+				rm[1]=path;
+				rm[2]=NULL;
+
+				exec_custom(rm,1);
+			}
+
+			/*WE FREE TP AS WE DON'T NEED IT ANYMORE*/
+
+			free(tp[0]);
+			free(tp[1]);
+			free(tp);
+
+			/*WE COPY PATH IN MV_OUT/MV_ERR, AS WE WILL USE MV_OUT 
+			IN THE FUNCTION REDIR TO COPY REDIR_OUT/REDIR_ERR PATH*/
+
+			if(flag_err){
+
+				mv_err=malloc(strlen(path)+sizeof(char));
+				strcpy(mv_err,path);
+
+			}
+
+			else{
+
+				mv_out=malloc(strlen(path)+sizeof(char));
+				strcpy(mv_out,path);
+			}
+
+			/*WE CHANGE PATH TO REDIR_OUT/REDIR_ERR SO THAT THIS WILL THE NAME
+			GIVEN TO OPEN*/
+
+			if(flag_err){
+
+				path=realloc(path,strlen("redir_err")+sizeof(char));
+				strcpy(path,"redir_err");
+
+			}
 			
-			path=realloc(path,strlen("redir_out")+sizeof(char));
-			strcpy(path,"redir_out");
+			else{
+
+				path=realloc(path,strlen("redir_out")+sizeof(char));
+				strcpy(path,"redir_out");
+			}
 			
+			/*WE ADD REDIR_OUT/REDIR_ERR TO THE DELETE ARRAY SO THAT IT'S DELETED
+			ONCE IT HAS BEEN COPIED IN THE TAR IN THE REDIR FUNCTION*/
+			if(flag_err){
+
+				delete[3]="redir_err";
+			}
+
+			else{
+
+				delete[2]="redir_out";
+
+			}		
 		}
 
 		/*------IF FLAG IS RAISED THEN WE HAVE EITHER >> OR 2>> SO THE
@@ -329,7 +403,7 @@ char * redir_out(char * prompt){
 
 			/*IF WE NEED TO REDIRECT STDERR_FILENO*/
 
-			if(anchor[-1]=='2'){
+			if(flag_err){
 				dup2(fd,STDERR_FILENO);
 				flag_err=1;//WE RAISE THE ERR FLAG
 			}
@@ -349,7 +423,7 @@ char * redir_out(char * prompt){
 
 			/*IF WE NEED TO REDIRECT STDERR_FILENO*/
 
-			if(anchor[-1]=='2'){
+			if(flag_err){
 				dup2(fd,STDERR_FILENO);
 				flag_err=1;//WE RAISE THE ERR FLAG
 			}
@@ -499,7 +573,12 @@ char * redir_in(char * prompt){
 			copy[2]="redir_in";
 			copy[3]=NULL;
 
+			/*IF THE COPY DIDN'T WORK IT MEANS THE FILE
+			DOES NOT EXIT SO WE HANDLE THE ERROR AND RETURN "ERROR"*/
+
 			if(tar_vers_ext_cp(copy)<0){
+
+				print_error(NULL,path,"No such file or directory");
 
 				char * err=malloc(strlen("error")+sizeof(char));
 				if(err==NULL){
@@ -511,6 +590,11 @@ char * redir_in(char * prompt){
 				return err;
 
 			}
+
+			/*WE CHANGE PATH TO REDIR_IN, THAT WAY A PATH NAMES REDIR_IN WILL BE
+			CREATED IN THE CURRENT NON TAR DIRECTORY AND WILL BE OPENED, BECAUSE WE USED CP
+			IT NOW CONTAINS WHAT WAS IN THE FILE INSIDE THE TAR THAT WE WANTED
+			WE ADD IT TO THE DELETE ARRAY SO THAT IT WILL BE DELETED LATER ON*/
 	
 			path=realloc(path,strlen("redir_in")+sizeof(char));
 			strcpy(path,"redir_in");
@@ -565,15 +649,33 @@ SPECIFIED IN PROMPT*/
 
 char * redir(char * prompt){
 
-	delete=calloc(3,sizeof(char *));
+	/*WE INITIALIZE THE DELETE ARRAY
+	CONTAINING ALL THE FILES CREATED FOR REDIRECTION PURPOSE
+	THAT WILL NEED TO BE DELETED*/
+
+	delete=calloc(5,sizeof(char *));
 	delete[0]="rm";
 	delete[1]=NULL;
 	delete[2]=NULL;
+	delete[3]=NULL;
+	delete[4]=NULL;
+
+	/*WE INITAILIZE MV_OUT AND MV_ERR AS NULL*/
+
 	mv_out=NULL;
+	mv_err=NULL;
+
+	/*WE CALL REDIR_OUT THEN REDIR_IN ON THE RESULT
+	OF REDIR_OUT BECAUSE IT REMOVES ANY POTENTION > REDIRECTIONS
+	THAT REDIR_IN DOES NOT COMPUTE*/
 
 	char * out =redir_out(prompt);
 	char *ret =redir_in(out);
 	free(out);
+
+	/*IF MV_OUT ISNT NULL THEN THERE WAS
+	AN OUT REDIRECTION AND WE COPY WHAT IS IN REDIR_OUT 
+	TO THE MV_OUT SAVED PATH*/
 
 	if(mv_out!=NULL){
 
@@ -586,12 +688,35 @@ char * redir(char * prompt){
 		ext_vers_tar_cp(copy);
 	}
 
+	/*IF MV_OUT ISNT NULL THEN THERE WAS
+	AN ERROR REDIRECTION AND WE COPY WHAT IS IN REDIR_ERR
+	TO THE MV_ERR SAVED PATH*/
+
+	if(mv_err!=NULL){
+
+		char *copy[4];
+		copy[0]="cp";
+		copy[1]="redir_err";
+		copy[2]=mv_err;
+		copy[3]=NULL;
+
+		ext_vers_tar_cp(copy);
+	}
+
+	/*WE REMOVE ALL THE FILES LISTED
+	IN DELETE*/
+
 	if(delete[1]!=NULL){
 
 		exec_custom(delete,0);
 	}	
 
+	/*WE FREE AND RETURN*/
+
 	free(delete);
+	free(mv_out);
+	free(mv_err);
+
 	return ret;
 	
 }
@@ -956,12 +1081,24 @@ void exec_split(char ** tokens){
 	if(strcmp(tokens[0],"mv")==0|| strcmp(tokens[0],"cp")==0){
 
 		/*IF BOTH ARGS ARE OUT OF TAR*/
-
 		if(tokens[cpt]!=NULL && tokens[cpt+1]!=NULL){
 
-			if((!goes_back_in_tar(tokens[cpt]) && !goes_back_in_tar(tokens[cpt+1])) || 
-				((goes_back_in_tar(tokens[cpt]) && goes_back_in_tar(tokens[cpt+1])) &&
-					string_contains_tar(tokens[cpt]) && string_contains_tar(tokens[cpt+1]))){
+			/*COND IS TRUE IF WE WANT TO COPY A TAR FILE*/
+
+			int cond = ((goes_back_in_tar(tokens[cpt]) && goes_back_in_tar(tokens[cpt+1])) &&
+					strcmp(&(tokens[cpt][strlen(tokens[cpt])-4]),".tar")==0 
+					&& strcmp(&(tokens[cpt+1][strlen(tokens[cpt+1])-4]),".tar")==0 );
+
+			if((!goes_back_in_tar(tokens[cpt]) && !goes_back_in_tar(tokens[cpt+1])) || cond){
+
+				/*IF COND IS TRUE BUT THE OPTION ISN'T -r THEN WE DON'T COPY BECAUSE
+				.TAR FILES ARE CONSIDERED DIRECTORIES*/
+
+				if(cond && strcmp(tokens[cpt-1],"-r")!=0){
+
+					print_error(NULL,tokens[cpt],"can't copy a directory -r non specified");
+					return;
+				}
 
 				tokens[cpt]=true_path(tokens[cpt]);
 				cpt++;

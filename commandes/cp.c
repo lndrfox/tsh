@@ -671,10 +671,6 @@ int tar_vers_tar(char *argv[]){
 		exit(-1);
 	}
 
-	if (arg[1] == NULL){
-		print_error("cp : '",argv[2],"' Problem with argv 2");
-		exit(-1);
-	}
 
   char * tar2 = malloc(strlen(arg2[0])+sizeof(char));
   strcpy (tar2,arg2[0]);
