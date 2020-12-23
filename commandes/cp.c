@@ -602,6 +602,7 @@ for(unsigned int i=0; i<((fsize+ BLOCKSIZE - 1) >> BLOCKBITS);i++){
       exit(-1);
 
     }
+		  memset(buf,0,BLOCKSIZE);
 }
     //RESETING THE BUFFER
 

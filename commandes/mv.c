@@ -610,6 +610,7 @@ for(unsigned int i=0; i<((fsize+ BLOCKSIZE - 1) >> BLOCKBITS);i++){
 			exit(-1);
 
 		}
+		  memset(buff,0,BLOCKSIZE);
 	}
 
 
