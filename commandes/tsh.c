@@ -668,47 +668,12 @@ BECAUS EOF REDIRECTIONS*/
 
 void reinit_descriptors(){
 
-	dup2(d_stdout,STDOUT_FILENO);
-	dup2(d_stdin,STDIN_FILENO);
-	dup2(d_stderr,STDERR_FILENO);
-
-}
-
-/*HANDLES REDIRECTIONS : CHANGES THE DESCRIPTORS SO SATISFY THE REDIRECTIONS 
-SPECIFIED IN PROMPT*/
-
-char * redir(char * prompt){
-
-	/*WE INITIALIZE THE DELETE ARRAY
-	CONTAINING ALL THE FILES CREATED FOR REDIRECTION PURPOSE
-	THAT WILL NEED TO BE DELETED*/
-
-	delete=calloc(5,sizeof(char *));
-	delete[0]="rm";
-	delete[1]=NULL;
-	delete[2]=NULL;
-	delete[3]=NULL;
-	delete[4]=NULL;
-
-	/*WE INITAILIZE MV_OUT AND MV_ERR AS NULL*/
-
-	mv_out=NULL;
-	mv_err=NULL;
-
-	/*WE CALL REDIR_OUT THEN REDIR_IN ON THE RESULT
-	OF REDIR_OUT BECAUSE IT REMOVES ANY POTENTION > REDIRECTIONS
-	THAT REDIR_IN DOES NOT COMPUTE*/
-
-	char * out =redir_out(prompt);
-	char *ret =redir_in(out);
-	free(out);
 
 	/*IF MV_OUT ISNT NULL THEN THERE WAS
 	AN OUT REDIRECTION AND WE COPY WHAT IS IN REDIR_OUT 
 	TO THE MV_OUT SAVED PATH*/
 
-	if(mv_out!=NULL){
-
+	if(mv_out!=NULL){	
 		char *copy[4];
 		copy[0]="cp";
 		copy[1]="redir_out";
@@ -746,6 +711,42 @@ char * redir(char * prompt){
 	free(delete);
 	free(mv_out);
 	free(mv_err);
+
+	dup2(d_stdout,STDOUT_FILENO);
+	dup2(d_stdin,STDIN_FILENO);
+	dup2(d_stderr,STDERR_FILENO);
+
+}
+
+/*HANDLES REDIRECTIONS : CHANGES THE DESCRIPTORS SO SATISFY THE REDIRECTIONS 
+SPECIFIED IN PROMPT*/
+
+char * redir(char * prompt){
+
+	/*WE INITIALIZE THE DELETE ARRAY
+	CONTAINING ALL THE FILES CREATED FOR REDIRECTION PURPOSE
+	THAT WILL NEED TO BE DELETED*/
+
+	delete=calloc(5,sizeof(char *));
+	delete[0]="rm";
+	delete[1]=NULL;
+	delete[2]=NULL;
+	delete[3]=NULL;
+	delete[4]=NULL;
+
+	/*WE INITAILIZE MV_OUT AND MV_ERR AS NULL*/
+
+	mv_out=NULL;
+	mv_err=NULL;
+
+	/*WE CALL REDIR_OUT THEN REDIR_IN ON THE RESULT
+	OF REDIR_OUT BECAUSE IT REMOVES ANY POTENTION > REDIRECTIONS
+	THAT REDIR_IN DOES NOT COMPUTE*/
+
+	char * out =redir_out(prompt);
+	char *ret =redir_in(out);
+	free(out);
+
 
 	return ret;
 	
@@ -1049,6 +1050,12 @@ void exec_split(char ** tokens){
 
 	if(strcmp(tokens[0],"error")==0){
 
+		return;
+	}
+
+	if(strcmp(tokens[0],"tar")==0){
+
+		exec_custom(tokens,0);
 		return;
 	}
 
@@ -1497,6 +1504,8 @@ int main (void){
 		/*------PARSING THE COMMAND------*/
 
 		parse(prompt_clear);
+
+
 		reinit_descriptors();
 
 		/*------FREE------*/

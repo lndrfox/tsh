@@ -762,10 +762,10 @@ int ext_vers_tar_cp(char *argv[]){
     exit(-1);
   }
 
-  int fd2 = open(true_path(argv[1]), O_RDONLY);
+  int fd2 = open(argv[1], O_RDONLY);
 
   if(fd2<0){
-    print_error(NULL, argv[1] ,"Aucun fichier ou dossier de ce type\n");
+    print_error(NULL, argv[1] ,"iciAucun fichier ou dossier de ce type\n");
     exit(-1);
   }
 
