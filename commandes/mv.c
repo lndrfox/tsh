@@ -225,12 +225,12 @@ int tar_vers_ext(char *argv[]){
   char ** arg = tar_and_path(argv[1]);
 
 	if (arg[0] == NULL){
-		print_error("cp : '",argv[1],"' Problem with argv 1");
+		print_error("mv : '",argv[1],"' Problem with argv 1");
 		exit(-1);
 	}
 
 	if (arg[1] == NULL){
-		print_error("cp : '",argv[1],"' Problem with argv 1");
+		print_error("mv : '",argv[1],"' Problem with argv 1");
 		exit(-1);
 	}
 
@@ -417,12 +417,12 @@ int ext_vers_tar(char *argv[]){
   //from tar_and_path
   char ** arg = tar_and_path(argv[2]);
 	if (arg[0] == NULL){
-		print_error("cp : '",argv[2],"' Problem with argv 1");
+		print_error("mv : '",argv[2],"' Problem with argv 1");
 		exit(-1);
 	}
 
 	if (arg[1] == NULL){
-		print_error("cp : '",argv[2],"' Problem with argv 1");
+		print_error("mv : '",argv[2],"' Problem with argv 1");
 		exit(-1);
 	}
 
@@ -654,12 +654,12 @@ int tar_vers_tar(char *argv[]){
 
   char ** arg = tar_and_path(argv[1]);
 	if (arg[0] == NULL){
-		print_error("cp : '",argv[1],"' Problem with argv 1");
+		print_error("mv : '",argv[1],"' Problem with argv 1");
 		exit(-1);
 	}
 
 	if (arg[1] == NULL){
-		print_error("cp : '",argv[1],"' Problem with argv 1");
+		print_error("mv : '",argv[1],"' Problem with argv 1");
 		exit(-1);
 	}
 
@@ -671,10 +671,6 @@ int tar_vers_tar(char *argv[]){
   free(arg);
 
   char ** arg2 = tar_and_path(argv[2]);
-	if (arg[0] == NULL){
-		print_error("cp : '",argv[2],"' Problem with argv 1");
-		exit(-1);
-	}
 
   char * tar2 = malloc(strlen(arg2[0])+sizeof(char));
   strcpy (tar2,arg2[0]);
@@ -697,7 +693,7 @@ int tar_vers_tar(char *argv[]){
   free(tar2);
 
 
-  char rd [BLOCKSIZE] ;
+
   //OPENING FIRST TAR AND FINDING FILE
   do{
 
@@ -741,7 +737,6 @@ int tar_vers_tar(char *argv[]){
   }while(strcmp(hd.name,path)!=0);
 
 
-
   ////////////////////////////////////////////
   ////////////////////////////////////////////
   //OPENING SECOND TAR GO TO THE END
@@ -761,21 +756,28 @@ int tar_vers_tar(char *argv[]){
     }
 
     //IF WE REACHED THE END OF THE TAR WITHOUT FINDING THE HEADER THEN IT DOESNT EXIST AND WE CAN CREATE IT
+		sscanf(hd2.size, "%o",&size2);
 
-    if(strcmp(hd2.name,path2) == 0){
-      rmtar(path2);
+
+		if(strcmp(hd2.name,path2) == 0){
+			break;
+		}
+
+    if((hd2.name[1]=='\0')){
+      break;
     }
+
 
     //READING THE SIZE OF THE FILE CORRESPONDING TO THE CURRENT HEADER
 
-    sscanf(hd2.size, "%o",&size2);
+
 
     //WE GET TO THE NEXT HEADER
 
     lseek(fd2,((size2+ BLOCKSIZE - 1) >> BLOCKBITS)*BLOCKSIZE,SEEK_CUR);
 
 
-  }while(hd2.name[0]!='\0');
+  }while(hd2.name!=0);
 	sscanf(hd.size, "%o",&size);
 
 
@@ -847,6 +849,8 @@ int tar_vers_tar(char *argv[]){
  // SINCE WE READ THE FIRST EMPTY BLOCK (TAR ENDS WITH 2 EMPTY BLOCKS) TO CHECK IF WE HAD READ ALL OF THE HEADERS
  // WE NEED TO GO BACK ONE BLOCK
 
+
+
   lseek(fd2,-512,SEEK_CUR);
 
 
@@ -888,12 +892,11 @@ int tar_vers_tar(char *argv[]){
     }
 
 
-   memset(rd, 0, BLOCKSIZE);
+   memset(buff, 0, BLOCKSIZE);
 
   }
 		rmtar(path);
 	  free(path);
-
 
   memset(buff,0,BLOCKSIZE);
 	//writing the 2 last tar block
@@ -943,7 +946,7 @@ int main (int argc, char *argv[]){
 
   if (argc == 3){
 		if (strcmp(true_path(argv[2]),true_path(argv[3])) == 0){
-			print_error("cp ", "argv[2] et  argv[3] ", "identifient le même fichier  ");
+			print_error("mv ", "argv[2] et  argv[3] ", "identifient le même fichier  ");
 			exit (-1);
 		}
 
