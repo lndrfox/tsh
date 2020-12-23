@@ -230,8 +230,8 @@ int file_exists_in_tar(char * path, char * tar){
 	//ERROR MANAGMENT
 
 	if(fd==-1){
-		perror("open tar file");
-		exit(-1);
+		print_error(NULL,tar,"does not exist");
+		return 0;
 	}
 
 	// THIS IS WERE WE STORE HEADERS
@@ -250,7 +250,7 @@ int file_exists_in_tar(char * path, char * tar){
 
 				perror("reading tar file");
 				close(fd);
-				return -1;
+				return 0;
 			}
 
 
@@ -522,7 +522,7 @@ char ** tar_and_path(char *p){
 	free(tokens);
 	//We make a " char ** tokens3" where we stock "tar" in tokens3[0]
 	//and "path" in tokens3[1];
-	char ** tokens3= (char **) calloc(2,sizeof(char *));
+	char ** tokens3= (char **) calloc(3,sizeof(char *));
 
 
 	tokens3[0] = tar;
@@ -589,7 +589,7 @@ int tar_vers_ext_cp(char *argv[]){
     //IF WE REACHED THE END OF THE TAR WITHOUT FINDING THE GOOD HEADER
 
     if((hd.name[0]=='\0')){
-      print_error(NULL,path,"No such file or directory");
+      
       return -2;
     }
 
@@ -911,24 +911,30 @@ int ext_vers_tar_cp(char *argv[]){
   }
 
 
-  char buff [fsize];
+	char buff [BLOCKSIZE];
+	memset(buff,0,BLOCKSIZE);
+	int rdtmp=0;
 
-    int rdtmp = read(fd2,buff, fsize);
-    //EROR MANAGMENT
+	do{
+	    rdtmp = read(fd2,buff, BLOCKSIZE);
+	    //EROR MANAGMENT
 
-    if(rdtmp<0){
-      print_error(NULL,NULL,"Reading tar file");
-      exit(-1);
-    }
+	    if(rdtmp<0){
+	      print_error(NULL,NULL,"Reading tar file");
+	      exit(-1);
+	    }
 
-    //WRITING THE BLOCK AND ERROR MANGEMENT
+	    //WRITING THE BLOCK AND ERROR MANGEMENT
 
-    if(write(fd,buff, fsize)<0){
+	    if(write(fd,buff, BLOCKSIZE)<0){
 
-      print_error(NULL,NULL,"Writing file content");
-      exit(-1);
+	      print_error(NULL,NULL,"Writing file content");
+	      exit(-1);
 
-    }
+	    }
+		memset(buf,0,BLOCKSIZE);
+		
+	}while(rdtmp>0);
 
     //RESETING THE BUFFER
 
@@ -953,4 +959,5 @@ int ext_vers_tar_cp(char *argv[]){
   close (fd2);
   return 0;
 }
+
 
