@@ -47,10 +47,10 @@ int rmtar(char *argv){
 	 free(ar);
 	  // OPENING THE TAR FILE
 	  fd=open(tar,O_RDWR);
-		free(tar);
+
 
 	  if(fd < 0){
-	    perror("\033[1;31mErreur lors de l'ouverture du tar\033[0m");
+	    print_error("rm ",tar," error lors de l'ouverture du tar");
 	    exit(-1);
 	  }
 
@@ -89,7 +89,7 @@ int rmtar(char *argv){
 
 				int rdcount = read(fd,&tampon, BLOCKSIZE);
 				if(rdcount<0){
-					perror("\033[1;31mErreur lors de la lecture du tar\033[0m");
+					print_error("rm ",tar," error lors de la lecture du tar");
 					close(fd);
 					exit(-1);
 				}
@@ -183,7 +183,7 @@ int rmtar(char *argv){
 
 				int rd = read(fd, &mem, dep);
 				if(rd<0){
-					perror("\033[1;31mErreur lors de la lecture du tar\033[0m");
+					print_error("rm ",tar," error lecture du tar");
 					close(fd);
 					exit(-1);
 				}
@@ -193,11 +193,11 @@ int rmtar(char *argv){
 				lseek(fd, longueur, SEEK_SET);
 				int wr = write(fd, &mem, dep);
 				if(wr<0){
-					perror("\033[1;31mErreur lors de l'écriture du tar\033[0m");
+					print_error("rm ",tar," error lors de l'écriture dans tar");
 					close(fd);
 					exit(-1);
 				}
-
+				free(tar);
 				ftruncate(fd, longueur+dep);
 			}
 
@@ -210,7 +210,7 @@ int rmtar(char *argv){
 
 	free(arg);
 	close(fd);
-	exit(0);
+	return (0);
 }
 
 //COPY A FILE FROM A TAR TO A REP OUTSIDE THE TAR
@@ -225,12 +225,12 @@ int tar_vers_ext(char *argv[]){
   char ** arg = tar_and_path(argv[1]);
 
 	if (arg[0] == NULL){
-		print_error("cp : '",argv[1],"' Problem with argv 1");
+		print_error("mv : '",argv[1],"' Problem with argv 1");
 		exit(-1);
 	}
 
 	if (arg[1] == NULL){
-		print_error("cp : '",argv[1],"' Problem with argv 1");
+		print_error("mv : '",argv[1],"' Problem with argv 1");
 		exit(-1);
 	}
 
@@ -417,12 +417,12 @@ int ext_vers_tar(char *argv[]){
   //from tar_and_path
   char ** arg = tar_and_path(argv[2]);
 	if (arg[0] == NULL){
-		print_error("cp : '",argv[2],"' Problem with argv 1");
+		print_error("mv : '",argv[2],"' Problem with argv 1");
 		exit(-1);
 	}
 
 	if (arg[1] == NULL){
-		print_error("cp : '",argv[2],"' Problem with argv 1");
+		print_error("mv : '",argv[2],"' Problem with argv 1");
 		exit(-1);
 	}
 
@@ -468,9 +468,13 @@ int ext_vers_tar(char *argv[]){
 
     //IF WE REACHED THE END OF THE TAR WITHOUT FINDING THE HEADER THEN IT DOESNT EXIST AND WE CAN CREATE IT
 
-    if(strcmp(hd.name,path) == 0){
-      break;
+		if(strcmp(hd.name,path) == 0){
+			rmtar(path);
+			ext_vers_tar(argv);
+			close(fd);
+			return 0;
     }
+
 
     if((hd.name[1]=='\0')){
       break;
@@ -658,12 +662,12 @@ int tar_vers_tar(char *argv[]){
 
   char ** arg = tar_and_path(argv[1]);
 	if (arg[0] == NULL){
-		print_error("cp : '",argv[1],"' Problem with argv 1");
+		print_error("mv : '",argv[1],"' Problem with argv 1");
 		exit(-1);
 	}
 
 	if (arg[1] == NULL){
-		print_error("cp : '",argv[1],"' Problem with argv 1");
+		print_error("mv : '",argv[1],"' Problem with argv 1");
 		exit(-1);
 	}
 
@@ -676,7 +680,7 @@ int tar_vers_tar(char *argv[]){
 
   char ** arg2 = tar_and_path(argv[2]);
 	if (arg[0] == NULL){
-		print_error("cp : '",argv[2],"' Problem with argv 1");
+		print_error("mv : '",argv[2],"' Problem with argv 1");
 		exit(-1);
 	}
 
@@ -766,8 +770,11 @@ int tar_vers_tar(char *argv[]){
 
     //IF WE REACHED THE END OF THE TAR WITHOUT FINDING THE HEADER THEN IT DOESNT EXIST AND WE CAN CREATE IT
 
-    if(strcmp(hd2.name,path2) == 0){
-      break;
+		if(strcmp(hd2.name,path2) == 0){
+			rmtar(path2);
+			ext_vers_tar(argv);
+			close(fd2);
+			return 0;
     }
 
     if((hd2.name[1]=='\0')){
@@ -900,8 +907,7 @@ int tar_vers_tar(char *argv[]){
    memset(rd, 0, BLOCKSIZE);
 
   }
-		rmtar(path);
-	  free(path);
+
 
 
   memset(buff,0,BLOCKSIZE);
@@ -923,6 +929,9 @@ int tar_vers_tar(char *argv[]){
 
   close (fd);
   close (fd2);
+	rmtar(path);
+	free(path);
+	prints("yep");
   return 0;
 }
 
@@ -951,7 +960,10 @@ int main (int argc, char *argv[]){
 
 
   if (argc == 3){
-
+		if (strcmp(true_path(argv[1]),true_path(argv[2])) == 0){
+					print_error("mv ", "argv[1] et  argv[2] ", "identifient le même fichier  ");
+					exit (-1);
+				}
     //if argv1 is not inside a tar and argv2 is insiede a tar call ext_vers_tar
     if((string_contains_tar(path1) == 0) && (string_contains_tar(path2) == 1)){
       ext_vers_tar(argv);

@@ -13,7 +13,209 @@
 #include <dirent.h>
 #include <libgen.h>
 #include <limits.h>
+#include "lib.h"
 
+int rmtar(char *argv){
+
+	// ======================================================================
+	// 	 			INITIALISATION
+	// ======================================================================
+
+
+
+	// S'il y a l'option "-r"
+	int r = 0;
+
+	// ======================================================================
+	// 			      OUVERTURE DU TAR
+	// ======================================================================
+
+	struct posix_header * p_hdr;
+	char tampon[512];
+	int fd;
+	// ======================================================================
+	// 	 	    PARCOURS DU TAR POUR CHAQUE ARGUMENT
+	// ======================================================================
+
+
+
+		//we get the tar to open and the path for the file
+		//from tar_and_path
+		char ** ar = tar_and_path(argv);
+
+ 	 char * tar = malloc(strlen(ar[0])+sizeof(char));
+ 	 strcpy (tar,ar[0]);
+ 	 char * path = malloc(strlen(ar[1])+sizeof(char));
+ 	 strcpy (path,ar[1]);
+	 free(ar);
+	  // OPENING THE TAR FILE
+	  fd=open(tar,O_RDWR);
+
+
+	  if(fd < 0){
+	    print_error("rm ",tar," error ouverture du tar");
+	    exit(-1);
+	  }
+
+
+		int valide = 0;			// 0: fichier ne peut pas etre supprime
+						// 1: le fichier peut etre supprime
+
+		char * fich = NULL;		// Nom du fichier
+		int rep = 0;			// c'est un repertoire
+		unsigned int size;		// Taille du fichier
+		off_t longueur = 0;		// Somme de la taille des fichiers avant le repertoire
+		off_t supp = 0;			// Somme de la taille du repertoire et de ses fichiers
+		off_t dep = 0;			// Somme de la taille des fichiers apres le repertoire
+		char * arg;				// argv[i] adapte au tar et la variable d'environnement
+
+		// On evite "-r"
+		if(strcmp(argv, "-r") != 0) {
+
+			// ----------------------------------------------------------------------
+			// 	 	     		FICHIER A SUPPRIMER
+			// ----------------------------------------------------------------------
+
+			// Si un repertoire est entre sans '/'
+			arg = malloc(strlen(path) + 1);
+
+			strcpy(arg,path);
+
+			free(path);
+
+			// ----------------------------------------------------------------------
+			// 	 		       PARCOURS DU TAR
+			// ----------------------------------------------------------------------
+
+			while(1) {
+
+				// Lecture du bloc
+
+				int rdcount = read(fd,&tampon, BLOCKSIZE);
+				if(rdcount<0){
+					print_error("rm ",tar," erreur lors de la lecture du tar");
+					close(fd);
+					exit(-1);
+				}
+
+				// Extraction des informations
+
+				p_hdr = (struct posix_header*)tampon;
+				sscanf(p_hdr->size, "%o",&size);
+
+				// On arrive a la fin au bloc nul
+
+				if(strlen(p_hdr-> name) == 0) {
+					if (fich == NULL) {
+						print_error("rm: impossible de supprimer '", argv, "': Aucun fichier ou dossier de ce type\n");
+						break;
+					}
+					else {
+						if(rep == 1 && r == 0) {
+							print_error("rm: impossible de supprimer '", argv, "': est un dossier\n");
+							break;
+						}
+						else {
+							valide = 1;
+							dep = dep + BLOCKSIZE;
+							break;
+						}
+					}
+				}
+
+				// Si on trouve le fichier
+
+				char * name;
+
+				// Si l'argument entree est un repertoire sans '/' a la fin
+				if(p_hdr-> typeflag == '5' && arg[strlen(arg) - 1] != '/') {
+					name = malloc(strlen(arg) + 2);
+					strcpy(name, arg);
+					strcat(name, "/");
+				}
+				// Sinon on ne change pas arg
+				else {
+					name = malloc(strlen(arg) + 1);
+					strcpy(name, arg);
+				}
+
+				// Comparaison
+				if(strcmp(p_hdr -> name, name) == 0) {
+					if(p_hdr-> typeflag == '5')
+						rep = 1;
+					fich = malloc(strlen(p_hdr->name) + 1);
+					strcpy(fich, p_hdr->name);
+				}
+
+				// Stockage des octets a utiliser lors de la suppresion
+
+				if(fich != NULL) {
+					// Le repertoire et ses fichiers a supprimer
+					if(r == 1 && estDansRep(p_hdr-> name, fich) == 1)
+						supp = supp + BLOCKSIZE + (((size+ BLOCKSIZE - 1) >> BLOCKBITS)*BLOCKSIZE);
+
+					// Le fichier a supprimer
+					else if(r == 0 && strcmp(p_hdr -> name, arg) == 0)
+						supp = supp + BLOCKSIZE + (((size+ BLOCKSIZE - 1) >> BLOCKBITS)*BLOCKSIZE);
+
+					// Toutes donnees se situant apres le repertoire
+					else
+						dep = dep + BLOCKSIZE + (((size+ BLOCKSIZE - 1) >> BLOCKBITS)*BLOCKSIZE);
+				}
+				// Toutes donnees avant d'avoir trouve le repertoire
+				else
+					longueur = longueur + BLOCKSIZE + (((size+ BLOCKSIZE - 1) >> BLOCKBITS)*BLOCKSIZE);
+
+				// On passe a l'entete suivante
+
+				lseek(fd,((size+ BLOCKSIZE - 1) >> BLOCKBITS)*BLOCKSIZE,SEEK_CUR);
+
+			}
+
+			// ----------------------------------------------------------------------
+			// 	 		  TRAITEMENT DU REPERTOIRE
+			// ----------------------------------------------------------------------
+
+			if (valide == 1) {
+
+				// On stocke les donnees a deplacer apres la suppression du repertoire
+				// Rappel : le 1er bloc nul a ete lu dans la boucle
+
+				lseek(fd, -dep, SEEK_CUR);
+				dep = dep + BLOCKSIZE;
+				char mem[dep];
+
+				int rd = read(fd, &mem, dep);
+				if(rd<0){
+					print_error("rm ",tar," error lecture du tar");
+					close(fd);
+					exit(-1);
+				}
+
+				// On supprime le repertoire
+
+				lseek(fd, longueur, SEEK_SET);
+				int wr = write(fd, &mem, dep);
+				if(wr<0){
+					print_error("rm ",tar," error écriture dans le tar");
+					close(fd);
+					exit(-1);
+				}
+				free(tar);
+				ftruncate(fd, longueur+dep);
+			}
+
+			// Retour au depart
+
+			lseek(fd,0,SEEK_SET);
+			close(fd);
+
+		}
+
+	free(arg);
+	close(fd);
+	return (0);
+}
 
 void create_dir(int fd ,char * path){
 
@@ -462,7 +664,10 @@ int ext_vers_tar(char *argv[]){
     //IF WE REACHED THE END OF THE TAR WITHOUT FINDING THE HEADER THEN IT DOESNT EXIST AND WE CAN CREATE IT
 
     if(strcmp(hd.name,path) == 0){
-      break;
+			rmtar(path);
+			ext_vers_tar(argv);
+			close(fd);
+			return 0;
     }
 
     if((hd.name[1]=='\0')){
@@ -760,9 +965,12 @@ int tar_vers_tar(char *argv[]){
 
     //IF WE REACHED THE END OF THE TAR WITHOUT FINDING THE HEADER THEN IT DOESNT EXIST AND WE CAN CREATE IT
 
-    if(strcmp(hd2.name,path2) == 0){
-      break;
-    }
+		if(strcmp(hd2.name,path2) == 0){
+			rmtar(path2);
+			tar_vers_tar(argv);
+			close(fd);
+			return 0;
+		}
 
     if((hd2.name[1]=='\0')){
       break;
@@ -1321,6 +1529,10 @@ int main (int argc, char *argv[]){
 
 
   if (argc == 3){
+		if (strcmp(true_path(argv[1]),true_path(argv[2])) == 0){
+			print_error("cp ", "argv[1] et  argv[2] ", "identifient le même fichier  ");
+			exit (-1);
+		}
     //Get a variable containing argv[1]
      char *test = malloc(strlen(argv[1])+sizeof(char));
      strcpy (test,argv[1]);
@@ -1367,6 +1579,10 @@ int main (int argc, char *argv[]){
   }
 
   if (argc == 4 && (strcmp(argv[1],"-r") == 0)){
+		if (strcmp(true_path(argv[2]),true_path(argv[3])) == 0){
+			print_error("cp ", "argv[1] et  argv[2] ", "identifient le même fichier  ");
+			exit (-1);
+		}
 
     //Get a variable containing argv[1]
      char *test = malloc(strlen(argv[2])+sizeof(char));
