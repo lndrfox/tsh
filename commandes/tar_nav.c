@@ -7,9 +7,13 @@
 #include <dirent.h>
 #include <unistd.h>
 #include <limits.h>
+#include <grp.h>
+#include <time.h>
+
 #include "tar.h"
 #include "print.h"
 #include "tar_nav.h"
+#include "lib.h"
 
 
 
@@ -540,12 +544,18 @@ int tar_vers_ext_cp(char *argv[]){
   //we get the tar to open and the path for the file
   //from tar_and_path
   char ** arg = tar_and_path(argv[1]);
-
   char * tar = malloc(strlen(arg[0])+sizeof(char));
   strcpy (tar,arg[0]);
+
+  if(arg[1]==NULL){
+
+  		print_error(NULL,argv[1],"No such file or directory");
+  		free(arg);
+  		return -1;
+  }
+
   char * path = malloc(strlen(arg[1])+sizeof(char));
   strcpy (path,arg[1]);
-
   free(arg);
 
   // OPENING THE TAR FILE
@@ -573,14 +583,14 @@ int tar_vers_ext_cp(char *argv[]){
 
       print_error(NULL,NULL,"reading tar file");
       close(fd);
-      return -1;
+     exit (-1);
     }
 
     //IF WE REACHED THE END OF THE TAR WITHOUT FINDING THE GOOD HEADER
 
     if((hd.name[0]=='\0')){
       print_error(NULL,path,"No such file or directory");
-      return -1;
+      return -2;
     }
 
     //READONG THE SIZE OF THE FILE CORRESPONDING TO THE CURRENT HEADER
@@ -700,5 +710,247 @@ int tar_vers_ext_cp(char *argv[]){
   close(fd2);
 
 return 0;
+}
+
+void set_checksum_cp(struct posix_header *hd) {
+  memset(hd->chksum,' ',8);
+  unsigned int sum = 0;
+  char *p = (char *)hd;
+  for (int i=0; i < BLOCKSIZE; i++) { sum += p[i]; }
+  sprintf(hd->chksum,"%06o",sum);
+}
+
+/* Check that the checksum of a header is correct */
+
+int check_checksum_cp(struct posix_header *hd) {
+  unsigned int checksum;
+  sscanf(hd->chksum,"%o ", &checksum);
+  unsigned int sum = 0;
+  char *p = (char *)hd;
+  for (int i=0; i < BLOCKSIZE; i++) { sum += p[i]; }
+  for (int i=0;i<8;i++) { sum += ' ' - hd->chksum[i]; }
+  return (checksum == sum);
+}
+
+//COPY A FILE FROM OUTSIDE OF THE TAR  INTO A TAR
+int ext_vers_tar_cp(char *argv[]){
+
+  char buf [BLOCKSIZE];
+
+  struct posix_header hd; //Header for the tar
+
+  unsigned int size; //Size of the file that will be initialized later
+
+  //we get the tar to open and the path for the file
+  //from tar_and_path
+  char ** arg = tar_and_path(argv[2]);
+
+  char * tar = malloc(strlen(arg[0])+sizeof(char));
+  strcpy (tar,arg[0]);
+  char * path = malloc(strlen(arg[1])+sizeof(char));
+  strcpy (path,arg[1]);
+
+  free(arg);
+
+  // OPENING THE TAR FILE
+
+  int fd=open(tar,O_RDWR);
+	free(tar);
+
+  if(fd <0){
+    print_error(NULL,argv[2],"Problem with argv 2");
+    exit(-1);
+  }
+
+  int fd2 = open(true_path(argv[1]), O_RDONLY);
+
+  if(fd2<0){
+    print_error(NULL, argv[1] ,"Aucun fichier ou dossier de ce type\n");
+    exit(-1);
+  }
+
+
+  // THIS LOOP ALLOWS US TO GO TO THE END OF THE TAR
+  do{
+
+    // READING AN HEADER
+
+    int rdcount=read(fd,&hd,BLOCKSIZE);
+
+    //ERROR MANAGMENT
+
+    if(rdcount<0){
+      print_error(NULL,tar," reading tar file");
+      close(fd);
+      exit (-1);
+    }
+
+    //IF WE REACHED THE END OF THE TAR WITHOUT FINDING THE HEADER THEN IT DOESNT EXIST AND WE CAN CREATE IT
+
+    if(strcmp(hd.name,path) == 0){
+      break;
+    }
+
+    if((hd.name[1]=='\0')){
+      break;
+    }
+
+
+    //READING THE SIZE OF THE FILE CORRESPONDING TO THE CURRENT HEADER
+
+    sscanf(hd.size, "%o",&size);
+
+    //WE GET TO THE NEXT HEADER
+
+    lseek(fd,((size+ BLOCKSIZE - 1) >> BLOCKBITS)*BLOCKSIZE,SEEK_CUR);
+
+
+  }while(hd.name[1]!=0);//While the header is not at the end block of 0
+
+
+  struct posix_header temporaire;//The 'entete' we will put at the end of the tar
+
+
+  //INIT STRUCT MEMORY
+
+  memset(&temporaire,0,BLOCKSIZE);
+
+  //Naming the file as argv[3]
+
+  sprintf(temporaire.name,"%s",path);
+  free(path);
+
+
+  //FILLING MODE
+  struct stat f;
+  stat(true_path(argv[1]),&f);
+ 	sprintf(temporaire.mode,"%7o", f.st_mode);
+
+
+ //SIZE BECOME THE SIZE OF THE COPIED FILE
+
+  unsigned int fsize;//Size of the file that will be initialized later
+  fsize = lseek(fd2,0,SEEK_END);//GET FILE SIZE
+
+
+  //SETTING THE ENTETE SIZE AS THE SAME OF THE COPIED FILE
+
+  sprintf(temporaire.size,"%011o",fsize);
+  lseek(fd2,0,SEEK_SET);//RESETING fd2 OFFSET
+
+  // LAST MODIFICATION DATE
+
+  unsigned int  t_acc= time(NULL);
+  sprintf(temporaire.mtime ,"%o", t_acc);
+
+
+  //FILLING MAGIC FIELD
+
+
+ sprintf(temporaire.magic,TMAGIC);
+
+
+ //Typeflag
+  if(S_ISREG(f.st_mode)){
+ 	 temporaire.typeflag = '0';
+ 	 }
+ //LINKNAME
+  if(S_ISLNK(f.st_mode)){
+ 	 temporaire.typeflag = '2';
+  }
+  if(S_ISCHR(f.st_mode) != 0){
+ 	 temporaire.typeflag = '3';
+  }
+  if(S_ISBLK(f.st_mode) != 0){
+ 	 temporaire.typeflag = '4';
+  }
+  if(S_ISFIFO(f.st_mode) != 0){
+ 	 temporaire.typeflag = 54 ;
+  }
+
+ // VERSION
+
+ sprintf(temporaire.version,TVERSION);
+
+ //USER NAME
+
+ getlogin_r(temporaire.uname, sizeof(temporaire.uname));
+
+ //GETTING GROUP NAME
+
+ gid_t gid= getgid();
+ struct group * g= getgrgid(gid);
+
+ //ERROR MANAGMENT
+
+ if(g==NULL){
+   print_error(NULL,NULL,"Reading group ID");
+   exit(-1);
+ }
+ sprintf(temporaire.gname,"%s",g->gr_name);
+
+ //SETTING CHECKSUM ONCE ALL THE OTHER FIELDS ARE FILLED
+
+ set_checksum_cp(&temporaire);
+ check_checksum_cp(&temporaire);
+
+ // SINCE WE READ THE FIRST EMPTY BLOCK (TAR ENDS WITH 2 EMPTY BLOCKS) TO CHECK IF WE HAD READ ALL OF THE HEADERS
+ // WE NEED TO GO BACK ONE BLOCK
+
+ lseek(fd,-512,SEEK_CUR);
+
+ //WRITING THE NEW DIRECTORY AT THE END OF THE FILE
+
+
+  int rddd=write(fd,&temporaire,BLOCKSIZE);
+
+  if(rddd<BLOCKSIZE){
+
+    print_error(NULL,NULL,"Error writing in file");
+    exit(-1);
+  }
+
+
+  char buff [fsize];
+
+    int rdtmp = read(fd2,buff, fsize);
+    //EROR MANAGMENT
+
+    if(rdtmp<0){
+      print_error(NULL,NULL,"Reading tar file");
+      exit(-1);
+    }
+
+    //WRITING THE BLOCK AND ERROR MANGEMENT
+
+    if(write(fd,buff, fsize)<0){
+
+      print_error(NULL,NULL,"Writing file content");
+      exit(-1);
+
+    }
+
+    //RESETING THE BUFFER
+
+
+  memset(buf,0,BLOCKSIZE);
+
+  for(int i=0;i<2;i++){
+
+    int rdd=write(fd,buf,BLOCKSIZE);
+
+
+    if(rdd<BLOCKSIZE){
+
+      print_error(NULL,NULL,"Error writing in file2");
+      exit(-1);
+    }
+
+  }
+
+  lseek(fd,0,SEEK_SET);
+  close (fd);
+  close (fd2);
+  return 0;
 }
 
