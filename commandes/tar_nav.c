@@ -788,7 +788,7 @@ int ext_vers_tar_cp(char *argv[]){
     //IF WE REACHED THE END OF THE TAR WITHOUT FINDING THE HEADER THEN IT DOESNT EXIST AND WE CAN CREATE IT
 
     if(strcmp(hd.name,path) == 0){
-      break;
+      	return -1;
     }
 
     if((hd.name[1]=='\0')){
@@ -897,7 +897,7 @@ int ext_vers_tar_cp(char *argv[]){
  // SINCE WE READ THE FIRST EMPTY BLOCK (TAR ENDS WITH 2 EMPTY BLOCKS) TO CHECK IF WE HAD READ ALL OF THE HEADERS
  // WE NEED TO GO BACK ONE BLOCK
 
- lseek(fd,-512,SEEK_CUR);
+ lseek(fd,-BLOCKSIZE,SEEK_CUR);
 
  //WRITING THE NEW DIRECTORY AT THE END OF THE FILE
 
@@ -915,9 +915,9 @@ int ext_vers_tar_cp(char *argv[]){
 	memset(buff,0,BLOCKSIZE);
 	int rdtmp=0;
 
-	do{
+	do{	
 	    rdtmp = read(fd2,buff, BLOCKSIZE);
-	    //EROR MANAGMENT
+	    //ERROR MANAGMENT
 
 	    if(rdtmp<0){
 	      print_error(NULL,NULL,"Reading tar file");
@@ -932,8 +932,8 @@ int ext_vers_tar_cp(char *argv[]){
 	      exit(-1);
 
 	    }
-		memset(buf,0,BLOCKSIZE);
-		
+		memset(buff,0,BLOCKSIZE);
+
 	}while(rdtmp>0);
 
     //RESETING THE BUFFER
