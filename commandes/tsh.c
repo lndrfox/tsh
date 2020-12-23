@@ -330,7 +330,7 @@ char * redir_out(char * prompt){
 
 			char ** tp=tar_and_path(path);
 
-			if(file_exists_in_tar(tp[1],tp[0])){
+			if(file_ndir_exists_in_tar(tp[1],tp[0])){
 
 				char * rm[3];
 				rm[0]="rm";
