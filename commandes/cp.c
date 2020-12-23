@@ -213,6 +213,16 @@ int tar_vers_ext(char *argv[]){
   //from tar_and_path
   char ** arg = tar_and_path(argv[1]);
 
+	if (arg[0] == NULL){
+		print_error("cp : '",argv[1],"' Problem with argv 1");
+		exit(-1);
+	}
+
+	if (arg[1] == NULL){
+		print_error("cp : '",argv[1],"' Problem with argv 1");
+		exit(-1);
+	}
+
   char * tar = malloc(strlen(arg[0])+sizeof(char));
   strcpy (tar,arg[0]);
   char * path = malloc(strlen(arg[1])+sizeof(char));
@@ -397,10 +407,22 @@ int ext_vers_tar(char *argv[]){
   //from tar_and_path
   char ** arg = tar_and_path(argv[2]);
 
+	if (arg[0] == NULL){
+		print_error("cp : '",argv[2],"' Problem with argv 2");
+    exit(-1);
+	}
+
+	if (arg[1] == NULL){
+		print_error("cp : '",argv[2],"' Problem with argv 2");
+		exit(-1);
+	}
+
   char * tar = malloc(strlen(arg[0])+sizeof(char));
   strcpy (tar,arg[0]);
+
   char * path = malloc(strlen(arg[1])+sizeof(char));
   strcpy (path,arg[1]);
+
 
   free(arg);
 
@@ -562,9 +584,10 @@ int ext_vers_tar(char *argv[]){
   }
 
 
-  char buff [fsize];
-
-    int rdtmp = read(fd2,buff, fsize);
+  char buff [BLOCKSIZE];
+	memset(buff,0,BLOCKSIZE);
+for(unsigned int i=0; i<((fsize+ BLOCKSIZE - 1) >> BLOCKBITS);i++){
+    int rdtmp = read(fd2,buff, BLOCKSIZE);
     //EROR MANAGMENT
 
     if(rdtmp<0){
@@ -574,13 +597,14 @@ int ext_vers_tar(char *argv[]){
 
     //WRITING THE BLOCK AND ERROR MANGEMENT
 
-    if(write(fd,buff, fsize)<0){
+    if(write(fd,buff, BLOCKSIZE)<0){
 
       print_error(NULL,NULL,"Writing file content");
       exit(-1);
 
     }
-
+		  memset(buf,0,BLOCKSIZE);
+}
     //RESETING THE BUFFER
 
 
@@ -624,6 +648,15 @@ int tar_vers_tar(char *argv[]){
   unsigned int size2;
 
   char ** arg = tar_and_path(argv[1]);
+	if (arg[0] == NULL){
+		print_error("cp : '",argv[1],"' Problem with argv 1");
+		exit(-1);
+	}
+
+	if (arg[1] == NULL){
+		print_error("cp : '",argv[1],"' Problem with argv 1");
+		exit(-1);
+	}
 
   char * tar = malloc(strlen(arg[0])+sizeof(char));
   strcpy (tar,arg[0]);
@@ -633,6 +666,15 @@ int tar_vers_tar(char *argv[]){
   free(arg);
 
   char ** arg2 = tar_and_path(argv[2]);
+	if (arg[0] == NULL){
+		print_error("cp : '",argv[2],"' Problem with argv 2");
+		exit(-1);
+	}
+
+	if (arg[1] == NULL){
+		print_error("cp : '",argv[2],"' Problem with argv 2");
+		exit(-1);
+	}
 
   char * tar2 = malloc(strlen(arg2[0])+sizeof(char));
   strcpy (tar2,arg2[0]);
@@ -1315,8 +1357,13 @@ int main (int argc, char *argv[]){
       tar_vers_tar(argv);
     }
 
-    free(path1);
-    free(path2);
+		else {
+			free(path1);
+	    free(path2);
+			return -1;
+		}
+
+
     return 0;
     //Get a variable containing argv[1]
   }
@@ -1361,14 +1408,19 @@ int main (int argc, char *argv[]){
        if((string_contains_tar(path1) == 1) && (string_contains_tar(path2) == 1)){
        	cp_r_tvt(argv);
        }
+			 else {
+				 free(path1);
+		     free(path2);
+		     print_error("cp: ",NULL," invalid argument \n");
+		     return -1;
+		   }
 
-       free(path1);
-       free(path2);
+
        return 0;
 
 
   }
-  else if (argc < 3){
+  else if (argc < 3 || argc > 5){
     print_error("cp: ",NULL," opérande de fichier manquant \n");
     return -1;
   }
