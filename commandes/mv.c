@@ -469,11 +469,7 @@ int ext_vers_tar(char *argv[]){
     //IF WE REACHED THE END OF THE TAR WITHOUT FINDING THE HEADER THEN IT DOESNT EXIST AND WE CAN CREATE IT
 
     if(strcmp(hd.name,path) == 0){
-      break;
-    }
-
-    if((hd.name[1]=='\0')){
-      break;
+      rmtar(path);
     }
 
 
@@ -486,7 +482,7 @@ int ext_vers_tar(char *argv[]){
     lseek(fd,((size+ BLOCKSIZE - 1) >> BLOCKBITS)*BLOCKSIZE,SEEK_CUR);
 
 
-  }while(hd.name[1]!=0);//While the header is not at the end block of 0
+  }while(hd.name[0]!='\0');//While the header is not at the end block of 0
 
 
   struct posix_header temporaire;//The 'entete' we will put at the end of the tar
@@ -767,13 +763,8 @@ int tar_vers_tar(char *argv[]){
     //IF WE REACHED THE END OF THE TAR WITHOUT FINDING THE HEADER THEN IT DOESNT EXIST AND WE CAN CREATE IT
 
     if(strcmp(hd2.name,path2) == 0){
-      break;
+      rmtar(path2);
     }
-
-    if((hd2.name[1]=='\0')){
-      break;
-    }
-
 
     //READING THE SIZE OF THE FILE CORRESPONDING TO THE CURRENT HEADER
 
@@ -784,7 +775,7 @@ int tar_vers_tar(char *argv[]){
     lseek(fd2,((size2+ BLOCKSIZE - 1) >> BLOCKBITS)*BLOCKSIZE,SEEK_CUR);
 
 
-  }while(hd2.name!=0);
+  }while(hd2.name[0]!='\0');
 	sscanf(hd.size, "%o",&size);
 
 

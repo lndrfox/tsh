@@ -21,7 +21,7 @@ cd.o: cd.c cd.h
 tsh: tsh.o tar_nav.o print.o cd.o
 	$(CC) -o $@ $^ $(LDFLAGS) -lreadline
 
-tsh.o: tsh.c  cd.h 
+tsh.o: tsh.c  cd.h
 	$(CC) -o $@ -c $< $(CFLAGS)
 
 lib.o: lib.c lib.h
@@ -30,44 +30,44 @@ lib.o: lib.c lib.h
 ls: ls.o tar.o print.o lib.o tar_nav.o
 	$(CC) -o $@ $^ $(LDFLAGS)
 
-ls.o: ls.c 
+ls.o: ls.c
 	$(CC) -o $@ -c $< $(CFLAGS)
 
-cp: cp.o tar.o print.o tar_nav.o
+cp: cp.o tar.o print.o tar_nav.o lib.o
 	$(CC) -o $@ $^ $(LDFLAGS)
 
-cp.o: cp.c 
+cp.o: cp.c
 	$(CC) -o $@ -c $< $(CFLAGS)
 
 mv: mv.o tar.o print.o tar_nav.o lib.o
 	$(CC) -o $@ $^ $(LDFLAGS)
 
-mv.o: mv.c 
+mv.o: mv.c
 	$(CC) -o $@ -c $< $(CFLAGS)
 
 
-cat: cat.o tar_nav.o tar.o print.o 
+cat: cat.o tar_nav.o tar.o print.o
 	$(CC) -o $@ $^ $(LDFLAGS)
 
-cat.o: cat.c 
+cat.o: cat.c
 	$(CC) -o $@ -c $< $(CFLAGS)
 
 mkdir: mkdir.o tar.o print.o tar_nav.o print.o
 	$(CC) -o $@ $^ $(LDFLAGS)
 
-mkdir.o: mkdir.c 
+mkdir.o: mkdir.c
 	$(CC) -o $@ -c $< $(CFLAGS)
 
 rmdir: rmdir.o tar.o print.o lib.o tar_nav.o
 	$(CC) -o $@ $^ $(LDFLAGS)
 
-rmdir.o: rmdir.c 
+rmdir.o: rmdir.c
 	$(CC) -o $@ -c $< $(CFLAGS)
 
 rm: rm.o tar.o print.o lib.o tar_nav.o
 	$(CC) -o $@ $^ $(LDFLAGS)
 
-rm.o: rm.c 
+rm.o: rm.c
 	$(CC) -o $@ -c $< $(CFLAGS)
 
 clean:
