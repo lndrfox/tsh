@@ -14,6 +14,7 @@
 #include <libgen.h>
 #include <limits.h>
 #include "lib.h"
+
 int rmtar(char *argv){
 
 	// ======================================================================
@@ -49,12 +50,13 @@ int rmtar(char *argv){
 	 free(ar);
 	  // OPENING THE TAR FILE
 	  fd=open(tar,O_RDWR);
-		free(tar);
+
 
 	  if(fd < 0){
-	    perror("\033[1;31mErreur lors de l'ouverture du tar\033[0m");
+	    print_error("rm ",tar," error ouverture du tar");
 	    exit(-1);
 	  }
+
 
 		int valide = 0;			// 0: fichier ne peut pas etre supprime
 						// 1: le fichier peut etre supprime
@@ -91,7 +93,7 @@ int rmtar(char *argv){
 
 				int rdcount = read(fd,&tampon, BLOCKSIZE);
 				if(rdcount<0){
-					perror("\033[1;31mErreur lors de la lecture du tar\033[0m");
+					print_error("rm ",tar," erreur lors de la lecture du tar");
 					close(fd);
 					exit(-1);
 				}
@@ -185,7 +187,7 @@ int rmtar(char *argv){
 
 				int rd = read(fd, &mem, dep);
 				if(rd<0){
-					perror("\033[1;31mErreur lors de la lecture du tar\033[0m");
+					print_error("rm ",tar," error lecture du tar");
 					close(fd);
 					exit(-1);
 				}
@@ -195,11 +197,11 @@ int rmtar(char *argv){
 				lseek(fd, longueur, SEEK_SET);
 				int wr = write(fd, &mem, dep);
 				if(wr<0){
-					perror("\033[1;31mErreur lors de l'écriture du tar\033[0m");
+					print_error("rm ",tar," error écriture dans le tar");
 					close(fd);
 					exit(-1);
 				}
-
+				free(tar);
 				ftruncate(fd, longueur+dep);
 			}
 
@@ -212,7 +214,7 @@ int rmtar(char *argv){
 
 	free(arg);
 	close(fd);
-	exit(0);
+	return (0);
 }
 
 void create_dir(int fd ,char * path){
@@ -661,9 +663,16 @@ int ext_vers_tar(char *argv[]){
 
     //IF WE REACHED THE END OF THE TAR WITHOUT FINDING THE HEADER THEN IT DOESNT EXIST AND WE CAN CREATE IT
 
-				if(strcmp(hd.name,path) == 0){
-					break;
-				}
+    if(strcmp(hd.name,path) == 0){
+			rmtar(path);
+			ext_vers_tar(argv);
+			close(fd);
+			return 0;
+    }
+
+    if((hd.name[1]=='\0')){
+      break;
+    }
 
 
     //READING THE SIZE OF THE FILE CORRESPONDING TO THE CURRENT HEADER
@@ -952,9 +961,11 @@ int tar_vers_tar(char *argv[]){
     //IF WE REACHED THE END OF THE TAR WITHOUT FINDING THE HEADER THEN IT DOESNT EXIST AND WE CAN CREATE IT
 		sscanf(hd2.size, "%o",&size2);
 
-
 		if(strcmp(hd2.name,path2) == 0){
-			break;
+			rmtar(path2);
+			tar_vers_tar(argv);
+			close(fd);
+			return 0;
 		}
 
     if((hd2.name[1]=='\0')){
@@ -1516,7 +1527,6 @@ int main (int argc, char *argv[]){
 
 
   if (argc == 3){
-
 		if (strcmp(true_path(argv[1]),true_path(argv[2])) == 0){
 			print_error("cp ", "argv[1] et  argv[2] ", "identifient le même fichier  ");
 			exit (-1);
@@ -1567,6 +1577,10 @@ int main (int argc, char *argv[]){
   }
 
   if (argc == 4 && (strcmp(argv[1],"-r") == 0)){
+		if (strcmp(true_path(argv[2]),true_path(argv[3])) == 0){
+			print_error("cp ", "argv[1] et  argv[2] ", "identifient le même fichier  ");
+			exit (-1);
+		}
 
 				if (strcmp(true_path(argv[2]),true_path(argv[3])) == 0){
 					print_error("cp ", "argv[2] et  argv[3] ", "identifient le même fichier  ");

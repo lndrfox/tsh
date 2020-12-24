@@ -278,6 +278,66 @@ int file_exists_in_tar(char * path, char * tar){
 
 }
 
+/*CHECKS IF THE FILE PATH EXIST IN THE TAR FILE TAR*/
+
+int file_ndir_exists_in_tar(char * path, char * tar){
+
+
+	// OPENING THE TAR FILE
+
+	int fd=open(tar,O_RDONLY);
+
+	//ERROR MANAGMENT
+
+	if(fd==-1){
+		print_error(NULL,tar,"does not exist");
+		return 0;
+	}
+
+	// THIS IS WERE WE STORE HEADERS
+
+	struct posix_header hd;
+
+		do{
+
+			// READING AN HEADER
+
+			int rdcount=read(fd,&hd,BLOCKSIZE);
+
+			//ERROR MANAGMENT
+
+			if(rdcount<0){
+
+				perror("reading tar file");
+				close(fd);
+				return 0;
+			}
+
+
+			//IF WE FOUND THE HEADER
+
+			if(strcmp(hd.name,path)==0){
+
+				return 1;
+
+			}
+
+			//READING THE SIZE OF THE FILE CORRESPONDING TO THE CURRENT HEADER
+
+			unsigned int size;
+			sscanf(hd.size, "%o",&size);
+
+			//WE GET TO THE NEXT HEADER
+
+			lseek(fd,((size+ BLOCKSIZE - 1) >> BLOCKBITS)*BLOCKSIZE,SEEK_CUR);
+
+
+		}while(hd.name[0]!='\0');
+
+		return 0;
+
+}
+
 /*IF PATH IS A VALID PATH, RETURN A CHAR * WITH THE PATH ( WITH .. PROCESSED ) ELSE
 RETURNS NULL, IF WE SIMPLY NEED TO EXIT THE TAR, RETURNS ""*/
 
@@ -762,10 +822,10 @@ int ext_vers_tar_cp(char *argv[]){
     exit(-1);
   }
 
-  int fd2 = open(true_path(argv[1]), O_RDONLY);
+  int fd2 = open(argv[1], O_RDONLY);
 
   if(fd2<0){
-    print_error(NULL, argv[1] ,"Aucun fichier ou dossier de ce type\n");
+    print_error(NULL, argv[1] ,"iciAucun fichier ou dossier de ce type\n");
     exit(-1);
   }
 
