@@ -490,7 +490,7 @@ int ext_vers_tar(char *argv[]){
     lseek(fd,((size+ BLOCKSIZE - 1) >> BLOCKBITS)*BLOCKSIZE,SEEK_CUR);
 
 
-  }while(hd.name[1]!=0);//While the header is not at the end block of 0
+  }while(hd.name[0]!='\0');//While the header is not at the end block of 0
 
 
   struct posix_header temporaire;//The 'entete' we will put at the end of the tar
@@ -705,7 +705,7 @@ int tar_vers_tar(char *argv[]){
   free(tar2);
 
 
-  char rd [BLOCKSIZE] ;
+
   //OPENING FIRST TAR AND FINDING FILE
   do{
 
@@ -749,7 +749,6 @@ int tar_vers_tar(char *argv[]){
   }while(strcmp(hd.name,path)!=0);
 
 
-
   ////////////////////////////////////////////
   ////////////////////////////////////////////
   //OPENING SECOND TAR GO TO THE END
@@ -769,6 +768,7 @@ int tar_vers_tar(char *argv[]){
     }
 
     //IF WE REACHED THE END OF THE TAR WITHOUT FINDING THE HEADER THEN IT DOESNT EXIST AND WE CAN CREATE IT
+		sscanf(hd2.size, "%o",&size2);
 
 		if(strcmp(hd2.name,path2) == 0){
 			rmtar(path2);
@@ -784,7 +784,7 @@ int tar_vers_tar(char *argv[]){
 
     //READING THE SIZE OF THE FILE CORRESPONDING TO THE CURRENT HEADER
 
-    sscanf(hd2.size, "%o",&size2);
+
 
     //WE GET TO THE NEXT HEADER
 
@@ -863,6 +863,8 @@ int tar_vers_tar(char *argv[]){
  // SINCE WE READ THE FIRST EMPTY BLOCK (TAR ENDS WITH 2 EMPTY BLOCKS) TO CHECK IF WE HAD READ ALL OF THE HEADERS
  // WE NEED TO GO BACK ONE BLOCK
 
+
+
   lseek(fd2,-512,SEEK_CUR);
 
 
@@ -904,10 +906,9 @@ int tar_vers_tar(char *argv[]){
     }
 
 
-   memset(rd, 0, BLOCKSIZE);
+   memset(buff, 0, BLOCKSIZE);
 
   }
-
 
 
   memset(buff,0,BLOCKSIZE);
