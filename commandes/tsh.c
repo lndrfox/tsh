@@ -981,13 +981,16 @@ char ** split_args(char ** args){
 			BY A "."*/
 
 			if(strcmp(tmp,"")==0){
+
 				tmp=".";
 			}
 
 			token_out_tar[cpt_token_out_tar]=malloc(strlen(tmp)+sizeof(char));
 			strcpy(token_out_tar[cpt_token_out_tar],tmp);
 
-			free(tmp);
+			if(strcmp(tmp,".")!=0){
+				free(tmp);
+			}
 
 			cpt_token_out_tar++;
 
