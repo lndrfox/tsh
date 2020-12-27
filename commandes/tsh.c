@@ -324,27 +324,7 @@ char * redir_out(char * prompt){
 
 			}
 
-			/*WE CHECK IF THE FILE DID EXIST IN THE TAR BEFORE OR NOT
-			IF YES WE REMOVE IT FROM THE TAR SO THAT IT'S CONTENT CAN BE REPLACED
-			LATER ON BY WHAT IS IN REDIR_OUT/REDIR_ERR*/
 
-			char ** tp=tar_and_path(path);
-
-			if(file_ndir_exists_in_tar(tp[1],tp[0])){
-
-				char * rm[3];
-				rm[0]="rm";
-				rm[1]=path;
-				rm[2]=NULL;
-
-				exec_custom(rm,1);
-			}
-
-			/*WE FREE TP AS WE DON'T NEED IT ANYMORE*/
-
-			free(tp[0]);
-			free(tp[1]);
-			free(tp);
 
 			/*WE COPY PATH IN MV_OUT/MV_ERR, AS WE WILL USE MV_OUT 
 			IN THE FUNCTION REDIR TO COPY REDIR_OUT/REDIR_ERR PATH*/
@@ -674,6 +654,29 @@ void reinit_descriptors(){
 	TO THE MV_OUT SAVED PATH*/
 
 	if(mv_out!=NULL){	
+
+		/*WE CHECK IF THE FILE DID EXIST IN THE TAR BEFORE OR NOT
+		IF YES WE REMOVE IT FROM THE TAR SO THAT IT'S CONTENT CAN BE REPLACED
+		LATER ON BY WHAT IS IN REDIR_OUT/REDIR_ERR*/
+
+		char ** tp=tar_and_path(mv_out);
+
+		if(file_ndir_exists_in_tar(tp[1],tp[0])){
+
+			char * rm[3];
+			rm[0]="rm";
+			rm[1]=mv_out;
+			rm[2]=NULL;
+
+			exec_custom(rm,1);
+		}
+
+		/*WE FREE TP AS WE DON'T NEED IT ANYMORE*/
+
+		free(tp[0]);
+		free(tp[1]);
+		free(tp);
+
 		char *copy[4];
 		copy[0]="cp";
 		copy[1]="redir_out";
@@ -688,6 +691,29 @@ void reinit_descriptors(){
 	TO THE MV_ERR SAVED PATH*/
 
 	if(mv_err!=NULL){
+
+		/*WE CHECK IF THE FILE DID EXIST IN THE TAR BEFORE OR NOT
+		IF YES WE REMOVE IT FROM THE TAR SO THAT IT'S CONTENT CAN BE REPLACED
+		LATER ON BY WHAT IS IN REDIR_OUT/REDIR_ERR*/
+
+		char ** tp=tar_and_path(mv_err);
+
+		if(file_ndir_exists_in_tar(tp[1],tp[0])){
+
+			char * rm[3];
+			rm[0]="rm";
+			rm[1]=mv_err;
+			rm[2]=NULL;
+
+			exec_custom(rm,1);
+		}
+
+		/*WE FREE TP AS WE DON'T NEED IT ANYMORE*/
+
+		free(tp[0]);
+		free(tp[1]);
+		free(tp);
+
 
 		char *copy[4];
 		copy[0]="cp";
