@@ -12,7 +12,7 @@ Voici les fonctionnalités disponibles du tsh:
 
 * Fonctionnement normal des commandes lorsqu'on leur donne plusieurs arguments et que des tarballs sont impliqués ainsi que lorsqu'on on leur donne plusieurs arguments, certains impliquants des tarballs, d'autres non.
 
-* Fonctionnement des redirections `>` , `>>` , `2>` , `2>>` , `<` que des tarballs soient impliqués ou non. Fonctionnement des redirections multiples que des tarballs soient impliqués ou non.
+* Fonctionnement des redirections `>` , `>>` , `2>` , `2>>` , `<` que des tarballs soient impliqués ou non. Fonctionnement des redirections multiples uniquement lorsque les tarballs ne sont pas impliqués ( `commande > tata > toto `)
 
 * Fonctionnement normal des combinaisons de commande que des tarballs soient impliqué ou non, y compris plusieurs combinaisons de commandes à la suite.
 
@@ -46,6 +46,9 @@ Cette boucle va se répèter tant que nous trouvons un symbole `>` ou que nous n
 Le cas ou le fichier vers lequel la redirection doit avoir lieu se situe dans un tarball est un peu plus complexe. En effet, il est impossible de procèder à un simple open du fichier. Voici la stratégie que nous avons décidée d'adopter. Encore une fois nous nous attarderons plus longuement sur l'implémentation dans `redir_out()` car elle est très similaire à celle de `redir_in`. Lorsque la chaîne de caractère représentant le chemin vers lequel la redirecion doit avoir lieu se situe dans un tarball ( ce que nous pouvons déterminer grâce à la fonction auxiliaire `goes_back_in_tar()` ) nous copions le contenu du fichier hors du tar, dans le premier répertoire courant qui n'est pas un tarball, et avec un nom fixe ( `redir_out` ou `redir_err`). Nous utilisons un nom fixe afin d'éviter les conflits entre deux fichiers différents entre le tarball et l'exterieur mais portant le même nom.
 c'est ensuite ce fichier `redir_out/redir_err` qui sera ouvert lors du open, et le chemin du fichier dans le tarballs sera mémorisé dans une variable globale. Par la suite, lors de la réinitialisation des descripteurs, on copie de nouveau le contenu de `redir_out/redir_err` dans le tar mais sous son vrai nom. Puis on supprime le fichier devenu inutile. 
 
+Le fonctiondement est similaire pour `redir_in()`, seulement, nous n'avons pas besoin de copier de nouveau le  contenu du fichier crèer `redir_in` puisque nous l'ouvrons uniquement en lecture.
+
+Une fois cela fini plus tard dans la boucle, une fois que la/les commande.s ont été exécutée.s on appelle la fonction `reinit_descriptor()` qui se charge des copies et supression mentionnées ci dessus et réinitialise `STDIN_FILENO`, `STDOUT_FILENO` et `STDERR_FILENO` grâce à leurs valeurs que nous avions mit de côté ( avec un `dup`) avant de les modifier.
 ## Algorithmes implémentés
 
 Les commandes qui ont été implémentés
