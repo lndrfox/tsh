@@ -109,11 +109,11 @@ Si la commande n'a pas d'arguments (l'option -l non concernée) il y a deux cas.
 Si la commande prend au moins un argument, on parcours le tarball qu'autant d'arguments qu'il y a. On adapte d'abord l'argument en le modifiant en fonction de la variable d'environnement ou de la présence de `../` grâce la fonction `tar_and_path()` dans tar_nav.c.
 
 Dans le parcours du tarball, on parcours la boucle qui récupère à chaque tour l'header qui suit le précédant ayant été lu dans le tarball.
-Une structure a été mise en place pour l'affichage ordonné des éléments. C'est un tableau de la longueur du nombre d'arguments. Chaque case correspond à un argument et possède initialement une liste vide (structure située dans lib.c). Cette liste pourra stocker les informations de l'élément à afficher notamment son header. Sa taille varie si c'est un répertoire, sinon si c'est un fichier elle sera de taille 1 et vide si le fichier n'est pas trouvé.
+Une structure a été mise en place pour l'affichage ordonné des éléments. C'est un tableau de la longueur du nombre d'arguments ou de longueur 1 s'il n'y a pas d'arguments. Chaque case correspond à un argument et possède initialement une liste vide (`struct node` dans lib.c). Cette liste pourra stocker les informations de l'élément à afficher notamment son header. Sa taille varie si c'est un répertoire, sinon si c'est un fichier elle sera de taille 1 et si le fichier n'est pas trouvé elle sera vide.
 
-INSERER PETIT SCHEMA
+A la fin de la boucle on trie ce tableau en 3 parties, le premier est un tableau de listes correspondant aux tarballs vides et fichiers/repertoires non existants, le deuxième correspond aux fichiers existants et le troisième aux tarballs, repertoires existants. Cela nous permettra d'afficher d'abord les erreurs puis les fichiers suivis par les répertoires.
 
-A la fin de la boucle on trie ce tableau en 3 parties, le premier est un tableau de listes correspondant aux tars vides et fichiers/repertoires non existants, le deuxième correspond aux fichiers existants et le troisième au tars, repertoires existants. Cela nous permettra d'afficher d'abord les erreurs puis les fichiers suivis par les répertoires.
+![](lsListes.png)
 
 Pour l'affichage la fonction `afficher` dans lib.c s'occupera de récupérer les données nécéssaires d'un header et les convertir en char*.
 Un char* "mutable" (`struct affichage` dans lib.c) a été créé pour concaténer toutes ses valeurs et obtenir un seul char* à afficher. L'affichage se fait à la fin du programme.
