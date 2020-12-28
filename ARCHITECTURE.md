@@ -52,7 +52,10 @@ Une fois cela fini plus tard dans la boucle, une fois que la/les commande.s ont 
 
 ### Les combinaisons de commandes (pipes)
 
-Ici on utilise d'abord la fonction `decompose()` du fichier `tar_nav.c` qui , étant donné un `char * prompt` et un `char * searateur`, nous renvois un `char ** tokens` contenant tout les morceaux de `prompt` séparés par `separateur` et finissant pas `NULL` . Ici on utilise `|` comme séparateur. Nous appelons ensuite `exec_pipe()` avec comme arguments, 
+Ici on utilise d'abord la fonction `decompose()` du fichier `tar_nav.c` qui , étant donné un `char * prompt` et un `char * searateur`, nous renvois un `char ** tokens` contenant tout les morceaux de `prompt` séparés par `separateur` et finissant pas `NULL` . Ici on utilise `|` comme séparateur. Nous appelons ensuite `exec_pipe()` avec comme arguments, `char ** arg1` et  `char ** arg2` qui correspondent aux deux premières commandes à lancer mais décomposées en fonction de `" "` à l'aide de la fonction `decompose()`. On lui donne également en argument `char ** next`, qui correspond à l'adresse du prochain argument après `arg2` dans le `char **` contenant toutes les commandes su prompt, décomposées en fonction de `|`. Si next est NULL alors `exec_pipe()` va crèer deux processus fils imbriqué et les relier par un tube anonyme en s'assurant que `STDOUT_FILENO` du premier processsus à s'éxuter ( on s'assure de cela grâce à `wait()` ) communique avec `STDIN_FILENO` du second, et ce grâve au tube.
+
+
+Si `next[1]` n'est pas nul, la fonction s'appelle elle même récusivement, en prenant soin de changer next a  `&(next[1])` , permettant ainsi à la fonction de crèer autant de processus imbriqués que nécessaire pour qu'on puisse éxécuter une combinaison de commande aussi longue qu'on le souhaite.
 
 
 ### La séparation des arguments (dans ls tarballs et hors tarballs)
