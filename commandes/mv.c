@@ -476,7 +476,7 @@ int ext_vers_tar(char *argv[]){
     }
 
 
-    if((hd.name[1]=='\0')){
+    if((hd.name[0]=='\0')){
       break;
     }
 
@@ -777,7 +777,7 @@ int tar_vers_tar(char *argv[]){
 			return 0;
     }
 
-    if((hd2.name[1]=='\0')){
+    if((hd2.name[0]=='\0')){
       break;
     }
 
