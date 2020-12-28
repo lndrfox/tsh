@@ -569,6 +569,21 @@ char * redir_in(char * prompt){
 			copy[2]="redir_in";
 			copy[3]=NULL;
 
+			/*IN CASE OF MULTIPLE REDIRECTIONS, WE NEED TO REMOVE REDIR_IN SO WE
+			CAN REPLACE IT WITH THE CONTENT OF THE LATEST FILE INDICATED*/
+
+			if(access("redir_in",F_OK)==0){
+
+				char *remove[3];
+				remove[0]="rm";
+				remove[1]="redir_in";
+				remove[2]=NULL;
+
+				exec_custom(remove,0);
+
+
+			}
+
 			/*IF THE COPY DIDN'T WORK IT MEANS THE FILE
 			DOES NOT EXIT SO WE HANDLE THE ERROR AND RETURN "ERROR"*/
 
@@ -733,7 +748,7 @@ void reinit_descriptors(){
 
 	if(delete[1]!=NULL){
 
-		exec_custom(delete,0);
+		//exec_custom(delete,0);
 	}	
 
 	/*WE FREE AND RETURN*/

@@ -629,7 +629,7 @@ int tar_vers_ext_cp(char *argv[]){
   //ERROR MANAGMENT
 
   if(fd==-1){
-    print_error(NULL,tar,"' open tar file");
+    print_error(NULL,tar,"open tar file");
     exit(-1);
   }
 
