@@ -703,8 +703,8 @@ int ext_vers_tar(char *argv[]){
   //FILLING MODE
   struct stat f;
   stat(true_path(argv[1]),&f);
- 	sprintf(temporaire.mode,"%7o", f.st_mode);
-
+  sprintf(temporaire.mode,"%7o", f.st_mode);
+  
 
  //SIZE BECOME THE SIZE OF THE COPIED FILE
 

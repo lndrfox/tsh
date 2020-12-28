@@ -325,7 +325,6 @@ char * redir_out(char * prompt){
 			}
 
 
-
 			/*WE COPY PATH IN MV_OUT/MV_ERR, AS WE WILL USE MV_OUT 
 			IN THE FUNCTION REDIR TO COPY REDIR_OUT/REDIR_ERR PATH*/
 
@@ -649,6 +648,11 @@ BECAUS EOF REDIRECTIONS*/
 void reinit_descriptors(){
 
 
+	dup2(d_stdout,STDOUT_FILENO);
+	dup2(d_stdin,STDIN_FILENO);
+	dup2(d_stderr,STDERR_FILENO);
+
+
 	/*IF MV_OUT ISNT NULL THEN THERE WAS
 	AN OUT REDIRECTION AND WE COPY WHAT IS IN REDIR_OUT 
 	TO THE MV_OUT SAVED PATH*/
@@ -737,10 +741,6 @@ void reinit_descriptors(){
 	free(delete);
 	free(mv_out);
 	free(mv_err);
-
-	dup2(d_stdout,STDOUT_FILENO);
-	dup2(d_stdin,STDIN_FILENO);
-	dup2(d_stderr,STDERR_FILENO);
 
 }
 
