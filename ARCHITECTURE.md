@@ -49,6 +49,15 @@ c'est ensuite ce fichier `redir_out/redir_err` qui sera ouvert lors du open, et 
 Le fonctiondement est similaire pour `redir_in()`, seulement, nous n'avons pas besoin de copier de nouveau le  contenu du fichier crèer `redir_in` puisque nous l'ouvrons uniquement en lecture.
 
 Une fois cela fini plus tard dans la boucle, une fois que la/les commande.s ont été exécutée.s on appelle la fonction `reinit_descriptor()` qui se charge des copies et supression mentionnées ci dessus et réinitialise `STDIN_FILENO`, `STDOUT_FILENO` et `STDERR_FILENO` grâce à leurs valeurs que nous avions mit de côté ( avec un `dup`) avant de les modifier.
+
+### Combinaisons de commandes (pipes)
+
+### Séparation des arguments (dans ls tarballs et hors tarballs)
+
+L'objectif de cette séparation, réalisée par la fonction `split_args()` , est de permettre des entrées comme "mkdir toto a.tar/tata" de fonctionner sans problème.
+Pour cela, on utilise la fonction `exec_split()` a qui on donne en argument un `char ** args` qui contient tout les arguments de la commande ( son nom inclus ) et terminant par NULL - obtenu à l'aide de la fonction `decompose()` du fichier `tar_nav.c` qui décompose une chaine de caractère en fonction d'un caractère, ici, ` `. Cette fonction va parcourir `args` et, à l'aide de la fonction `goes_back_in_tar()`, déterminer si oui ou non - en fonction du répertoire courant , un argument correspond à un chemin dans un tarball. Si l'argument est dans un tarball, rien ne se passera, mais si il ne l'est pas, on le retire de args, et on l'ajoute à `char ** out_tar` , dans lequel on aura au préalabale copié le nom et les options présents dans `args`.
+Une fois ceci terminé, on retourne `out_tar`. La fonction `exec_split()` se sert ensuite des deux `char ** ` obtenus et détermine si elle doit appeller `exec_custom()` sur l'un, l'autre, ou les deux selon leur contenu, la fonction concernée (Si on est face à cp ou mv par exemple, avant même d'appeller `split_args()` , on vérifie si les deux premiers arguments disponibles après les options sont tout les deux hors du tar, et alors on appelle la version hors du tar avec `exec_custom`, sinon on appelle la version pour tarballs).
+
 ## Algorithmes implémentés
 
 Les commandes qui ont été implémentés
