@@ -67,6 +67,15 @@ Une fois ceci terminé, on retourne `out_tar`. La fonction `exec_split()` se ser
 
 ## Algorithmes implémentés
 
+
+### La fonction true_path()
+
+La fonction `true_path()`, présente dans le fichier `tar_nav.c` est une fonction qui étant donné un `char * path` , va déterminer son chemin absolu dans les tarballs et le renvoyer. Pour cela la fonction prend en compte le contenu de la variable d'environnement "tar" ( mentionnée quelques sections plus tôt ). Si le chemin sort d'un tarball mais ne re rentre pas dans un tarball ( le même ou un autre ) alors `true_path()` renverra le reste du chemin une fois sorti du tar. Nous nous servons de cette fonction dans chaque commande ou presque qui doit fonctionner avec les tarballs. La fonction `tar_and_path()` nous permet, pour chaque argument, d'obtenir à l'aide de `true_path()` , le nom du tarball dans lequel se situe le chemin ainsi que le chemin absolu dans ce dit tarball.
+Cela permet de traiter des arguments contenant des chemins à l'origine relatifs, incluant nottament des `..`
+
+### Les commandes
+
+
 * `mkdir`: 
 
 * `rmdir`:
