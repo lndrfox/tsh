@@ -13,3 +13,7 @@ Après installation, éxecuter le Makefile avec la commande:
 Pour lancer le shell, utiliser la commande
 
 ./tsh
+
+## Version antiX
+
+19.2.1

@@ -1,92 +1,47 @@
 # PROJET DE SYSTEME D'EXPLOITATION
 
-## Stratégie adoptée
+## Fonctionnalités disponibles
 
-Pour ce projet nous avons décidé de commencer par l'implémentation des commandes demandées dans les fonctionnalités du shell. Chaque commande est représenté par un fichier `.c`, à l'exception de cd puisqu'il s'agit d'une commande codée directement dans le Shell et qui ne peut être appelée avec exec pour fonctionner correctement . Lors de l'avancement du projet, nous avons aussi commencé à réflechir sur l'implémentation du `Makefile` afin compiler et exécuter ces fichiers. Certains fichiers headers ont été ajoutés pour faciliter le codage des fichiers `.c`.
+Voici les fonctionnalités disponibles du tsh: 
 
-### Architecture logicielle
-	
-Le dépôt est constitué d'un fichier AUTHORS.md qui contient la liste des membres de l'équipe, un fichier .gitignore et un répertoire contenant un Makefile, les fichiers `.c` des commandes du shell et des fichiers headers.
+* Affichage du nom de l'utilisateur, nom de la machine et du répertoire courant au début du prompt.
 
-### Structures de données et les algorithmes
+* Fonctionnement normal des commandes lorsqu’un tarball n'est pas impliqué.
 
-Dans le répertoire "commandes":
+* Fonctionnement des commandes `ls` (nottament avec l'option -l), `cp` et `rm` (nottament avec l'option -r) , `mv` , `rmdir`, `cat` , `pwd`, `cd` et `exit` lorsque des tarballs sont impliqués. Les options sont uniquement prises en compte lorsqu'elles sont entrées avant n'importe quel argument. La commande `cd` sans argument renvoit dans le répertoire `home/`.
 
-* Le `Makefile` créé des éxécutables pour chaque commande possédant le nom du fichier `.c`.
+* Fonctionnement normal des commandes lorsqu'on leur donne plusieurs arguments et que des tarballs sont impliqués ainsi que lorsqu'on on leur donne plusieurs arguments, certains impliquants des tarballs, d'autres non.
 
-* La partie centrale du programme est dans le fichier `tsh.c` On y trouve une boucle qui lis les commandes entrée par l'utilisateur à chaque itération à l'aide de la librairie readline. La fontion parse decompose ensuite les arguments et a l'aide d'exec appelle la bonne commande selon que des tars soient impliqués ou non. 
+* Fonctionnement des redirections `>` , `>>` , `2>` , `2>>` , `<` que des tarballs soient impliqués ou non. Fonctionnement des redirections multiples que des tarballs soient impliqués ou non.
 
-* Les fichiers `.c` représente  chacun une commande du shell pour les tarballs à l'exception de `tsh.c` qui gère les commandes `cd` et `exit`.
- 
-* Afin de gèrer le déplacement dans les tar en plus de path "normal" accesible via getcwd, nous stockons le chemin dans les tar dans la variable d'environnement "tar" qui peut ainsi être accèdée par chaque processus fils.
+* Fonctionnement normal des combinaisons de commande que des tarballs soient impliqué ou non, y compris plusieurs combinaisons de commandes à la suite.
 
-* Les fichiers headers facilitent l'implémentation des fichiers `.c`.
+## Architecture
 
-  * `tar.h`: représente la structure de l'entête d'un fichier dans un tarball grâce à une structure posix_header.
-  * `print.h`: implémente des fonctions qui facilitent l'affichage dans la sortie standard.
-  * `cd.h`: contient la fonction cd en dehors des tar et un début de fonctionnement de cd dans les tar (pour l'instant il permet uniquement d'accèder a un tar avec cd fichier.tar ou d'en sortir avec cd ..).
-  * `tar_nav.h` : contient des fonctions aidant à la navigation dans les tar et la gestion des path dans les tar.
+tsh.c est le point central de notre architecture. Le tsh va s'occuper de récupérer ce qui est entré par l'utilisateur grâce a la librairie readline. A l'aide de fonctions disponibles dans tar_nav.c , il va par la suite (expliqué plus en détail dans l'explication de tsh) s'occuper de parser le prompt obtenu permettant ainsi de traiter si nécessaire la présence de combinaisons de commandes et de redirection. Dernièrement il va appeler la ou les commandes nécéssaires avec leurs arguments sur un ou des processus fils.
+
+Chaque commande devant fonctionner sur les tarballs est gérer dans un fichier à son nom possédant un main afin de pouvoir être appelée avec exec depuis le tsh à l'exception de `cd` et `exit` qui sont inhérent au shell. `exit` se contente de mettre à faux la condition qui est vérifiée à chaque tour de boucle du shell. 
+
+Afin de gèrer `cd` et les tarballs nous avons mis au point un système de surcouche. Une variable d'environnent nommée "tar" contient le répertoire courant dans les tarballs. Si nous ne sommes actuellement pas dans un tarball alors elle contient uniquement "". `cd`, qui est une fonction codée dans cd.c (afin de mieux séparer le code, mais ce fichier ne contient pas de main) à le même comportement que le `cd` du bash quand les tarballs ne sont pas impliqués. Quand les tarballs sont impliqués, il s'assure de modifier la variable d'environnement "tar" en conséquence.
+
+##  Explication de tsh
 
 ### Algorithmes implémentés
 
 Les commandes qui ont été implémentés
 
-* `cd`: C'est une commande codée directement dans le Shell. Nous stockons le chemin dans les tar dans la variable d'environnement "tar" qui peut être accèdée par chaque processus fils.
+* `mkdir`: 
 
-* `exit`
-	Dans le main, la boucle du shell tourne tant qu'un entier run est a 1. La fonction exit qui est implémentée directement dans le shell tsh met run a 0 et interrompt
-ainsi tsh.
+* `rmdir`: 
 
-* `pwd`: Le fichier pwd.c affiche sur la sortie standard la concaténation du chemin du fichier exécuté et du tarball ou le repertoire du tarball si celui-ci existe. 
+* `cp`: 
 
-	**Entrée:** 
-	`./pwd test.tar/nomfichier`
+* `mv`:
 
-* `mkdir`: Le fichier mkdir.c permet de créer un ou plusieurs répertoires dans le tarball si celui-ci n'existe pas déjà. Le nom entré ne doit pas dépasser 100 lettres. Le répertoire est ajouté à la fin du tarball. Il contient uniquement un bloc d'en-tête remplit des informations nécéssaires.
+* `rm`:
 	
-	**Entrée:** 
-	`./mkdir rep1 rep_existant/rep2 rep3 ...`
-
-* `rmdir`: Le fichier rmdir.c permet de supprimer un répertoire si et seulement s'il est vide. Pour le supprimer, on déplace toutes les données se situant en dessous de celui-ci à la suite des données se situant avant. Si le répertoire est à la fin, alors il n'y a aucune donnée à déplacer. Donc on diminue la taille du fichier pour suprrimer le répertoire. Pour l'instant rmdir.c n'est pas fonctionnelle sur des entrées `rep1/rep2/...`.
-
-	**Entrée:** 
-	`./rmdir rep1/... rep2/...   ...`
-
-* `cp`: Le fichier cp.c permet de copier un fichier d'un tarball vers un autre ou d'un fichier en dehors du tarball vers un tarball. La commande est utilisé selon la manière dont elle est appelé.
-
-  	**Entrée:**
-
-
-	Si l'on veut copier un fichier du tarball vers un autre tarball: 
-	`cp fichier_à_copier test.tar/nomfichier`
-
-	Si l'on veut copier un fichier du tarball en dehors du tarball: 
-	`cp fichier_à_copier path/nom_de_la_copie`
-
-	Si l'on veut copier un fichier en dehors du tarball vers un tarball: 
-	`cp path/fichier_à_copier nom_de_la_copie`
-  	
+* `ls`: 
 	
+* `cat`: 
 
-* `ls`: Le fichier ls.c permet d'afficher le nom des fichiers dans le tarball :
-  * sans afficher les fichiers appartenant à un répertoire si on souhaite afficher le tarball lui-même
-  * en affichant uniquement le nom des fichiers appartenant au repertoire que l'on souhaite afficher sinon
-Le fichier conitent l'option `-l` pour afficher des informations supplémentaires qui à le même rôle que `ls -l` dans un répertoire.
-Pour l'instant ls.c n'est pas fonctionnelle sur des entrées `test.tar/rep1/rep2/...`.
-
-	**Entrée:**
-
-
-	`ls test.tar` ou
-
-	`ls test.tar/rep/` ou
-
-	`ls -l rep` ou
-
-	`ls -l test.tar/rep/`
-	
-* `cat`: Quand appelée avec des arguments ou dans une arborescence contentant un `.tar`, cat affiche le contenu des fichiers passé en argument.
-
-	**Entrée:**
-	`./cat fichiertar.tar fichier autrefichier ...`
-
+* `pwd`:
