@@ -26,7 +26,9 @@ Afin de gèrer `cd` et les tarballs nous avons mis au point un système de surco
 
 ##  Explication de tsh
 
-### Algorithmes implémentés
+![Diagramme](https://i.imgur.com/59y4lqN.png)
+
+## Algorithmes implémentés
 
 Les commandes qui ont été implémentés
 
