@@ -301,8 +301,12 @@ int main (int argc, char *argv[]) {
 		node_t * node = get_head(array[1][i]);
 		afficher(format, node, l_tar[0][i], l, &size, var_rep);
 	}
-	if(length3 > 0 && length2 > 0)
+
+	if(length3 > 0 && length2 > 0) {
 		ajout(format, "\n");
+		if(!l) 
+			ajout(format, "\n");
+	}
 
 	// TARS OU REPERTOIRES
 	for (int i = 0; i < length3 ; i++) {
@@ -332,6 +336,8 @@ int main (int argc, char *argv[]) {
 			total += 1 + ((size + BLOCKSIZE - 1) >> BLOCKBITS);
 			node = get_next(node);
 		}
+		if(!l) 
+			ajout(aff, "\n");
 
 		// Total
 		if(l == 1) {
