@@ -26,7 +26,7 @@ Afin de gèrer `cd` et les tarballs nous avons mis au point un système de surco
 
 ##  Explication de tsh
 
-![Diagramme](https://i.imgur.com/59y4lqN.png)
+![](tshDiagramme.png)
 
 ## Algorithmes implémentés
 
