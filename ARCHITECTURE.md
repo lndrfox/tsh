@@ -64,17 +64,23 @@ Une fois ceci terminé, on retourne `out_tar`. La fonction `exec_split()` se ser
 
 ## Algorithmes implémentés
 
-Les commandes qui ont été implémentés
-
 * `mkdir`: 
 
-* `rmdir`: 
+* `rmdir`:
 
 * `cp`: 
 
 * `mv`:
 
 * `rm`:
+
+Cette commande fonctionne uniquement dans les tarballs bien rangés.
+
+Tout d'abord nous procédons à la vérification de l'existence de l'option -r en argument. La présence celle-ci sera stocké dans une variable pour être rappeler plus tard lors de la suppression des fichiers entrés en argument. 
+
+On parcours ensuite chaque argument une seule fois. Dans ce parcours on vérifie d'abord que l'argument n'est pas appelé sur un tarball lui-même. Si un tarball est en argument et qu'il y a l'option -r on le supprime avec `unlink()`, sinon on procède à la suite. On adapte d'abord l'argument en le modifiant en fonction de la variable d'environnement ou de la présence de `../` grâce la fonction `tar_and_path()` dans tar_nav.c (ex: t.tar/r1/r2$ rm fich nous renvoit r1/r2/fich pour l'argument fich). Une fois cela fait, on parcours la boucle qui récupère à chaque tour l'header qui suit le précédant ayant été lu dans le tarball. Tant qu'on ne trouve pas le fichier ou répertoire en argument on stocke la somme de la taille des fichiers lus dans une variable `longueur`. Si le fichier ou répertoire est trouvé on stocke sa taille dans une variable `supp` ainsi que les fichiers appertant à celui-ci si c'est une répertoire. Le reste lu après sera stocké dans une variable `dep`. Une fois arrivé à la fin du tarball, on vérifie que la suppression peut avoir lieu, c'est-à-dire si le fichier existe et que l'option -r est présente si c'est un répertoire à supprimer.
+
+Pour la suppression, on écrit par dessus les données à supprimer en se situant dans le tarball à `longueur` octects. Ce sont les données situées à partir de `longueur+supp` octets qui sont reécrites. On termine par la réduction de la taille du tarball avec `ftruncate()`.
 	
 * `ls`: 
 	
