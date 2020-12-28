@@ -33,7 +33,15 @@ Le diagramme ci-dessus illustre le fonctionnement de tsh.c sans entrer dans les 
 On passe ensuite le prompt à la fonction `exec_pipe()` qui va se charger de crèer le nombre de processus nécéssaire pour traiter les combinaisons de commandes correctement ( si elles sont présente ) et de les relier par des tubes anonymes. Une fois ceci fait, ou de manière immédiate si il n'y a aucune combinaison de commnades à traiter, la fonction `exec_custom()` est appelée, elle se charge de crèer un processus fils puis appelle `exec_tar_or_bin()`. Une fonction qui prend en argument un ` char ** args` contenant le nom de la fonction et ses arguments/options et terminan par NULL ainsi qu'un boolean indiquant si l'ont peut exécuter directement la commande "normale" avec `exec` ou si l'on doit procèder a quelque vérification supplémentaire pour savoir si
 nous devons à la place exécuter sa version spécifique aux tarballs.
 
-#Les redirections 
+### Les redirections 
+
+Attardons nous sur le fonctionnement de la fonction `redir_out()`, la fonction `redir_in()` fonctionne de manière très similaire.
+
+Cette fonction va parcourir le `char * prompt` fourni en argument et chercher la présence d'un symbole de redirection `>` . Elle va par la suite en analysant les charactères adjacents, déterminer si il s'agot d'une redirection `>` , `>>` , `2>` ou `2>>` et va crèer une chaine de charactère path contenant le texte 
+présent entre le symbole de redirection trouvé et le prochain symbol de redirection dans `prompt` ou la fin de `prompt`. Par exemple, "commande > blabla 2> tata" nous fournira commande chaîne "blabla". La fonction prend bien soin de supprimer les espaces superflu. Une fois ceci fait, on va ourvir un nouveau descripteur avec `open`, les paramètres du descripteur dépendant de quel symbole de redirection nous traitons  ( `>` ou `>>`) puis nous
+redirigeons la sortie qui nous intéresse, a savoir `STDOUT_FILENO` ou `STDERR_FILENO` selon les circonstances, sur le descripteur que nous venons d'ouvrir, à l'aide de `dup2`. Avant d'appeller `dup2` nous sauvegardons le descripteur remplacé dans une variable global afin qu'il puisse être restauré plus tard. Une fois ceci fait nous enlevons du prompt le symbole de redirection aisni que le chemin de redirection a l'aide d'un `memmove` ( fonction auxiliaire `str_cut`).
+
+Cette boucle va se répèter tant que nous trouvons un symbole `>` ou que nous n'avons pas atteint la fin de prompt. Le processus est très similaire pour `redir_in()` mis à part que le symbole que nous recherchons est `<` et qu'il y a moins de paramètres à prendre en compte.
 
 ## Algorithmes implémentés
 
