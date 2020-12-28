@@ -90,6 +90,24 @@ On parcours ensuite chaque argument une seule fois. Dans ce parcours on vérifie
 Pour la suppression, on écrit par dessus les données à supprimer en se situant dans le tarball à `longueur` octects. Ce sont les données situées à partir de `longueur+supp` octets qui sont reécrites. On termine par la réduction de la taille du tarball avec `ftruncate()`.
 	
 * `ls`: 
+
+Cette commande fonctionne uniquement dans les tarballs bien rangés.
+
+Tout d'abord nous procédons à la vérification de l'existence de l'option -l en argument. La présence celle-ci sera stocké dans une variable pour être rappeler plus tard lors de l'affichage des fichiers entrés en argument. 
+
+Si la commande n'a pas d'arguments (l'option -l non concernée) il y a deux cas. Si la variable d'environnement est dans un répertoire du tar, on "imite" le comportement du ls appelé depuis un tar avec en argument le nom du répertoire. Sinon on choisi d'afficher tous les fichiers ou répertoires du tarball ayant une profondeur de 0 (c'est-à-dire qu'il n'appartiennent à aucun répertoire). Il n'y aura qu'un seul parcours du tarball.
+
+Si la commande prend au moins un argument, on parcours le tarball qu'autant d'arguments qu'il y a. On adapte d'abord l'argument en le modifiant en fonction de la variable d'environnement ou de la présence de `../` grâce la fonction `tar_and_path()` dans tar_nav.c.
+
+Dans le parcours du tarball, on parcours la boucle qui récupère à chaque tour l'header qui suit le précédant ayant été lu dans le tarball.
+Une structure a été mise en place pour l'affichage ordonné des éléments. C'est un tableau de la longueur du nombre d'arguments. Chaque case correspond à un argument et possède initialement une liste vide (structure située dans lib.c). Cette liste pourra stocker les informations de l'élément à afficher notamment son header. Sa taille varie si c'est un répertoire, sinon si c'est un fichier elle sera de taille 1 et vide si le fichier n'est pas trouvé.
+
+INSERER PETIT SCHEMA
+
+A la fin de la boucle on trie ce tableau en 3 parties, le premier est un tableau de listes correspondant aux tars vides et fichiers/repertoires non existants, le deuxième correspond aux fichiers existants et le troisième au tars, repertoires existants. Cela nous permettra d'afficher d'abord les erreurs puis les fichiers suivis par les répertoires.
+
+Pour l'affichage la fonction `afficher` dans lib.c s'occupera de récupérer les données nécéssaires d'un header et les convertir en char*.
+Un char* "mutable" (`struct affichage` dans lib.c) a été créé pour concaténer toutes ses valeurs et obtenir un seul char* à afficher. L'affichage se fait à la fin du programme.
 	
 * `cat`: 
 
