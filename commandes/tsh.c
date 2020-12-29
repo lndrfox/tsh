@@ -524,13 +524,15 @@ char * redir_in(char * prompt){
 
 		path[cpt_path]='\0';
 		len_cut+=strlen(path);
+		char * path_f=NULL;
 
 		/*IF THE GIVEN PATH DOESNT GOES BACK IN TAR
 		WE SIMPLY APPLY TRUE PATH TO IT*/
 
 		if(!goes_back_in_tar(path)){
 
-			path=true_path(path);
+			path_f=true_path(path);
+			
 		}
 
 		/*IF IT IS INSIDE A TAR*/
@@ -584,8 +586,15 @@ char * redir_in(char * prompt){
 			IT NOW CONTAINS WHAT WAS IN THE FILE INSIDE THE TAR THAT WE WANTED
 			WE ADD IT TO THE DELETE ARRAY SO THAT IT WILL BE DELETED LATER ON*/
 	
-			path=realloc(path,strlen("redir_in")+sizeof(char));
-			strcpy(path,"redir_in");
+			path_f=malloc(strlen("redir_in")+sizeof(char));
+
+			if(path_f==NULL){
+
+				perror("malloc");
+				exit(-1);
+			}
+			
+			strcpy(path_f,"redir_in");
 
 			if(delete[1]==NULL){
 
@@ -605,21 +614,23 @@ char * redir_in(char * prompt){
 		}
 
 			
-		int fd=open(path,O_RDWR);
+		int fd=open(path_f,O_RDWR);
 
 		if(fd<0){
 
-			print_error(NULL,path,"No such file or directory");
+			print_error(NULL,path_f,"No such file or directory");
 			str_cut(anchor,len_cut);
 			free(path);
 
 			char * err=malloc(strlen("error")+sizeof(char));
+
 				if(err==NULL){
 
 					perror("malloc");
 					exit(-1);
 				}
 				strcpy(err,"error");
+				free(path);
 				return err;
 		}
 
@@ -629,6 +640,7 @@ char * redir_in(char * prompt){
 
 		str_cut(anchor,len_cut);
 		free(path);
+		free(path_f);
 
 	}while(anchor!=NULL);
 
