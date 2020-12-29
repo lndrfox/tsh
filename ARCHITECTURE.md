@@ -76,15 +76,15 @@ Cela permet de traiter des arguments contenant des chemins à l'origine relatifs
 ### Les commandes
 
 
-* `mkdir`:
+#### `mkdir`
 
-* `rmdir`:
+#### `rmdir`
 
 Pour cette commande on parcours chaque argument une seule fois. On adapte d'abord l'argument si celui-ci n'est pas un tarball en le modifiant en fonction de la variable d'environnement ou de la présence de `../` grâce la fonction `tar_and_path()` dans tar_nav.c. On parcours ensuite la boucle qui récupère à chaque tour l'header qui suit le précédant ayant été lu dans le tarball. Pour un répertoire, tant qu'on ne le trouve pas le on stocke la somme de la taille des fichiers lus dans une variable `longueur`. Si le répertoire est trouvé on stocke sa taille dans une variable `supp` ainsi que les fichiers appartenant à celui-ci. Le reste lu après sera stocké dans une variable `dep`. Une fois arrivé à la fin du tarball, on vérifie que la suppression peut avoir lieu, c'est-à-dire si le répertoire existe et qu'il est vide. Pour un tar on vérifie que celui-ci est vide en vérifiant que le premier header lu est le header vide (chaque tarball possède 2 headers vides à la fin).
 
 Pour la suppression d'un répertoire on écrit par dessus les données à supprimer en se situant dans le tarball à `longueur` octects. Ce sont les données situées à partir de `longueur+supp` octets qui sont reécrites. On termine par la réduction de la taille du tarball avec `ftruncate()`. Pour la suppresion d'un tarball on le supprime avec `unlink()`.
 
-* `cp`:
+#### `cp`
 
 Cette commande comporte 3 fonctions principales:
 ext_vers_tar: Cette fonction permet de copier un fichier qui n'est pas dans un tarball et la copie dans un tarball.
@@ -109,11 +109,11 @@ cp_r_tvt: Cette fonction permet de copier un répertoire d'un tarball et de le c
 Ces 3 fonctions principales fonctionnes aussi de la même manière
 En suivant le même principe que pour "cp" nous regardons le type du header, si le header est un répertoire contenant le path du répertoire copier alors nous créons le répertoire avec "mkdirep" mais avec le path du répertoire collée, si le header n'est pas un répertoire et contient le path du fichier copiée alors nous réutilisons les 3 fonctions principaux de "cp" selon le cas et nous continuons jusqu'à la fin du parcours du tarball, de même si le répertoire est en dehors d'un tarball mais nous parcourons alors le répertoire avec "opendir".
 
-* `mv`:
+#### `mv`
 
 mv ce comporte exactement comme "cp" sauf qu'après la copie du fichier, nous supprimons le fichier.
 
-* `rm`:
+#### `rm`
 
 Cette commande fonctionne uniquement dans les tarballs bien rangés.
 
@@ -123,7 +123,7 @@ On parcours ensuite chaque argument une seule fois. Dans ce parcours on vérifie
 
 Pour la suppression, on écrit par dessus les données à supprimer en se situant dans le tarball à `longueur` octects. Ce sont les données situées à partir de `longueur+supp` octets qui sont reécrites. On termine par la réduction de la taille du tarball avec `ftruncate()`.
 
-* `ls`:
+#### `ls`
 
 Cette commande fonctionne uniquement dans les tarballs bien rangés.
 
@@ -143,6 +143,6 @@ A la fin de la boucle on trie ce tableau en 3 parties, le premier est un tableau
 Pour l'affichage la fonction `afficher` dans lib.c s'occupera de récupérer les données nécéssaires d'un header et les convertir en char*.
 Un char* "mutable" (`struct affichage` dans lib.c) a été créé pour concaténer toutes ses valeurs et obtenir un seul char* à afficher. L'affichage se fait à la fin du programme.
 
-* `cat`:
+#### `cat`
 
-* `pwd`:
+#### `pwd`
