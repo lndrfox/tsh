@@ -51,7 +51,7 @@ int rmtar(char *argv){
 
 	  if(fd < 0){
 	    print_error("rm ",tar," error lors de l'ouverture du tar");
-	    exit(-1);
+	    return -1;
 	  }
 
 		int valide = 0;			// 0: fichier ne peut pas etre supprime
@@ -91,7 +91,7 @@ int rmtar(char *argv){
 				if(rdcount<0){
 					print_error("rm ",tar," error lors de la lecture du tar");
 					close(fd);
-					exit(-1);
+					return -1;
 				}
 
 				// Extraction des informations
@@ -185,7 +185,7 @@ int rmtar(char *argv){
 				if(rd<0){
 					print_error("rm ",tar," error lecture du tar");
 					close(fd);
-					exit(-1);
+					return -1;
 				}
 
 				// On supprime le repertoire
@@ -195,7 +195,7 @@ int rmtar(char *argv){
 				if(wr<0){
 					print_error("rm ",tar," error lors de l'écriture dans tar");
 					close(fd);
-					exit(-1);
+					return -1;
 				}
 				free(tar);
 				ftruncate(fd, longueur+dep);
@@ -226,12 +226,12 @@ int tar_vers_ext(char *argv[]){
 
 	if (arg[0] == NULL){
 		print_error("mv : '",argv[1],"' Problem with argv 1");
-		exit(-1);
+		return -1;
 	}
 
 	if (arg[1] == NULL){
 		print_error("mv : '",argv[1],"' Problem with argv 1");
-		exit(-1);
+		return -1;
 	}
 
   char * tar = malloc(strlen(arg[0])+sizeof(char));
@@ -249,7 +249,7 @@ int tar_vers_ext(char *argv[]){
 
   if(fd==-1){
     print_error("mv : '",tar,"' open tar file");
-    exit(-1);
+    return -1;
   }
 
   // THIS LOOP ALLOWS US TO LOOK FOR THE HEADER CORRESPONDING TO THE FILE WE WANT TO
@@ -380,7 +380,7 @@ int tar_vers_ext(char *argv[]){
 	    if(rdtmp<0){
 
 	      print_error("mv  '",tar,"' Reading tar file");
-	      exit(-1);
+	      return -1;
 	    }
 
 	    //WRITING THE BLOCK AND ERROR MANGEMENT
@@ -388,7 +388,7 @@ int tar_vers_ext(char *argv[]){
 	    if(write(fd2,rd, size)<0){
 
 	      print_error("mv ", argv[2] ," Writing file content");
-	      exit(-1);
+	      return -1;
 
 	    }
 			rmtar(path);
@@ -418,12 +418,12 @@ int ext_vers_tar(char *argv[]){
   char ** arg = tar_and_path(argv[2]);
 	if (arg[0] == NULL){
 		print_error("mv : '",argv[2],"' Problem with argv 1");
-		exit(-1);
+		return -1;
 	}
 
 	if (arg[1] == NULL){
 		print_error("mv : '",argv[2],"' Problem with argv 1");
-		exit(-1);
+		return -1;
 	}
 
   char * tar = malloc(strlen(arg[0])+sizeof(char));
@@ -440,14 +440,14 @@ int ext_vers_tar(char *argv[]){
 
   if(fd <0){
     print_error("mv : '",argv[2],"' Problem with argv 2");
-    exit(-1);
+    return -1;
   }
 
   int fd2 = open(true_path(argv[1]), O_RDONLY);
 
   if(fd2<0){
     print_error("mv: impossible d'évaluer ", argv[1] ," : Aucun fichier ou dossier de ce type\n");
-    exit(-1);
+    return -1;
   }
 
 
@@ -570,7 +570,7 @@ int ext_vers_tar(char *argv[]){
 
  if(g==NULL){
    print_error(NULL,NULL,"Reading group ID");
-   exit(-1);
+   return -1;
  }
  sprintf(temporaire.gname,"%s",g->gr_name);
 
@@ -592,7 +592,7 @@ int ext_vers_tar(char *argv[]){
   if(rddd<BLOCKSIZE){
 
     print_error(NULL,NULL,"Error writing in file");
-    exit(-1);
+    return -1;
   }
 
 
@@ -606,7 +606,7 @@ int ext_vers_tar(char *argv[]){
 
 	    if(rdtmp<0){
 	      print_error(NULL,NULL,"Reading tar file");
-	      exit(-1);
+	      return -1;
 	    }
 
 	    //WRITING THE BLOCK AND ERROR MANGEMENT
@@ -614,7 +614,7 @@ int ext_vers_tar(char *argv[]){
 	    if(write(fd,buff, BLOCKSIZE)<0){
 
 	      print_error(NULL,NULL,"Writing file content");
-	      exit(-1);
+	      return -1;
 
 	    }
 		memset(buff,0,BLOCKSIZE);
@@ -631,7 +631,7 @@ int ext_vers_tar(char *argv[]){
     if(rdd<BLOCKSIZE){
 
       print_error(NULL,NULL,"Error writing in file2");
-      exit(-1);
+      return -1;
     }
 
   }
@@ -663,12 +663,12 @@ int tar_vers_tar(char *argv[]){
   char ** arg = tar_and_path(argv[1]);
 	if (arg[0] == NULL){
 		print_error("mv : '",argv[1],"' Problem with argv 1");
-		exit(-1);
+		return -1;
 	}
 
 	if (arg[1] == NULL){
 		print_error("mv : '",argv[1],"' Problem with argv 1");
-		exit(-1);
+		return -1;
 	}
 
   char * tar = malloc(strlen(arg[0])+sizeof(char));
@@ -681,7 +681,7 @@ int tar_vers_tar(char *argv[]){
   char ** arg2 = tar_and_path(argv[2]);
 	if (arg[0] == NULL){
 		print_error("mv : '",argv[2],"' Problem with argv 1");
-		exit(-1);
+		return -1;
 	}
 
   char * tar2 = malloc(strlen(arg2[0])+sizeof(char));
@@ -851,7 +851,7 @@ int tar_vers_tar(char *argv[]){
 
  if(g==NULL){
    print_error("mv :",NULL,"Reading group ID");
-   exit(-1);
+   return -1;
  }
  sprintf(temporaire.gname,"%s",g->gr_name);
 
@@ -878,7 +878,7 @@ int tar_vers_tar(char *argv[]){
   if(rddd<BLOCKSIZE){
 
     print_error("mv :",NULL,"Error writing in file");
-    exit(-1);
+    return -1;
   }
 
 
@@ -893,7 +893,7 @@ int tar_vers_tar(char *argv[]){
 
     if(rdtmp<0){
       print_error("mv : '",tar,"' Reading tar file");
-      exit(-1);
+      return -1;
     }
 
     //WRITING THE BLOCK AND ERROR MANGEMENT
@@ -901,7 +901,7 @@ int tar_vers_tar(char *argv[]){
     if(write(fd2,buff, BLOCKSIZE)<0){
 
       print_error("mv :",NULL,"Writing file content");
-      exit(-1);
+      return -1;
 
     }
 
@@ -921,7 +921,7 @@ int tar_vers_tar(char *argv[]){
     if(rdd<BLOCKSIZE){
 
       print_error("mv :",NULL,"Error writing in file");
-      exit(-1);
+      return -1;
     }
 
    }
@@ -963,7 +963,7 @@ int main (int argc, char *argv[]){
   if (argc == 3){
 		if (strcmp(true_path(argv[1]),true_path(argv[2])) == 0){
 					print_error("mv ", "argv[1] et  argv[2] ", "identifient le même fichier  ");
-					exit (-1);
+					return  (-1);
 				}
     //if argv1 is not inside a tar and argv2 is insiede a tar call ext_vers_tar
     if((string_contains_tar(path1) == 0) && (string_contains_tar(path2) == 1)){

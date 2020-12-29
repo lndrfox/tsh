@@ -311,7 +311,7 @@ void plink(a * a, node_t * tar, struct posix_header hdr) {
 
 	int n = strlen_int(compt);
 	char hardlink[n + 2];
-	sprintf(hardlink, " %d ", compt);
+	sprintf(hardlink, " %d", compt);
 	ajout(a, hardlink);
 }
 
@@ -376,15 +376,19 @@ void afficheNom(a * a, node_t * node, node_t * tar, int option, char * var_rep) 
 		ajout(a, "\033[0m");
 
 	// Si c'est un symbolique et qu'il y a l'option "-l" on affiche le fichier sur lequel il pointe 
-	if(hdr.typeflag == '2' && option == 1) {
+	if(hdr.typeflag == '2' && option) {
 		ajout(a, " -> ");
 		if(existe == 0) ajout(a, "\033[1;31m\033[48;5;236m");
 		ajout(a, hdr.linkname);
 		if(existe == 0) ajout(a, "\033[0m");
 	}
 
+	// On rajoute un tab
+	if(!option)
+		ajout(a, "\t");
 	// On ajoute un retour a la ligne
-	ajout(a, "\n");
+	else
+		ajout(a, "\n");
 }
 
 // Affichage du fichier
@@ -404,18 +408,18 @@ void afficher (a * aff, node_t * node, node_t * tar, int l, unsigned int * size,
 
 		// Nom propriétaire
 		char proprietaire[strlen(node -> p.uname)+2];
-		sprintf(proprietaire, "%s ", node -> p.uname);
+		sprintf(proprietaire, "\t%s", node -> p.uname);
 		ajout(aff, proprietaire);
 
 		// Nom du groupe
 		char groupe[strlen(node -> p.gname)+1];
-		sprintf(groupe, "%s ", node -> p.gname);
+		sprintf(groupe, "\t%s", node -> p.gname);
 		ajout(aff, groupe);
 
 		// Taille en octets
 		sscanf(node -> p.size, "%o", size);
 		char taille[40];
-		sprintf(taille, "%d  ", *size);
+		sprintf(taille, "\t%d\t", *size);
 		ajout(aff, taille);
 
 		// Date de dernière modification 

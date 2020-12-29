@@ -54,7 +54,7 @@ int rmtar(char *argv){
 
 	  if(fd < 0){
 	    print_error("rm ",tar," error ouverture du tar");
-	    exit(-1);
+	    return -1;
 	  }
 
 
@@ -189,7 +189,7 @@ int rmtar(char *argv){
 				if(rd<0){
 					print_error("rm ",tar," error lecture du tar");
 					close(fd);
-					exit(-1);
+					return -1;
 				}
 
 				// On supprime le repertoire
@@ -199,7 +199,7 @@ int rmtar(char *argv){
 				if(wr<0){
 					print_error("rm ",tar," error écriture dans le tar");
 					close(fd);
-					exit(-1);
+					return -1;
 				}
 				free(tar);
 				ftruncate(fd, longueur+dep);
@@ -238,7 +238,7 @@ void create_dir(int fd ,char * path){
 
 				print_error("mkdir : ",NULL," reading tar file");
 				close(fd);
-				exit (-1);
+				exit(-1);
 			}
 
 			//IF WE REACHED THE END OF THE TAR WITHOUT FINDING THE HEADER THEN IT DOESNT EXIST AND WE CAN CREATE IT
@@ -252,7 +252,7 @@ void create_dir(int fd ,char * path){
 			if(strcmp(hd.name,path)==0){
 
 				print_error("mkdir",path,"can't create this directory as it already exists");
-				return;
+				exit(-1);
 
 			}
 
@@ -417,12 +417,12 @@ int tar_vers_ext(char *argv[]){
 
 	if (arg[0] == NULL){
 		print_error("cp : '",argv[1],"' Problem with argv 1");
-		exit(-1);
+		return -1;
 	}
 
 	if (arg[1] == NULL){
 		print_error("cp : '",argv[1],"' Problem with argv 1");
-		exit(-1);
+		return -1;
 	}
 
   char * tar = malloc(strlen(arg[0])+sizeof(char));
@@ -440,7 +440,7 @@ int tar_vers_ext(char *argv[]){
 
   if(fd==-1){
     print_error("cp : '",tar,"' open tar file");
-    exit(-1);
+    return -1;
   }
 
   // THIS LOOP ALLOWS US TO LOOK FOR THE HEADER CORRESPONDING TO THE FILE WE WANT TO
@@ -574,7 +574,7 @@ int tar_vers_ext(char *argv[]){
 	    if(rdtmp<0){
 
 	      print_error("cp  '",tar,"' Reading tar file");
-	      exit(-1);
+	      return -1;
 	    }
 
 	    //WRITING THE BLOCK AND ERROR MANGEMENT
@@ -582,7 +582,7 @@ int tar_vers_ext(char *argv[]){
 	    if(write(fd2,rd, size)<0){
 
 	      print_error("cp ", argv[2] ," Writing file content");
-	      exit(-1);
+	      return -1;
 
 	    }
 
@@ -611,12 +611,12 @@ int ext_vers_tar(char *argv[]){
 
 	if (arg[0] == NULL){
 		print_error("cp : '",argv[2],"' Problem with argv 2");
-    exit(-1);
+    return -1;
 	}
 
 	if (arg[1] == NULL){
 		print_error("cp : '",argv[2],"' Problem with argv 2");
-		exit(-1);
+		return -1;
 	}
 
   char * tar = malloc(strlen(arg[0])+sizeof(char));
@@ -635,14 +635,14 @@ int ext_vers_tar(char *argv[]){
 
   if(fd <0){
     print_error("cp : '",argv[2],"' Problem with argv 2");
-    exit(-1);
+    return -1;
   }
 
   int fd2 = open(true_path(argv[1]), O_RDWR);
 
   if(fd2<0){
     print_error("cp: impossible d'évaluer ", argv[1] ," : Aucun fichier ou dossier de ce type\n");
-    exit(-1);
+    return -1;
   }
 
 
@@ -667,8 +667,6 @@ int ext_vers_tar(char *argv[]){
 			prints("really");
 			rmtar(path);
 			return ext_vers_tar(argv);
-		  close(fd);
-			return 0;
     }
 
     if((hd.name[0]=='\0')){
@@ -763,8 +761,8 @@ int ext_vers_tar(char *argv[]){
  //ERROR MANAGMENT
 
  if(g==NULL){
-   print_error(NULL,NULL,"Reading group ID");
-   exit(-1);
+   print_error("cp ",NULL,"Reading group ID");
+   return -1;
  }
  sprintf(temporaire.gname,"%s",g->gr_name);
 
@@ -785,7 +783,7 @@ int ext_vers_tar(char *argv[]){
   if(rddd<BLOCKSIZE){
 
     print_error(NULL,NULL,"Error writing in file");
-    exit(-1);
+    return -1;
   }
 
 
@@ -798,16 +796,16 @@ int ext_vers_tar(char *argv[]){
       //EROR MANAGMENT
 
       if(rdtmp<0){
-        print_error("cp",NULL,"Reading tar file");
-        exit(-1);
+        print_error(NULL,NULL,"Reading tar file");
+        return -1;
       }
 
       //WRITING THE BLOCK AND ERROR MANGEMENT
 
       if(write(fd,buff, BLOCKSIZE)<0){
 
-        print_error("cp",NULL,"Writing file content");
-        exit(-1);
+        print_error(NULL,NULL,"Writing file content");
+        return -1;
 
       }
     memset(buff,0,BLOCKSIZE);
@@ -825,7 +823,7 @@ int ext_vers_tar(char *argv[]){
     if(rdd<BLOCKSIZE){
 
       print_error(NULL,NULL,"Error writing in file2");
-      exit(-1);
+      return -1;
     }
 
   }
@@ -857,12 +855,12 @@ int tar_vers_tar(char *argv[]){
   char ** arg = tar_and_path(argv[1]);
 	if (arg[0] == NULL){
 		print_error("cp : '",argv[1],"' Problem with argv 1");
-		exit(-1);
+		return -1;
 	}
 
 	if (arg[1] == NULL){
 		print_error("cp : '",argv[1],"' Problem with argv 1");
-		exit(-1);
+		return -1;
 	}
 
   char * tar = malloc(strlen(arg[0])+sizeof(char));
@@ -963,9 +961,8 @@ int tar_vers_tar(char *argv[]){
 
 		if(strcmp(hd2.name,path2) == 0){
 			rmtar(path2);
-			tar_vers_tar(argv);
-			close(fd);
-			return 0;
+			return tar_vers_tar(argv);
+
 		}
 
     if((hd2.name[0]=='\0')){
@@ -1043,7 +1040,7 @@ int tar_vers_tar(char *argv[]){
 
  if(g==NULL){
    print_error("cp :",NULL,"Reading group ID");
-   exit(-1);
+   return -1;
  }
  sprintf(temporaire.gname,"%s",g->gr_name);
 
@@ -1070,7 +1067,7 @@ int tar_vers_tar(char *argv[]){
   if(rddd<BLOCKSIZE){
 
     print_error("cp :",NULL,"Error writing in file");
-    exit(-1);
+    return -1;
   }
 
 
@@ -1085,7 +1082,7 @@ int tar_vers_tar(char *argv[]){
 
     if(rdtmp<0){
       print_error("cp : '",tar,"' Reading tar file");
-      exit(-1);
+      return -1;
     }
 
     //WRITING THE BLOCK AND ERROR MANGEMENT
@@ -1093,7 +1090,7 @@ int tar_vers_tar(char *argv[]){
     if(write(fd2,buff, BLOCKSIZE)<0){
 
       print_error("cp :",NULL,"Writing file content");
-      exit(-1);
+      return -1;
 
     }
 
@@ -1113,7 +1110,7 @@ int tar_vers_tar(char *argv[]){
     if(rdd<BLOCKSIZE){
 
       print_error("cp :",NULL,"Error writing in file");
-      exit(-1);
+      return -1;
     }
 
    }
@@ -1229,7 +1226,7 @@ int cp_r_tvt(char *argv[]){
 
   if(fd==-1){
     print_error("cp :",NULL,"open tar file");
-    exit(-1);
+    return -1;
   }
 
 
@@ -1395,7 +1392,7 @@ int cp_r_tve(char *argv[]){
 
  if(fd==-1){
    print_error("cp :",NULL,"open tar file");
-   exit(-1);
+   return -1;
  }
 
 
@@ -1530,7 +1527,7 @@ int main (int argc, char *argv[]){
   if (argc == 3){
 		if (strcmp(true_path(argv[1]),true_path(argv[2])) == 0){
 			print_error("cp ", "argv[1] et  argv[2] ", "identifient le même fichier  ");
-			exit (-1);
+			return  (-1);
 		}
     //Get a variable containing argv[1]
      char *test = malloc(strlen(argv[1])+sizeof(char));
@@ -1580,12 +1577,12 @@ int main (int argc, char *argv[]){
   if (argc == 4 && (strcmp(argv[1],"-r") == 0)){
 		if (strcmp(true_path(argv[2]),true_path(argv[3])) == 0){
 			print_error("cp ", "argv[1] et  argv[2] ", "identifient le même fichier  ");
-			exit (-1);
+			return  (-1);
 		}
 
 				if (strcmp(true_path(argv[2]),true_path(argv[3])) == 0){
 					print_error("cp ", "argv[2] et  argv[3] ", "identifient le même fichier  ");
-					exit (-1);
+					return  (-1);
 				}
     //Get a variable containing argv[1]
      char *test = malloc(strlen(argv[2])+sizeof(char));
