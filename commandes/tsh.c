@@ -268,15 +268,6 @@ char * redir_out(char * prompt){
 			char *copy[4];
 			copy[0]="cp";
 			copy[1]=path;
-
-			if(flag_err){
-				copy[2]="redir_err";
-			}
-
-			else{
-				copy[2]="redir_out";
-			}
-
 			copy[3]=NULL;
 
 			/*IF WHEN WE COPY WE GET -1 THEN THEN THERE WAS AN ERROR
@@ -342,9 +333,14 @@ char * redir_out(char * prompt){
 					delete[1]="redir_err";
 				}
 
-				else if(delete[2]==NULL){
+				else if(delete[1]!=NULL){
 
-					delete[2]="redir_err";
+					if(strcmp(delete[1],"redir_err")!=0 && delete[2]==NULL){
+
+						delete[2]="redir_err";
+
+					}
+					
 				}
 				
 			}
@@ -356,9 +352,14 @@ char * redir_out(char * prompt){
 					delete[1]="redir_out";
 				}
 
-				else if(delete[2]==NULL){
+				else if(delete[1]!=NULL){
 
-					delete[2]="redir_out";
+					if(strcmp(delete[1],"redir_out")!=0 && delete[2]==NULL){
+
+						delete[2]="redir_out";
+
+					}
+					
 				}
 
 			}		
@@ -591,11 +592,12 @@ char * redir_in(char * prompt){
 				delete[1]="redir_in";
 			}
 			
-			else if(delete[2]==NULL){
+			else if(strcmp(delete[1],"redir_in")!=0 && delete[2]==NULL){
 				delete[2]="redir_in";
 			}
 
-			else if(delete[3]==NULL){
+			else if(strcmp(delete[1],"redir_in")!=0 && 
+				strcmp(delete[2],"redir_in")!=0 && delete[3]==NULL){
 
 				delete[3]="redir_in";
 			}
