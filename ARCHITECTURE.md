@@ -153,4 +153,4 @@ Par la suite, nous continuons à lire le contenu du fichier, situé après l'en-
 
 #### `pwd`
 
-Bien qu'elle ne soit pas inhérente au shell, nous avons implémenté `pwd` dirèctement dans `tsh.c` étant donné la rapidité et longeur très faible d'implémentation.
+`pwd` construit une chaine de caractère `entry` qu'elle va ensuite afficher dans`STDOUT_FILENO` à l'aide de la fonction `prints()` , une des fonctions du fichier `print.c` qui contient des alternatives à `printf()` à base de `write()`. `pwd` va d'abord récupèrer le répertoire courant à l'aide de `getcwd()` ensuite on récupère le contenu de la variable d'environement `tar`. Si elle est vide on s'arrête la, on écrit ce qu'on a récupèrer dans `STDOUT_FILENO` et nous avons fini. Sinon on concatène le contenu de cette variable d'environnement à ce que nous avons récupèré préalablement, puis enfin nous écrions le résultat et nous avons fini.
