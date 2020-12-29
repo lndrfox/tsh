@@ -2,7 +2,7 @@
 
 ## Fonctionnalités disponibles
 
-Voici les fonctionnalités disponibles du tsh: 
+Voici les fonctionnalités disponibles du tsh:
 
 * Affichage du nom de l'utilisateur, nom de la machine et du répertoire courant au début du prompt.
 
@@ -20,7 +20,7 @@ Voici les fonctionnalités disponibles du tsh:
 
 tsh.c est le point central de notre architecture. Le tsh va s'occuper de récupérer ce qui est entré par l'utilisateur grâce a la librairie readline. A l'aide de fonctions disponibles dans tar_nav.c , il va par la suite (expliqué plus en détail dans l'explication de tsh) s'occuper de parser le prompt obtenu permettant ainsi de traiter si nécessaire la présence de combinaisons de commandes et de redirection. Dernièrement il va appeler la ou les commandes nécéssaires avec leurs arguments sur un ou des processus fils.
 
-Chaque commande devant fonctionner sur les tarballs est gérer dans un fichier à son nom possédant un main afin de pouvoir être appelée avec exec depuis le tsh à l'exception de `cd` et `exit` qui sont inhérent au shell. `exit` se contente de mettre à faux la condition qui est vérifiée à chaque tour de boucle du shell. 
+Chaque commande devant fonctionner sur les tarballs est gérer dans un fichier à son nom possédant un main afin de pouvoir être appelée avec exec depuis le tsh à l'exception de `cd` et `exit` qui sont inhérent au shell. `exit` se contente de mettre à faux la condition qui est vérifiée à chaque tour de boucle du shell.
 
 Afin de gèrer `cd` et les tarballs nous avons mis au point un système de surcouche. Une variable d'environnent nommée "tar" contient le répertoire courant dans les tarballs. Si nous ne sommes actuellement pas dans un tarball alors elle contient uniquement "". `cd`, qui est une fonction codée dans cd.c (afin de mieux séparer le code, mais ce fichier ne contient pas de main) à le même comportement que le `cd` du bash quand les tarballs ne sont pas impliqués. Quand les tarballs sont impliqués, il s'assure de modifier la variable d'environnement "tar" en conséquence.
 
@@ -33,18 +33,18 @@ Le diagramme ci-dessus illustre le fonctionnement de tsh.c sans entrer dans les 
 On passe ensuite le prompt à la fonction `exec_pipe()` qui va se charger de crèer le nombre de processus nécéssaire pour traiter les combinaisons de commandes correctement ( si elles sont présente ) et de les relier par des tubes anonymes. Une fois ceci fait, ou de manière immédiate si il n'y a aucune combinaison de commnades à traiter, la fonction `exec_custom()` est appelée, elle se charge de crèer un processus fils puis appelle `exec_tar_or_bin()`. Une fonction qui prend en argument un ` char ** args` contenant le nom de la fonction et ses arguments/options et terminan par NULL ainsi qu'un boolean indiquant si l'ont peut exécuter directement la commande "normale" avec `exec` ou si l'on doit procèder a quelque vérification supplémentaire pour savoir si
 nous devons à la place exécuter sa version spécifique aux tarballs.
 
-### Les redirections 
+### Les redirections
 
 Attardons nous sur le fonctionnement de la fonction `redir_out()`, la fonction `redir_in()` fonctionne de manière très similaire.
 
-Cette fonction va parcourir le `char * prompt` fourni en argument et chercher la présence d'un symbole de redirection `>` . Elle va par la suite en analysant les caractères adjacents, déterminer si il s'agot d'une redirection `>` , `>>` , `2>` ou `2>>` et va crèer une chaine de caractère path contenant le texte 
+Cette fonction va parcourir le `char * prompt` fourni en argument et chercher la présence d'un symbole de redirection `>` . Elle va par la suite en analysant les caractères adjacents, déterminer si il s'agot d'une redirection `>` , `>>` , `2>` ou `2>>` et va crèer une chaine de caractère path contenant le texte
 présent entre le symbole de redirection trouvé et le prochain symbol de redirection dans `prompt` ou la fin de `prompt`. Par exemple, "commande > blabla 2> tata" nous fournira commande chaîne "blabla". La fonction prend bien soin de supprimer les espaces superflu. Une fois ceci fait, on va ourvir un nouveau descripteur avec `open`, les paramètres du descripteur dépendant de quel symbole de redirection nous traitons  ( `>` ou `>>`) puis nous
 redirigeons la sortie qui nous intéresse, a savoir `STDOUT_FILENO` ou `STDERR_FILENO` selon les circonstances, sur le descripteur que nous venons d'ouvrir, à l'aide de `dup2`. Avant d'appeller `dup2` nous sauvegardons le descripteur remplacé dans une variable global afin qu'il puisse être restauré plus tard. Une fois ceci fait nous enlevons du prompt le symbole de redirection aisni que le chemin de redirection a l'aide d'un `memmove` ( fonction auxiliaire `str_cut`).
 
 Cette boucle va se répèter tant que nous trouvons un symbole `>` ou que nous n'avons pas atteint la fin de prompt. Le processus est très similaire pour `redir_in()` mis à part que le symbole que nous recherchons est `<` et qu'il y a moins de paramètres à prendre en compte.
 
 Le cas ou le fichier vers lequel la redirection doit avoir lieu se situe dans un tarball est un peu plus complexe. En effet, il est impossible de procèder à un simple open du fichier. Voici la stratégie que nous avons décidée d'adopter. Encore une fois nous nous attarderons plus longuement sur l'implémentation dans `redir_out()` car elle est très similaire à celle de `redir_in`. Lorsque la chaîne de caractère représentant le chemin vers lequel la redirecion doit avoir lieu se situe dans un tarball ( ce que nous pouvons déterminer grâce à la fonction auxiliaire `goes_back_in_tar()` ) nous copions le contenu du fichier hors du tar, dans le premier répertoire courant qui n'est pas un tarball, et avec un nom fixe ( `redir_out` ou `redir_err`). Nous utilisons un nom fixe afin d'éviter les conflits entre deux fichiers différents entre le tarball et l'exterieur mais portant le même nom.
-c'est ensuite ce fichier `redir_out/redir_err` qui sera ouvert lors du open, et le chemin du fichier dans le tarballs sera mémorisé dans une variable globale. Par la suite, lors de la réinitialisation des descripteurs, on copie de nouveau le contenu de `redir_out/redir_err` dans le tar mais sous son vrai nom. Puis on supprime le fichier devenu inutile. 
+c'est ensuite ce fichier `redir_out/redir_err` qui sera ouvert lors du open, et le chemin du fichier dans le tarballs sera mémorisé dans une variable globale. Par la suite, lors de la réinitialisation des descripteurs, on copie de nouveau le contenu de `redir_out/redir_err` dans le tar mais sous son vrai nom. Puis on supprime le fichier devenu inutile.
 
 Le fonctiondement est similaire pour `redir_in()`, seulement, nous n'avons pas besoin de copier de nouveau le  contenu du fichier crèer `redir_in` puisque nous l'ouvrons uniquement en lecture.
 
@@ -76,7 +76,7 @@ Cela permet de traiter des arguments contenant des chemins à l'origine relatifs
 ### Les commandes
 
 
-* `mkdir`: 
+* `mkdir`:
 
 * `rmdir`:
 
@@ -84,25 +84,50 @@ Pour cette commande on parcours chaque argument une seule fois. On adapte d'abor
 
 Pour la suppression d'un répertoire on écrit par dessus les données à supprimer en se situant dans le tarball à `longueur` octects. Ce sont les données situées à partir de `longueur+supp` octets qui sont reécrites. On termine par la réduction de la taille du tarball avec `ftruncate()`. Pour la suppresion d'un tarball on le supprime avec `unlink()`.
 
-* `cp`: 
+* `cp`:
+
+Cette commande comporte 3 fonctions principales:
+ext_vers_tar: Cette fonction permet de copier un fichier qui n'est pas dans un tarball et la copie dans un tarball.
+tar_vers_ext: Cette fonction permet de copier un fichier d'un tarball et de le copier dans un répertoire quelconque.
+tar_vers_tar: Cette fonction permet de copier un fichier d'un tarball et de le copier dans un autre tarball.
+
+et 2 fonctions auxiliaire:
+rmtar: qui est la même commande que rm légèrement modifié pour qu'il soit plus facile a utiliser pour 1 argument.
+rmdirep: qui est la même commande que mkdir légèrement modifié pour qu'il soit plus facile a utiliser pour 1 argument.
+
+Pour savoir quel fonctions utilisé nous regardons les arguments données lors de son appel, en faisant un true_path des arguments données puis en regardant si leurs true_path contienne le nom d'un tar nous pouvons en déduire quel fonctions utilisés sachant que cp s'appel de la manière "cp fichier_copié fichier_collé".
+
+Ces 3 fonctions fonctionnes de la même manière:
+Si le fichier a copié est dans un tarball, nous parcourons le tarball jusqu'à que nous rencontrons le header contenant le même nom que le fichier copié si nous ne trouvons pas l'header la fonction s'interrompt, si le fichier n'est pas dans tarball alors il sera ouvert normalement si il existe, nous faisons ensuite le même procédé pour le fichier collé, si la destination du fichier à collée est dans un tarball nous parcourons ces header, si le nom de l'header est le même que le fichier collée il sera alors supprimé, si il n'existe pas dans les 2 cas nous allons à la fin du tarball et le fichier a collée n'est pas dans un tarball nous l'ouvrons normalement avec "open". Si le fichier a collée est dans un tarball nous copions 512 octets par 512 octets du fichier copié pour maintenir la structure du tarball sinon pour les fichiers en dehors du tarball nous copions la taille du fichier copié d'un seul coup.
+
+Pour cp -r nous utilisons 3 autre fonctions principales:
+cp_r_evt: Cette fonction permet de copier un répertoire qui n'est pas dans un tarball et la copie dans un tarball.
+cp_r_tve: Cette fonction permet de copier un répertoire d'un tarball et de le copier dans un répertoire quelconque.
+cp_r_tvt: Cette fonction permet de copier un répertoire d'un tarball et de le copier dans un autre tarball.     
+
+
+Ces 3 fonctions principales fonctionnes aussi de la même manière
+En suivant le même principe que pour "cp" nous regardons le type du header, si le header est un répertoire contenant le path du répertoire copier alors nous créons le répertoire avec "mkdirep" mais avec le path du répertoire collée, si le header n'est pas un répertoire et contient le path du fichier copiée alors nous réutilisons les 3 fonctions principaux de "cp" selon le cas et nous continuons jusqu'à la fin du parcours du tarball, de même si le répertoire est en dehors d'un tarball mais nous parcourons alors le répertoire avec "opendir".
 
 * `mv`:
+
+mv ce comporte exactement comme "cp" sauf qu'après la copie du fichier, nous supprimons le fichier.
 
 * `rm`:
 
 Cette commande fonctionne uniquement dans les tarballs bien rangés.
 
-Tout d'abord nous procédons à la vérification de l'existence de l'option -r en argument. La présence celle-ci sera stocké dans une variable pour être rappeler plus tard lors de la suppression des fichiers entrés en argument. 
+Tout d'abord nous procédons à la vérification de l'existence de l'option -r en argument. La présence celle-ci sera stocké dans une variable pour être rappeler plus tard lors de la suppression des fichiers entrés en argument.
 
 On parcours ensuite chaque argument une seule fois. Dans ce parcours on vérifie d'abord que l'argument n'est pas appelé sur un tarball lui-même. Si un tarball est en argument et qu'il y a l'option -r on le supprime avec `unlink()`, sinon on procède à la suite. On adapte d'abord l'argument en le modifiant en fonction de la variable d'environnement ou de la présence de `../` grâce la fonction `tar_and_path()` dans tar_nav.c (ex: t.tar/r1/r2$ rm fich nous renvoit r1/r2/fich pour l'argument fich). Une fois cela fait, on parcours la boucle qui récupère à chaque tour l'header qui suit le précédant ayant été lu dans le tarball. Tant qu'on ne trouve pas le fichier ou répertoire en argument on stocke la somme de la taille des fichiers lus dans une variable `longueur`. Si le fichier ou répertoire est trouvé on stocke sa taille dans une variable `supp` ainsi que les fichiers appartenant à celui-ci si c'est une répertoire. Le reste lu après sera stocké dans une variable `dep`. Une fois arrivé à la fin du tarball, on vérifie que la suppression peut avoir lieu, c'est-à-dire si le fichier existe et que l'option -r est présente si c'est un répertoire à supprimer.
 
 Pour la suppression, on écrit par dessus les données à supprimer en se situant dans le tarball à `longueur` octects. Ce sont les données situées à partir de `longueur+supp` octets qui sont reécrites. On termine par la réduction de la taille du tarball avec `ftruncate()`.
-	
-* `ls`: 
+
+* `ls`:
 
 Cette commande fonctionne uniquement dans les tarballs bien rangés.
 
-Tout d'abord nous procédons à la vérification de l'existence de l'option -l en argument. La présence celle-ci sera stocké dans une variable pour être rappeler plus tard lors de l'affichage des fichiers entrés en argument. 
+Tout d'abord nous procédons à la vérification de l'existence de l'option -l en argument. La présence celle-ci sera stocké dans une variable pour être rappeler plus tard lors de l'affichage des fichiers entrés en argument.
 
 Si la commande n'a pas d'arguments (l'option -l non concernée) il y a deux cas. Si la variable d'environnement est dans un répertoire du tar, on "imite" le comportement du ls appelé depuis un tar avec en argument le nom du répertoire. Sinon on choisi d'afficher tous les fichiers ou répertoires du tarball ayant une profondeur de 0 (c'est-à-dire qu'il n'appartiennent à aucun répertoire). Il n'y aura qu'un seul parcours du tarball.
 
@@ -117,7 +142,7 @@ A la fin de la boucle on trie ce tableau en 3 parties, le premier est un tableau
 
 Pour l'affichage la fonction `afficher` dans lib.c s'occupera de récupérer les données nécéssaires d'un header et les convertir en char*.
 Un char* "mutable" (`struct affichage` dans lib.c) a été créé pour concaténer toutes ses valeurs et obtenir un seul char* à afficher. L'affichage se fait à la fin du programme.
-	
-* `cat`: 
+
+* `cat`:
 
 * `pwd`:
