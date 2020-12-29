@@ -865,7 +865,7 @@ int ext_vers_tar_cp(char *argv[]){
       	return -1;
     }
 
-    if((hd.name[1]=='\0')){
+    if((hd.name[0]=='\0')){
       break;
     }
 
@@ -879,7 +879,7 @@ int ext_vers_tar_cp(char *argv[]){
     lseek(fd,((size+ BLOCKSIZE - 1) >> BLOCKBITS)*BLOCKSIZE,SEEK_CUR);
 
 
-  }while(hd.name[1]!=0);//While the header is not at the end block of 0
+  }while(hd.name[0]!='\0');//While the header is not at the end block of 0
 
 
   struct posix_header temporaire;//The 'entete' we will put at the end of the tar

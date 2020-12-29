@@ -107,30 +107,6 @@ char * get_last_dir(){
 
 }
 
-/*RETURNS THE FULL PATH OF THE CURRENT WORKING DIRECTORY*/
-
-void pwd(){
-
-	char bufdir [PATH_MAX + 1];
-	getcwd(bufdir,sizeof(bufdir));
-	char * entry=malloc(sizeof(bufdir)+sizeof(getenv("tar"))+sizeof("/"));
-
-	if(entry==NULL){
-
-		perror("malloc");
-		exit(-1);
-	}
-
-	memset(entry,0,sizeof(bufdir)+sizeof(getenv("tar")));
-	entry= strcat(entry,bufdir);
-	entry=strcat(entry,"/");
-	entry = strcat(entry,getenv("tar"));
-	prints(entry);
-	prints("\n");
-	free(entry);
-
-
-}
 
 /*CUT THE SIZE FIRST CHAR FROM THE STRING PROMPT*/
 
@@ -748,7 +724,7 @@ void reinit_descriptors(){
 
 	if(delete[1]!=NULL){
 
-		//exec_custom(delete,0);
+		exec_custom(delete,0);
 	}	
 
 	/*WE FREE AND RETURN*/
@@ -1412,17 +1388,6 @@ void parse (char * prompt){
 		return;
 	}
 
-	/*IF THE COMMAND IS PWD*/
-
-	if(strcmp(tokens[0],"pwd")==0  && current_dir_is_tar()){
-
-		pwd();
-		free(tokens_pipe);
-		free(tokens);
-		free(token_1);
-		free(prompt_cpy);
-		return;
-	}
 
 	/*CD CAN'T BE CALLED AFTER A FORK CAUSE THE CHANGES WOULDNT CARRY OVER TO
 	THE FATHER PROCESS*/
