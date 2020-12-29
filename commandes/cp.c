@@ -664,11 +664,12 @@ int ext_vers_tar(char *argv[]){
     //IF WE REACHED THE END OF THE TAR WITHOUT FINDING THE HEADER THEN IT DOESNT EXIST AND WE CAN CREATE IT
 
     if(strcmp(hd.name,path) == 0){
+			prints("really");
 			rmtar(path);
 			return ext_vers_tar(argv);
     }
 
-    if((hd.name[1]=='\0')){
+    if((hd.name[0]=='\0')){
       break;
     }
 
@@ -701,7 +702,7 @@ int ext_vers_tar(char *argv[]){
   //FILLING MODE
   struct stat f;
   stat(true_path(argv[1]),&f);
- 	sprintf(temporaire.mode,"%7o", f.st_mode);
+  sprintf(temporaire.mode,"%7o", f.st_mode);
 
 
  //SIZE BECOME THE SIZE OF THE COPIED FILE
@@ -776,7 +777,6 @@ int ext_vers_tar(char *argv[]){
  lseek(fd,-512,SEEK_CUR);
 
  //WRITING THE NEW DIRECTORY AT THE END OF THE FILE
-
 
   int rddd=write(fd,&temporaire,BLOCKSIZE);
 
@@ -965,7 +965,7 @@ int tar_vers_tar(char *argv[]){
 
 		}
 
-    if((hd2.name[1]=='\0')){
+    if((hd2.name[0]=='\0')){
       break;
     }
 
@@ -1020,6 +1020,7 @@ int tar_vers_tar(char *argv[]){
  //FILE SO TYPE IS 0
 
  temporaire.typeflag=hd.typeflag;
+ printd(temporaire.typeflag);
 
 
  // VERSION
@@ -1253,7 +1254,7 @@ int cp_r_tvt(char *argv[]){
 
 
 
-    if((hd.name[1]=='\0')){
+    if((hd.name[0]=='\0')){
 
       break;
     }
@@ -1419,7 +1420,7 @@ int cp_r_tve(char *argv[]){
 
    sscanf(hd.size, "%o",&size);
 
-   if((hd.name[1]=='\0')){
+   if((hd.name[0]=='\0')){
 
      break;
    }

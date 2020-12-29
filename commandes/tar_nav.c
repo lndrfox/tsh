@@ -597,25 +597,29 @@ char ** tar_and_path(char *p){
 
 int tar_vers_ext_cp(char *argv[]){
 
-  struct posix_header hd; //Header for the tar
+   struct posix_header hd; //Header for the tar
 
   unsigned int size; //Size of the file that will be initialized later
 
   //we get the tar to open and the path for the file
   //from tar_and_path
   char ** arg = tar_and_path(argv[1]);
+
+	if (arg[0] == NULL){
+		print_error("cp : '",argv[1],"' Problem with argv 1");
+		exit(-1);
+	}
+
+	if (arg[1] == NULL){
+		print_error(NULL,argv[1],"' Problem with argv 1");
+		exit(-1);
+	}
+
   char * tar = malloc(strlen(arg[0])+sizeof(char));
   strcpy (tar,arg[0]);
-
-  if(arg[1]==NULL){
-
-  		print_error(NULL,argv[1],"No such file or directory");
-  		free(arg);
-  		return -1;
-  }
-
   char * path = malloc(strlen(arg[1])+sizeof(char));
   strcpy (path,arg[1]);
+
   free(arg);
 
   // OPENING THE TAR FILE
@@ -625,8 +629,8 @@ int tar_vers_ext_cp(char *argv[]){
   //ERROR MANAGMENT
 
   if(fd==-1){
-    print_error(NULL,tar,"No such file or directory");
-    return -1;
+    print_error(NULL,tar,"open tar file");
+    exit(-1);
   }
 
   // THIS LOOP ALLOWS US TO LOOK FOR THE HEADER CORRESPONDING TO THE FILE WE WANT TO
@@ -641,15 +645,14 @@ int tar_vers_ext_cp(char *argv[]){
 
     if(rdcount<0){
 
-      print_error(NULL,NULL,"reading tar file");
+      print_error(NULL,tar,"' reading tar file");
       close(fd);
-     exit (-1);
+      return -1;
     }
 
     //IF WE REACHED THE END OF THE TAR WITHOUT FINDING THE GOOD HEADER
 
     if((hd.name[0]=='\0')){
-      
       return -2;
     }
 
@@ -712,55 +715,66 @@ int tar_vers_ext_cp(char *argv[]){
       			case '7': c = S_IRWXO; break;
     		}
 
-  int fd2=open(argv[2], O_RDWR | O_CREAT | O_TRUNC , a | b | c);
+	  int fd2;
+
+	//if the file is a FIFO
+	if(hd.typeflag == 54){
+		fd2 = mkfifo(true_path(argv[2]), a | b |c );
+		fd2 = open(true_path(argv[2]), O_RDWR | O_CREAT , a | b | c);
+	}
+
+	//if the file is a LINK
+	else if(hd.typeflag == 50){
+		char * e = malloc(strlen(hd.linkname) + sizeof(char));
+		strcpy(e,hd.linkname);
+		char * f = malloc(strlen(true_path(argv[2])) + sizeof(char));
+		strcpy(f,true_path(argv[2]));
+		symlink(e, f);
+
+			fd2=open(f, O_RDWR | O_CREAT , a | b | c);
+			free (e);
+			free (f);
+
+	}
+	else {
+		fd2=open(argv[2], O_RDWR | O_CREAT , a | b | c);
+
+	}
+
+	fchmod(fd2, a | b | c);
+
 
 	if(fd2 < 0){
-		print_error(NULL,argv[2],"can't be opened");
+		print_error(NULL,argv[2],"error argv[2]");
 		return -1;
 	}
-  fchmod(fd2, a | b | c);
+
 
   //GETTING THE SIZE OF WHAT WE NEED TO READ
 
-  char rd [BLOCKSIZE] ;
-
-  //LOOP TO READ AND WRITE THE BLOCKS OF THE FILE CONTENT
-
-    for(unsigned int i=0; i<(size);i++){
+	sscanf(hd.size, "%o",&size);
+	char rd [size];
 
 
-    int rdtmp = read(fd, rd, 1);
-
-    //EROR MANAGMENT
+	    int rdtmp = read(fd, rd, size );
 
 
-    if((strcmp(rd,"\0"))==0){
+	    //EROR MANAGMENT
 
-      break;
-    }
-    if(rdtmp<0){
+	    if(rdtmp<0){
 
-      print_error(NULL,NULL,"Reading tar file");
-      exit(-1);
-    }
+	      print_error(NULL,tar,"' Reading tar file");
+	      exit(-1);
+	    }
 
-    //WRITING THE BLOCK AND ERROR MANGEMENT
+	    //WRITING THE BLOCK AND ERROR MANGEMENT
 
-    if(write(fd2,rd, 1)<0){
+	    if(write(fd2,rd, size)<0){
 
-      print_error(NULL,NULL,"Writing file content");
-      exit(-1);
+	      print_error(NULL, argv[2] ," Writing file content");
+	      exit(-1);
 
-    }
-
-    memset(rd, 0, BLOCKSIZE);
-
-    }
-
-  //MOVING READING HEAD BACK TO THE BEGINING OF THE TAR FILE IN CASE ARGUMENTS ARE NOT
-  //IN THE SAME ORDER AS THE HEADERS IN THE TAR FILE
-
-  lseek(fd,0,SEEK_SET);
+	    }
 
   //CLOSING WRITING FILE
 
@@ -825,8 +839,8 @@ int ext_vers_tar_cp(char *argv[]){
   int fd2 = open(argv[1], O_RDONLY);
 
   if(fd2<0){
-    print_error(NULL, argv[1] ,"iciAucun fichier ou dossier de ce type\n");
-    exit(-1);
+    print_error(NULL, argv[1] ,"Aucun fichier ou dossier de ce type\n");
+    return -1;
   }
 
 
@@ -851,7 +865,7 @@ int ext_vers_tar_cp(char *argv[]){
       	return -1;
     }
 
-    if((hd.name[1]=='\0')){
+    if((hd.name[0]=='\0')){
       break;
     }
 
@@ -865,7 +879,7 @@ int ext_vers_tar_cp(char *argv[]){
     lseek(fd,((size+ BLOCKSIZE - 1) >> BLOCKBITS)*BLOCKSIZE,SEEK_CUR);
 
 
-  }while(hd.name[1]!=0);//While the header is not at the end block of 0
+  }while(hd.name[0]!='\0');//While the header is not at the end block of 0
 
 
   struct posix_header temporaire;//The 'entete' we will put at the end of the tar
@@ -883,8 +897,8 @@ int ext_vers_tar_cp(char *argv[]){
 
   //FILLING MODE
   struct stat f;
-  stat(true_path(argv[1]),&f);
- 	sprintf(temporaire.mode,"%7o", f.st_mode);
+  stat(argv[1],&f);
+  sprintf(temporaire.mode,"%7o", f.st_mode);
 
 
  //SIZE BECOME THE SIZE OF THE COPIED FILE
@@ -909,24 +923,23 @@ int ext_vers_tar_cp(char *argv[]){
 
  sprintf(temporaire.magic,TMAGIC);
 
-
- //Typeflag
-  if(S_ISREG(f.st_mode)){
- 	 temporaire.typeflag = '0';
- 	 }
- //LINKNAME
-  if(S_ISLNK(f.st_mode)){
- 	 temporaire.typeflag = '2';
-  }
-  if(S_ISCHR(f.st_mode) != 0){
- 	 temporaire.typeflag = '3';
-  }
-  if(S_ISBLK(f.st_mode) != 0){
- 	 temporaire.typeflag = '4';
-  }
-  if(S_ISFIFO(f.st_mode) != 0){
- 	 temporaire.typeflag = 54 ;
-  }
+//Typeflag
+ if(S_ISREG(f.st_mode)){
+	 temporaire.typeflag = '0';
+	 }
+//LINKNAME
+ if(S_ISLNK(f.st_mode)){
+	 temporaire.typeflag = '2';
+ }
+ if(S_ISCHR(f.st_mode) != 0){
+	 temporaire.typeflag = '3';
+ }
+ if(S_ISBLK(f.st_mode) != 0){
+	 temporaire.typeflag = '4';
+ }
+ if(S_ISFIFO(f.st_mode) != 0){
+	 temporaire.typeflag = 54 ;
+ }
 
  // VERSION
 
@@ -957,7 +970,7 @@ int ext_vers_tar_cp(char *argv[]){
  // SINCE WE READ THE FIRST EMPTY BLOCK (TAR ENDS WITH 2 EMPTY BLOCKS) TO CHECK IF WE HAD READ ALL OF THE HEADERS
  // WE NEED TO GO BACK ONE BLOCK
 
- lseek(fd,-BLOCKSIZE,SEEK_CUR);
+ lseek(fd,-512,SEEK_CUR);
 
  //WRITING THE NEW DIRECTORY AT THE END OF THE FILE
 
@@ -971,31 +984,29 @@ int ext_vers_tar_cp(char *argv[]){
   }
 
 
-	char buff [BLOCKSIZE];
+  char buff [BLOCKSIZE];
 	memset(buff,0,BLOCKSIZE);
-	int rdtmp=0;
+  int rdtmp=0;
 
-	do{	
-	    rdtmp = read(fd2,buff, BLOCKSIZE);
-	    //ERROR MANAGMENT
+  do{
+      rdtmp = read(fd2,buff, BLOCKSIZE);
+      //EROR MANAGMENT
 
-	    if(rdtmp<0){
-	      print_error(NULL,NULL,"Reading tar file");
-	      exit(-1);
-	    }
+      if(rdtmp<0){
+        print_error(NULL,NULL,"Reading tar file");
+        exit(-1);
+      }
 
-	    //WRITING THE BLOCK AND ERROR MANGEMENT
+      //WRITING THE BLOCK AND ERROR MANGEMENT
 
-	    if(write(fd,buff, BLOCKSIZE)<0){
+      if(write(fd,buff, BLOCKSIZE)<0){
 
-	      print_error(NULL,NULL,"Writing file content");
-	      exit(-1);
+        print_error(NULL,NULL,"Writing file content");
+        exit(-1);
 
-	    }
-		memset(buff,0,BLOCKSIZE);
-
-	}while(rdtmp>0);
-
+      }
+    memset(buff,0,BLOCKSIZE);
+  }while(rdtmp>0);
     //RESETING THE BUFFER
 
 
@@ -1019,5 +1030,3 @@ int ext_vers_tar_cp(char *argv[]){
   close (fd2);
   return 0;
 }
-
-

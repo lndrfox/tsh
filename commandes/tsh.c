@@ -107,30 +107,6 @@ char * get_last_dir(){
 
 }
 
-/*RETURNS THE FULL PATH OF THE CURRENT WORKING DIRECTORY*/
-
-void pwd(){
-
-	char bufdir [PATH_MAX + 1];
-	getcwd(bufdir,sizeof(bufdir));
-	char * entry=malloc(sizeof(bufdir)+sizeof(getenv("tar"))+sizeof("/"));
-
-	if(entry==NULL){
-
-		perror("malloc");
-		exit(-1);
-	}
-
-	memset(entry,0,sizeof(bufdir)+sizeof(getenv("tar")));
-	entry= strcat(entry,bufdir);
-	entry=strcat(entry,"/");
-	entry = strcat(entry,getenv("tar"));
-	prints(entry);
-	prints("\n");
-	free(entry);
-
-
-}
 
 /*CUT THE SIZE FIRST CHAR FROM THE STRING PROMPT*/
 
@@ -292,15 +268,6 @@ char * redir_out(char * prompt){
 			char *copy[4];
 			copy[0]="cp";
 			copy[1]=path;
-
-			if(flag_err){
-				copy[2]="redir_err";
-			}
-
-			else{
-				copy[2]="redir_out";
-			}
-
 			copy[3]=NULL;
 
 			/*IF WHEN WE COPY WE GET -1 THEN THEN THERE WAS AN ERROR
@@ -323,7 +290,6 @@ char * redir_out(char * prompt){
 				return err;
 
 			}
-
 
 
 			/*WE COPY PATH IN MV_OUT/MV_ERR, AS WE WILL USE MV_OUT 
@@ -367,9 +333,14 @@ char * redir_out(char * prompt){
 					delete[1]="redir_err";
 				}
 
-				else if(delete[2]==NULL){
+				else if(delete[1]!=NULL){
 
-					delete[2]="redir_err";
+					if(strcmp(delete[1],"redir_err")!=0 && delete[2]==NULL){
+
+						delete[2]="redir_err";
+
+					}
+					
 				}
 				
 			}
@@ -381,9 +352,14 @@ char * redir_out(char * prompt){
 					delete[1]="redir_out";
 				}
 
-				else if(delete[2]==NULL){
+				else if(delete[1]!=NULL){
 
-					delete[2]="redir_out";
+					if(strcmp(delete[1],"redir_out")!=0 && delete[2]==NULL){
+
+						delete[2]="redir_out";
+
+					}
+					
 				}
 
 			}		
@@ -570,6 +546,21 @@ char * redir_in(char * prompt){
 			copy[2]="redir_in";
 			copy[3]=NULL;
 
+			/*IN CASE OF MULTIPLE REDIRECTIONS, WE NEED TO REMOVE REDIR_IN SO WE
+			CAN REPLACE IT WITH THE CONTENT OF THE LATEST FILE INDICATED*/
+
+			if(access("redir_in",F_OK)==0){
+
+				char *remove[3];
+				remove[0]="rm";
+				remove[1]="redir_in";
+				remove[2]=NULL;
+
+				exec_custom(remove,0);
+
+
+			}
+
 			/*IF THE COPY DIDN'T WORK IT MEANS THE FILE
 			DOES NOT EXIT SO WE HANDLE THE ERROR AND RETURN "ERROR"*/
 
@@ -601,11 +592,12 @@ char * redir_in(char * prompt){
 				delete[1]="redir_in";
 			}
 			
-			else if(delete[2]==NULL){
+			else if(strcmp(delete[1],"redir_in")!=0 && delete[2]==NULL){
 				delete[2]="redir_in";
 			}
 
-			else if(delete[3]==NULL){
+			else if(strcmp(delete[1],"redir_in")!=0 && 
+				strcmp(delete[2],"redir_in")!=0 && delete[3]==NULL){
 
 				delete[3]="redir_in";
 			}
@@ -647,6 +639,11 @@ char * redir_in(char * prompt){
 BECAUS EOF REDIRECTIONS*/
 
 void reinit_descriptors(){
+
+
+	dup2(d_stdout,STDOUT_FILENO);
+	dup2(d_stdin,STDIN_FILENO);
+	dup2(d_stderr,STDERR_FILENO);
 
 
 	/*IF MV_OUT ISNT NULL THEN THERE WAS
@@ -737,10 +734,6 @@ void reinit_descriptors(){
 	free(delete);
 	free(mv_out);
 	free(mv_err);
-
-	dup2(d_stdout,STDOUT_FILENO);
-	dup2(d_stdin,STDIN_FILENO);
-	dup2(d_stderr,STDERR_FILENO);
 
 }
 
@@ -1397,17 +1390,6 @@ void parse (char * prompt){
 		return;
 	}
 
-	/*IF THE COMMAND IS PWD*/
-
-	if(strcmp(tokens[0],"pwd")==0  && current_dir_is_tar()){
-
-		pwd();
-		free(tokens_pipe);
-		free(tokens);
-		free(token_1);
-		free(prompt_cpy);
-		return;
-	}
 
 	/*CD CAN'T BE CALLED AFTER A FORK CAUSE THE CHANGES WOULDNT CARRY OVER TO
 	THE FATHER PROCESS*/
