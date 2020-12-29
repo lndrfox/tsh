@@ -152,3 +152,5 @@ La version tarballs de `cat` s'occupe uniquement de gèrer les arguments se trou
 Par la suite, nous continuons à lire le contenu du fichier, situé après l'en-tête, par blocs de 512 octets ( selon la nome posix ) et nous les écrivons sur `STDOUT_FILENO`. La taille du fichier spécifiée dans le header nous permet de déterminer à l'avance le nombre de bloc devant être lus.
 
 #### `pwd`
+
+Bien qu'elle ne soit pas inhérente au shell, nous avons implémenté `pwd` dirèctement dans `tsh.c` étant donné la rapidité et longeur très faible d'implémentation.
