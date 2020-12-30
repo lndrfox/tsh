@@ -371,6 +371,9 @@ char * path_is_valid(char * path){
 
 	if(pathf==NULL){
 
+		free(tokens);
+		free(path_cpy);
+		
 		return pathf;
 	}
 
@@ -384,6 +387,11 @@ char * path_is_valid(char * path){
 
 	if(strcmp(pathf,"")==0){
 
+		free(tokens);
+		free(tokens_pathf);
+		free(pathf_copy);
+		free(path_cpy);
+
 		return "";
 	}
 
@@ -392,6 +400,11 @@ char * path_is_valid(char * path){
 
 	if(!string_contains_tar(tokens_pathf[0])){
 
+		free(tokens);
+		free(tokens_pathf);
+		free(pathf_copy);
+		free(path_cpy);
+		
 		return pathf;
 	}
 
@@ -402,6 +415,11 @@ char * path_is_valid(char * path){
 
 	if(!tar_file_exists(bufdir,tokens_pathf[0])){
 
+		free(tokens);
+		free(tokens_pathf);
+		free(pathf_copy);
+		free(path_cpy);
+
 		return NULL;
 	}
 
@@ -409,6 +427,11 @@ char * path_is_valid(char * path){
 	OF THE .TAR, WE CAN RETURN PATHF*/
 
 	if(tokens_pathf[1]==NULL){
+
+		free(tokens);
+		free(pathf_copy);
+		free(tokens_pathf);
+		free(path_cpy);
 
 		return pathf;
 	}
@@ -429,6 +452,7 @@ char * path_is_valid(char * path){
 		free(tokens_pathf);
 		free(path_without_tar);
 		free(pathf_copy);
+		free(path_cpy);
 
 		return pathf;
 	}
@@ -440,6 +464,7 @@ char * path_is_valid(char * path){
 	free(tokens_pathf);
 	free(path_without_tar);
 	free(pathf_copy);
+	free(path_cpy);
 
 	return NULL;
 }
@@ -587,7 +612,7 @@ char ** tar_and_path(char *p){
 
 	tokens3[0] = tar;
 	tokens3[1] = path;
-
+	tokens3[2]=NULL;
 
 
 	return tokens3;
@@ -619,6 +644,14 @@ int tar_vers_ext_cp(char *argv[]){
   strcpy (tar,arg[0]);
   char * path = malloc(strlen(arg[1])+sizeof(char));
   strcpy (path,arg[1]);
+
+  int fr=0;
+
+  while(arg[fr]!=NULL){
+
+  	free(arg[fr]);
+  	fr++;
+  }
 
   free(arg);
 
