@@ -605,6 +605,7 @@ char ** tar_and_path(char *p){
 
 	free(path_1_copy);
 	free(tokens);
+	free(path1);
 	//We make a " char ** tokens3" where we stock "tar" in tokens3[0]
 	//and "path" in tokens3[1];
 	char ** tokens3= (char **) calloc(3,sizeof(char *));
@@ -645,14 +646,8 @@ int tar_vers_ext_cp(char *argv[]){
   char * path = malloc(strlen(arg[1])+sizeof(char));
   strcpy (path,arg[1]);
 
-  int fr=0;
-
-  while(arg[fr]!=NULL){
-
-  	free(arg[fr]);
-  	fr++;
-  }
-
+  free(arg[0]);
+  free(arg[1]);
   free(arg);
 
   // OPENING THE TAR FILE
@@ -857,6 +852,8 @@ int ext_vers_tar_cp(char *argv[]){
   char * path = malloc(strlen(arg[1])+sizeof(char));
   strcpy (path,arg[1]);
 
+  free(arg[0]);
+  free(arg[1]);
   free(arg);
 
   // OPENING THE TAR FILE

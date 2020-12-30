@@ -252,10 +252,11 @@ char * redir_out(char * prompt){
 
 		/*IF THE GIVEN PATH DOESNT GOES BACK IN TAR
 		WE SIMPLY APPLY TRUE PATH TO IT*/
+		char * path_f=NULL;
 
 		if(!goes_back_in_tar(path)){
 
-			path=true_path(path);
+			path_f=true_path(path);
 		}
 
 		/*IF IT IS INSIDE A TAR*/
@@ -296,7 +297,13 @@ char * redir_out(char * prompt){
 					perror("malloc");
 					exit(-1);
 				}
+
 				strcpy(err,"error");
+
+				if(path_f!=NULL){
+					free(path_f);
+				}
+				free(path);
 				return err;
 
 			}
@@ -323,15 +330,15 @@ char * redir_out(char * prompt){
 
 			if(flag_err){
 
-				path=realloc(path,strlen("redir_err")+sizeof(char));
-				strcpy(path,"redir_err");
+				path_f=malloc(strlen("redir_err")+sizeof(char));
+				strcpy(path_f,"redir_err");
 
 			}
 			
 			else{
 
-				path=realloc(path,strlen("redir_out")+sizeof(char));
-				strcpy(path,"redir_out");
+				path_f=malloc(strlen("redir_out")+sizeof(char));
+				strcpy(path_f,"redir_out");
 			}
 			
 			/*WE ADD REDIR_OUT/REDIR_ERR TO THE DELETE ARRAY SO THAT IT'S DELETED
@@ -382,7 +389,7 @@ char * redir_out(char * prompt){
 
 			/*WE OPEN THE DESCRIPTOR*/
 
-			int fd=open(path,O_RDWR|O_CREAT|O_APPEND,S_IRUSR|S_IWUSR|S_IRGRP|S_IROTH);
+			int fd=open(path_f,O_RDWR|O_CREAT|O_APPEND,S_IRUSR|S_IWUSR|S_IRGRP|S_IROTH);
 
 			/*IF WE NEED TO REDIRECT STDERR_FILENO*/
 
@@ -402,7 +409,7 @@ char * redir_out(char * prompt){
 		DESCRIPTOR MUST NOT BE OPENED IN APPEND MODE ------*/
 
 		else{
-			int fd=open(path,O_RDWR|O_CREAT,S_IRUSR|S_IWUSR|S_IRGRP|S_IROTH);
+			int fd=open(path_f,O_RDWR|O_CREAT,S_IRUSR|S_IWUSR|S_IRGRP|S_IROTH);
 
 			/*IF WE NEED TO REDIRECT STDERR_FILENO*/
 
@@ -435,6 +442,7 @@ char * redir_out(char * prompt){
 
 		flag=0;
 		free(path);
+		free(path_f);
 
 	}while(anchor!=NULL);
 
