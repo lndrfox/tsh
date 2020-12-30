@@ -24,15 +24,15 @@ extern int existant (node_t * n, char * file, char * rep);
 
 // AFFICHAGE
 
-typedef struct affichage * affichage;
-extern char * to_string(affichage a);
-extern void init(affichage a);
-extern void ajout(affichage a, char * ajout);
-extern void ptemps(affichage a, long temps);
-extern void ptype(affichage a, char t);
-extern void pdroit(affichage a, char * d);
-extern void plink(affichage a, node_t * tar, struct posix_header hdr);
-extern void afficheNom(affichage a, node_t * node, node_t * tar, int option, char * var_rep);
-extern void afficher (affichage aff, node_t * node, node_t * tar, int l,  unsigned int * size, char * var_rep);
+typedef struct affichage * mutableString;
+extern char * to_string(mutableString a);
+extern void init(mutableString a);
+extern void ajout(mutableString a, char * ajout);
+extern void ptemps(mutableString a, long temps);
+extern void ptype(mutableString a, char t);
+extern void pdroit(mutableString a, char * d);
+extern void plink(mutableString a, node_t * tar, struct posix_header hdr);
+extern void afficheNom(mutableString a, node_t * node, node_t * tar, int option, char * var_rep);
+extern void afficher (mutableString aff, node_t * node, node_t * tar, int l,  unsigned int * size, char * var_rep);
 
 #endif

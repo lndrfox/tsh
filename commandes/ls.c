@@ -208,8 +208,8 @@ int main (int argc, char *argv[]) {
 	// 	 		FINALISATION DES INFORMATIONS A STOCKER
 	// ======================================================================
 
-	affichage format = malloc(sizeof(affichage));	// affichage final
-	init(format);									// initialisation de l'affichage
+	mutableString format = malloc(sizeof(mutableString));	// affichage final
+	init(format);											// initialisation de l'affichage
 
 	// ----------------------------------------------------------------------
 	//	 	 	     		 TRI DES LISTES
@@ -311,7 +311,7 @@ int main (int argc, char *argv[]) {
 	// TARS OU REPERTOIRES
 	for (int i = 0; i < length3 ; i++) {
 
-		affichage aff = malloc(sizeof(affichage));
+		mutableString aff = malloc(sizeof(mutableString));
 		init(aff);
 		node_t * node = get_head(array[2][i]);
 		int total = 0;

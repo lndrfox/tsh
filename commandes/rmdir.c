@@ -72,102 +72,115 @@ int main(int argc, char *argv[]){
 		int valide = 0;			// 0: le repertoire ne peut pas etre supprime
 						// 1: le repertoire peut etre supprime
 
+		int existe = 0;			// Le repertoire existe
 		char* rep = NULL;		// Nom du repertoire
 		unsigned int size;		// Taille du fichier
 		off_t longueur = 0;		// Somme de la taille des fichiers avant le repertoire
 		off_t supp = 0;			// Somme de la taille du repertoire et de ses fichiers
 		off_t dep = 0;			// Somme de la taille des fichiers apres le repertoire
 
+		if(arg != NULL)
+			existe = file_exists_in_tar(arg, tar);
+
+		if(arg == NULL || existe) {
+
 		// ----------------------------------------------------------------------
 		// 	 		     PARCOURS DU TAR
 		// ----------------------------------------------------------------------
 
-		while(1) {
+			while(1) {
 
-			// Lecture du bloc
+				// Lecture du bloc
 
-			int rdcount = read(fd,&tampon, BLOCKSIZE);
-			if(rdcount<0){
-				perror("rmdir: erreur lors de la lecture du tar");
-				close(fd);
-				exit(-1);
-			}
+				int rdcount = read(fd,&tampon, BLOCKSIZE);
+				if(rdcount<0){
+					perror("rmdir: erreur lors de la lecture du tar");
+					close(fd);
+					exit(-1);
+				}
 
-			// Extraction des informations
+				// Extraction des informations
 
-			p_hdr = (struct posix_header*)tampon;
-			sscanf(p_hdr->size, "%o",&size);
+				p_hdr = (struct posix_header*)tampon;
+				sscanf(p_hdr->size, "%o",&size);
 
-			// On arrive a la fin au bloc nul
+				// On arrive a la fin au bloc nul
 
-			if(strlen(p_hdr-> name) == 0) {
-				if (arg == NULL) {
-					if(vide) {
-						valide = 2;
-						break;
+				if(strlen(p_hdr-> name) == 0) {
+					if (arg == NULL) {
+						if(vide) {
+							valide = 2;
+							break;
+						}
+						else {
+							print_stderr("rmdir: impossible de supprimer '");
+							print_stderr(argv[i]);
+							print_stderr("': Le tar n'est pas vide\n");
+							break;
+						}
 					}
 					else {
-						print_stderr("rmdir: impossible de supprimer '");
-						print_stderr(argv[i]);
-						print_stderr("': Le tar n'est pas vide\n");
-						break;
+						if(supp != BLOCKSIZE) {
+							print_stderr("rmdir: impossible de supprimer '");
+							print_stderr(argv[i]);
+							print_stderr("': Le dossier n'est pas vide\n");
+							break;
+						}
+						else {
+							valide = 1;
+							dep = dep + BLOCKSIZE;
+							break;
+						}
 					}
 				}
-				if (rep == NULL) {
-					print_stderr("rmdir: impossible de supprimer '");
-					print_stderr(argv[i]);
-					print_stderr("': Aucun fichier ou dossier de ce type\n");
-					break;
-				}
-				else {
-					if(supp != BLOCKSIZE) {
-						print_stderr("rmdir: impossible de supprimer '");
-						print_stderr(argv[i]);
-						print_stderr("': Le dossier n'est pas vide\n");
-						break;
+
+				vide = 0;	// Si on peut lire jusqu'ici le tar n'est pas vide
+
+				// Si l'argument n'est pas un tar
+
+				if(arg != NULL) {
+
+					// Si on trouve le repertoire
+
+					if(strcmp(p_hdr -> name, arg) == 0 && p_hdr->typeflag == '5') {
+							rep = malloc(strlen(p_hdr->name) + 1);
+							strcpy(rep, p_hdr->name);
+					}
+
+					// Stockage des octets a utiliser lors de la suppresion
+
+					if(rep != NULL) {
+						// Le repertoire et ses fichiers a supprimer
+						if(estDansRep(p_hdr-> name, rep) == 1)
+							supp = supp + BLOCKSIZE + (((size+ BLOCKSIZE - 1) >> BLOCKBITS)*BLOCKSIZE);
+
+						// Toutes donnees se situant apres le repertoire
+						else
+							dep = dep + BLOCKSIZE + (((size+ BLOCKSIZE - 1) >> BLOCKBITS)*BLOCKSIZE);
 					}
 					else {
-						valide = 1;
-						dep = dep + BLOCKSIZE;
-						break;
+						// Le repertoire et ses fichiers a supprimer
+						if(estDansRep(p_hdr-> name, arg) == 1)
+							supp = supp + BLOCKSIZE + (((size+ BLOCKSIZE - 1) >> BLOCKBITS)*BLOCKSIZE);
+
+						// Toutes donnees avant d'avoir trouve le repertoire
+						else
+							longueur = longueur + BLOCKSIZE + (((size+ BLOCKSIZE - 1) >> BLOCKBITS)*BLOCKSIZE);
 					}
-				}
-			}
 
-			vide = 0;	// Si on peut lire jusqu'ici le tar n'est pas vide
-
-			// Si l'argument n'est pas un tar
-
-			if(arg != NULL) {
-
-				// Si on trouve le repertoire
-
-				if(strcmp(p_hdr -> name, arg) == 0 && p_hdr->typeflag == '5') {
-						rep = malloc(strlen(p_hdr->name) + 1);
-						strcpy(rep, p_hdr->name);
 				}
 
-				// Stockage des octets a utiliser lors de la suppresion
+				// On passe a l'entete suivante
 
-				if(rep != NULL) {
-					// Le repertoire et ses fichiers a supprimer
-					if(estDansRep(p_hdr-> name, rep) == 1)
-						supp = supp + BLOCKSIZE + (((size+ BLOCKSIZE - 1) >> BLOCKBITS)*BLOCKSIZE);
+				lseek(fd,((size+ BLOCKSIZE - 1) >> BLOCKBITS)*BLOCKSIZE,SEEK_CUR);
 
-					// Toutes donnees se situant apres le repertoire
-					else
-						dep = dep + BLOCKSIZE + (((size+ BLOCKSIZE - 1) >> BLOCKBITS)*BLOCKSIZE);
 				}
-				// Toutes donnees avant d'avoir trouve le repertoire
-				else
-					longueur = longueur + BLOCKSIZE + (((size+ BLOCKSIZE - 1) >> BLOCKBITS)*BLOCKSIZE);
+		}
 
-			}
-
-			// On passe a l'entete suivante
-
-			lseek(fd,((size+ BLOCKSIZE - 1) >> BLOCKBITS)*BLOCKSIZE,SEEK_CUR);
-
+		else {
+			print_stderr("rmdir: impossible de supprimer '");
+			print_stderr(argv[i]);
+			print_stderr("': Aucun dossier de ce type\n");
 		}
 
 		// ----------------------------------------------------------------------
