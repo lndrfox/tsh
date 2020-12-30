@@ -675,12 +675,14 @@ int tar_vers_ext_cp(char *argv[]){
 
       print_error(NULL,tar,"' reading tar file");
       close(fd);
+      free(path);
       return -1;
     }
 
     //IF WE REACHED THE END OF THE TAR WITHOUT FINDING THE GOOD HEADER
 
     if((hd.name[0]=='\0')){
+      free(path);
       return -2;
     }
 
@@ -703,6 +705,7 @@ int tar_vers_ext_cp(char *argv[]){
 
 
   }while(strcmp(hd.name,path)!=0);
+  
   free(path);
   //CREATING THE FILE TO COPY
 
