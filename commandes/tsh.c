@@ -268,6 +268,16 @@ char * redir_out(char * prompt){
 			char *copy[4];
 			copy[0]="cp";
 			copy[1]=path;
+
+			if(flag_err){
+
+				copy[2] = "redir_err";
+			}
+
+			else{
+
+				copy[2]="redir_out";
+			}
 			copy[3]=NULL;
 
 			/*IF WHEN WE COPY WE GET -1 THEN THEN THERE WAS AN ERROR
