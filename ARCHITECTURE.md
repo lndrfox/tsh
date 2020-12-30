@@ -12,7 +12,7 @@ Voici les fonctionnalités disponibles du tsh:
 
 * Fonctionnement normal des commandes lorsqu'on leur donne plusieurs arguments et que des tarballs sont impliqués ainsi que lorsqu'on on leur donne plusieurs arguments, certains impliquant des tarballs, d'autres non.
 
-* Fonctionnement des redirections '>' , '>>' , '2>' , '2>>' , '<' que des tarballs soient impliqués ou non. Fonctionnement des redirections multiples uniquement lorsque les tarballs ne sont pas impliqués ( 'commande > tata > toto ')
+* Fonctionnement des redirections '>' , '>>' , '2>' , '2>>' , '<' que des tarballs soient impliqués ou non. Fonctionnement des redirections multiples que les tarballs soient impliqués ou non.
 
 * Fonctionnement normal des combinaisons de commande que des tarballs soient impliqués ou non, y compris plusieurs combinaisons de commandes à la suite.
 
@@ -171,3 +171,13 @@ Par la suite, nous continuons à lire le contenu du fichier, situé après l'en-
 #### `pwd`
 
 'pwd' construit une chaine de caractère 'entry' qu'elle va ensuite afficher dans'STDOUT_FILENO' à l'aide de la fonction 'prints()', une des fonctions du fichier 'print.c' qui contient des alternatives à 'printf()' à base de 'write()'. 'pwd' va d'abord récupérer le répertoire courant à l'aide de 'getcwd()' ensuite on récupère le contenu de la variable d'environnement 'tar'. Si elle est vide on s'arrête là, on écrit ce qu'on a récupérée dans 'STDOUT_FILENO' et nous avons fini. Sinon on concatène le contenu de cette variable d'environnement à ce que nous avons récupéré préalablement, puis enfin nous écrions le résultat et nous avons fini.
+
+### `exit`
+
+La boucle de tsh tourne tant que `int run` , une variable globale, est à 1. Lorsque l'on détecte que la commande `exit` a été entrée on se contente de mettre `run` à 0.
+
+### `cd`
+
+Dans un premier temps, si l'on détecte qu'aucun argument n'a été fourni à `cd` nous allons renvoyer l'utilisateur au répertoire `home` . Pour cela nous construisons une schaîne de caractère contentant `/home/` suivi du nom de l'utilisateur que nous récupèrons grâce à `getlogin()` puis nous y accèdons à l'aide de la fonction `chdir()` et nous avons fini.
+
+Autrement, nous vérifions ensuite si nous devons simplement avoir le comportement normal de `cd` ou si des tarballs sont impliqués et que dans ce cas nous devons modifier le contenu de la variable d'environnement `tar`. 
