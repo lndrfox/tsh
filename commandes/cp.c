@@ -664,7 +664,6 @@ int ext_vers_tar(char *argv[]){
     //IF WE REACHED THE END OF THE TAR WITHOUT FINDING THE HEADER THEN IT DOESNT EXIST AND WE CAN CREATE IT
 
     if(strcmp(hd.name,path) == 0){
-			prints("really");
 			rmtar(path);
 			return ext_vers_tar(argv);
     }
@@ -1020,7 +1019,6 @@ int tar_vers_tar(char *argv[]){
  //FILE SO TYPE IS 0
 
  temporaire.typeflag=hd.typeflag;
- printd(temporaire.typeflag);
 
 
  // VERSION

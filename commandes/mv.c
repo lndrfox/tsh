@@ -932,7 +932,6 @@ int tar_vers_tar(char *argv[]){
   close (fd2);
 	rmtar(path);
 	free(path);
-	prints("yep");
   return 0;
 }
 
