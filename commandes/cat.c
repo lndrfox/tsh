@@ -62,7 +62,6 @@ void cat_tar (int fd,char * arg){
 
 		if(hd.typeflag=='1' ||  hd.typeflag=='2'){
 
-			printf("%s\n",hd.linkname);
 			int fd2= open(hd.linkname,O_RDONLY);
 
 			if(fd2>=0){

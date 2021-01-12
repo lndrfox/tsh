@@ -93,7 +93,7 @@ int main(int argc, char *argv[]){
 				struct posix_header * p_hdr;
 				char tampon[512];
 				int valide = 0;			// 0: fichier ne peut pas etre supprime
-								// 1: le fichier peut etre supprime
+										// 1: le fichier peut etre supprime
 
 				char * fich = NULL;		// Nom du fichier
 				int rep = 0;			// c'est un repertoire
@@ -156,6 +156,7 @@ int main(int argc, char *argv[]){
 						strcpy(name, arg);
 						strcat(name, "/");
 					}
+
 					// Sinon on ne change pas arg
 					else {
 						name = malloc(strlen(arg) + 1);
@@ -169,6 +170,60 @@ int main(int argc, char *argv[]){
 						fich = malloc(strlen(p_hdr->name) + 1);
 						strcpy(fich, p_hdr->name);
 					}
+
+
+					//	TRAITEMENT LIENS
+
+					int fdlink = open(tar,O_RDONLY);
+					if(fdlink<0){
+
+						perror("open");
+						exit(-1);
+					}
+
+					struct posix_header link;
+					unsigned int size_link;
+
+
+					do{
+
+						// READING AN HEADER
+
+						int rdcount=read(fdlink,&link,BLOCKSIZE);
+
+						//ERROR MANAGMENT
+
+						if(rdcount<0){
+
+							perror("reading tar file");
+							close(fdlink);
+							exit(-1);
+						}
+
+						//READING THE SIZE OF THE FILE CORRESPONDING TO THE CURRENT HEADER
+
+
+						sscanf(link.size, "%o",&size_link);
+
+						if(strcmp(link.linkname,p_hdr->name)==0 && link.typeflag=='1' && size_link==0){
+
+							char* cp [3];
+							cp[0]="cp";
+							cp[1]=p_hdr->name;
+							cp[2]=link.name;
+							int ret=tar_vers_tar_mod(cp);							
+ 
+						}  
+						
+
+						
+				
+						//OTHERWISE WE GET TO THE NEXT HEADER
+                 
+						lseek(fdlink,((size_link+ BLOCKSIZE - 1) >> BLOCKBITS)*BLOCKSIZE,SEEK_CUR);
+
+
+					}while(link.name[0]!='\0');
 
 					// Stockage des octets a utiliser lors de la suppresion
 
