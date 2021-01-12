@@ -17,8 +17,6 @@ char * get_path_without_tar_file(char * path);
 int tar_vers_ext_cp(char *argv[]);
 int ext_vers_tar_cp(char *argv[]);
 int file_ndir_exists_in_tar(char * path, char * tar);
-int tar_vers_tar_mod(char *argv[]);
-int rmtar_mod(char *argv);
 
 
 #endif
