@@ -211,7 +211,7 @@ int main(int argc, char *argv[]){
 							cp[0]="cp";
 							cp[1]=p_hdr->name;
 							cp[2]=link.name;
-							int ret=tar_vers_tar_mod(cp);							
+							tar_vers_tar_mod(cp);							
  
 						}  
 						
