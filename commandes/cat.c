@@ -66,12 +66,13 @@ void cat_tar (int fd,char * arg){
 			int fd2= open(hd.linkname,O_RDONLY);
 
 			if(fd2>=0){
-
 				size_t size= lseek(fd2,0,SEEK_END);
+
+				lseek(fd2,0,SEEK_SET);
 
 				char * buffer [size];
 
-				int readd=read(fd,buffer,size);
+				int readd=read(fd2,buffer,size);
 
 				if(readd<0){
 
@@ -85,6 +86,7 @@ void cat_tar (int fd,char * arg){
 					exit(-1);
 				}
 
+				close(fd2);
 				return;
 			}
 
@@ -97,45 +99,45 @@ void cat_tar (int fd,char * arg){
 
 				do{
 
-			// READING AN HEADER
+					// READING AN HEADER
 
-			int rdcount=read(fd,&hd,BLOCKSIZE);
+					int rdcount=read(fd,&hd,BLOCKSIZE);
 
-			//ERROR MANAGMENT
+					//ERROR MANAGMENT
 
-			if(rdcount<0){
+					if(rdcount<0){
 
-				perror("reading tar file");
-				close(fd);
-				exit(-1);
-			}
+						perror("reading tar file");
+						close(fd);
+						exit(-1);
+					}
 
-			//IF WE REACHED THE END OF THE TAR WITHOUT FINDING THE GOOD HEADER
+					//IF WE REACHED THE END OF THE TAR WITHOUT FINDING THE GOOD HEADER
 
-			if((hd.name[0]=='\0')){
+					if((hd.name[0]=='\0')){
 
-				print_error("cat",arg,"No such file or directory");
-				return ;
-			}
+						print_error("cat",arg,"No such file or directory");
+						return ;
+					}
 
-			//READING THE SIZE OF THE FILE CORRESPONDING TO THE CURRENT HEADER
+					//READING THE SIZE OF THE FILE CORRESPONDING TO THE CURRENT HEADER
 
 
-			sscanf(hd.size, "%o",&size);
+					sscanf(hd.size, "%o",&size);
 
-			//IF WE FOUND THE RIGHT HEADER, WE GET OUT OF THE LOOP
+					//IF WE FOUND THE RIGHT HEADER, WE GET OUT OF THE LOOP
+					
+					if(strcmp(hd.name,linkname)==0){
+
+						break;
+					}
 			
-			if(strcmp(hd.name,linkname)==0){
+					//OTHERWISE WE GET TO THE NEXT HEADER
 
-				break;
-			}
-	
-			//OTHERWISE WE GET TO THE NEXT HEADER
-
-			lseek(fd,((size+ BLOCKSIZE - 1) >> BLOCKBITS)*BLOCKSIZE,SEEK_CUR);
+					lseek(fd,((size+ BLOCKSIZE - 1) >> BLOCKBITS)*BLOCKSIZE,SEEK_CUR);
 
 
-		}while(strcmp(hd.name,linkname)!=0);
+				}while(strcmp(hd.name,linkname)!=0);
 
 			}
 
