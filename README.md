@@ -2,6 +2,12 @@
 
 This project was done for a university course about C and OS, most of the documentation is in French and the git history and code base is messy and reflective of very limited development time. I might translane the documentation on day, maybe fix stuff in the code for fun but most likely this repository is just an archive. 
 
+# Contributors 
+
+Natacha Guijarro 
+Anthony Phothirath
+Robin Arnoux
+
 # Instructions
 
 Installations des pré requis:
