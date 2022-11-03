@@ -4,9 +4,9 @@ This project was done for a university course about C and OS, most of the docume
 
 # Contributors 
 
-Natacha Guijarro 
-Anthony Phothirath
-Robin Arnoux
+- Natacha Guijarro 
+- Anthony Phothirath
+- Robin Arnoux
 
 # Instructions
 
